@@ -1,0 +1,250 @@
+.mp__label{
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.mp__actions{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mp__input{
+  width: 140px;
+}
+
+.mp__preview{
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.mp__preview img{
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ss-assets-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mp__preview{
+  max-height: 90px;
+}
+
+.mp__preview img{
+  max-height: 90px;
+  width: auto;
+}
+.mp-modal{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.mp-modal[hidden]{
+  display: none;
+}
+
+.mp-modal__backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+}
+
+.mp-modal__panel{
+  position: relative;
+  width: min(1100px, calc(100vw - 32px));
+  height: min(760px, calc(100vh - 32px));
+  margin: 16px auto;
+  background: var(--panel, #111);
+  border-radius: 16px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.mp-modal__head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.mp-modal__frame{
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+
+.ss-assets-grid .mp{
+  height: 100px;                 /* Kachelhöhe: ggf. 240–320 testen */
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 10px;
+}
+
+.ss-assets-grid .mp__label{
+  margin: 0;
+}
+
+.ss-assets-grid .mp__actions{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.ss-assets-grid .mp__input{
+  width: 100%;
+}
+
+.ss-assets-grid .mp__open{
+  width: 100%;
+}
+
+.ss-assets-grid .mp__preview{
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.ss-assets-grid .mp__preview img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+/* Branding-Grid: erzwinge 3 Spalten (überschreibt ggf. andere Regeln) */
+.ss-assets-grid{
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: start;
+}
+/* Picker: reduzierte Auswahlansicht (Grid/List) */
+
+.mp-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+  gap:10px;
+}
+.mp-tile{
+  border:1px solid var(--border);
+  background:var(--card);
+  border-radius:10px;
+  padding:6px;
+  cursor:pointer;
+}
+.mp-img{
+  display:block;
+  width:100%;
+  height:110px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+.mp-list{ display:flex; flex-direction:column; gap:8px; }
+.mp-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid var(--border);
+  background:var(--card);
+  border-radius:10px;
+  padding:8px;
+  cursor:pointer;
+  text-align:left;
+}
+.mp-thumb{
+  width:56px;
+  height:56px;
+  object-fit:cover;
+  border-radius:8px;
+  flex:0 0 auto;
+}
+.mp-name{
+  font:inherit;
+  color:var(--text);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+/* Settings-Widget (Kachel) */
+.ss-assets-grid .mp{
+  display: grid;
+  gap: 10px;
+}
+
+/* Iframe Picker-Ansicht */
+.mp-picker{
+  padding: 12px;
+}
+/* Iframe: reduzierter Media Picker (media_picker_list.php) */
+.media-picker{
+  padding: 12px;
+}
+
+/* Grid */
+.media-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.media-item{
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,.04);
+  cursor: pointer;
+}
+.media-item img{
+  display: block;
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+}
+
+/* List */
+.media-list{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+.media-list tr{
+  cursor: pointer;
+}
+.media-list td{
+  vertical-align: middle;
+  padding: 8px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+}
+.media-list td:first-child{
+  width: 72px;
+  border-left: 1px solid rgba(255,255,255,.10);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+.media-list td:last-child{
+  border-right: 1px solid rgba(255,255,255,.10);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.media-list img{
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
