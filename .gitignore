@@ -52,3 +52,8 @@ secrets/
 
 # Private keys
 Frontend/keys/
+
+# Stray temp/junk files
+/tmp_forms_check.php
+/ziYjQtvy
+/zij3v3Sw
