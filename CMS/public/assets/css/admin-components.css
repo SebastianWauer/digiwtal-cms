@@ -1,0 +1,320 @@
+.flash {
+    position: absolute;          /* Positionierung relativ zur Panel-Section */
+    top: 10px;                   /* Etwas Abstand vom oberen Rand */
+    left: 50%;                   /* Horizontal zentrieren */
+    transform: translateX(-50%); /* Korrektur der Zentrierung */
+    width: 80%;                  /* Breite auf 80% des Panel-Bereichs */
+    max-width: 500px;            /* Maximale Breite festlegen */
+    padding: 10px 12px;
+    border-radius: 12px;
+    background-color: var(--flash-ok-bg); /* Je nach Typ (ok/error) ändern */
+    border-color: var(--flash-ok-border);
+    color: #fff;
+    opacity: 1;
+    transition: opacity 0.5s ease-out; /* Übergangseffekt */
+    z-index: 9999;               /* Sicherstellen, dass es oben bleibt */
+}
+/* Badges */
+.pages-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  font-weight: 750;
+  font-size: 12px;
+}
+
+.pages-badge--live{
+  color: #32d583;
+  border-color: rgba(50,213,131,0.35);
+  background: rgba(50,213,131,0.08);
+}
+
+.pages-badge--deleted{
+  color: var(--muted);
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+}
+.pages-badge--draft{
+  color: rgba(255, 186, 73, 0.95);
+  border-color: rgba(255, 186, 73, 0.35);
+  background: rgba(255, 186, 73, 0.08);
+}
+
+.pages-badge--expired{
+  color: rgba(255, 120, 120, 0.98);
+  border-color: rgba(255, 120, 120, 0.4);
+  background: rgba(255, 120, 120, 0.1);
+}
+
+html[data-theme="light"] .pages-badge--draft{
+  color: #b25a00;
+  border-color: rgba(178, 90, 0, 0.35);
+  background: rgba(178, 90, 0, 0.08);
+}
+
+html[data-theme="light"] .pages-badge--expired{
+  color: #b22525;
+  border-color: rgba(178, 37, 37, 0.35);
+  background: rgba(178, 37, 37, 0.08);
+}
+.btn{
+  border: 1px solid transparent;
+  padding: 7px 12px;        /* vorher: 10px 14px */
+  border-radius: 10px;      /* vorher: 12px */
+  background: var(--primary);
+  color: var(--bg);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;          /* etwas ruhiger */
+  line-height: 1.2;
+}
+
+html[data-theme="light"] .btn:not(.btn--ghost){
+  background: #111;
+  color: #fff;
+}
+.btn:hover{ opacity: 0.92; }
+
+.btn--ghost{
+  background: transparent;
+  color: var(--text);
+  border-color: var(--btn-border);
+}
+.btn--ghost:hover{ background: var(--btn-hover); }
+
+.hint{ margin-top: 16px; color: var(--muted); }
+
+.actions{
+  margin-top: 14px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chk{ display:inline-flex; gap: 8px; align-items:center; }
+
+.content{ flex: 1; min-width: 0; }
+.mainline{ display:flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.label{ font-weight: 750; }
+.url{ color: var(--muted); }
+
+.controls{
+  margin-top: 8px;
+  display:flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.order{ color: var(--muted); }
+/* Button Variants (Components) */
+.btn--warn{
+  border-color: rgba(255, 186, 73, 0.55);
+  color: rgba(255, 214, 145, 0.95);
+}
+.btn--warn:hover{
+  background: rgba(255, 186, 73, 0.08);
+}
+
+.btn--danger{
+  border-color: rgba(255, 90, 90, 0.55);
+  color: rgba(255, 170, 170, 0.95);
+}
+.btn--danger:hover{
+  background: rgba(255, 90, 90, 0.08);
+}
+/* Button Variants (Components) – greifen sicher auch mit btn--ghost */
+
+.btn.btn--ghost.btn--warn{
+  border-color: rgba(255, 186, 73, 0.55);
+  color: rgba(255, 214, 145, 0.95);
+}
+.btn.btn--ghost.btn--warn:hover{
+  background: rgba(255, 186, 73, 0.08);
+}
+
+.btn.btn--ghost.btn--danger{
+  border-color: rgba(255, 90, 90, 0.55);
+  color: rgba(255, 170, 170, 0.95);
+}
+.btn.btn--ghost.btn--danger:hover{
+  background: rgba(255, 90, 90, 0.08);
+}
+/* Button Size Variant (Components) */
+.btn--sm{
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 9px;
+  line-height: 1.2;
+}
+.btn--xs{
+  padding: 5px 9px;
+  font-size: 12.5px;
+  border-radius: 9px;
+  line-height: 1.2;
+}
+html[data-theme="light"] .btn.btn--ghost.btn--warn{
+  color: #b25a00;
+  border-color: rgba(178, 90, 0, 0.35);
+}
+html[data-theme="light"] .btn.btn--ghost.btn--warn:hover{
+  background: rgba(178, 90, 0, 0.08);
+}
+
+html[data-theme="light"] .btn.btn--ghost.btn--danger{
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.35);
+}
+html[data-theme="light"] .btn.btn--ghost.btn--danger:hover{
+  background: rgba(180, 35, 24, 0.08);
+}
+/* Action group: Buttons + Separator exakt mittig im Gap */
+.pages-actions-inline{
+  --actions-gap: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--actions-gap);
+}
+
+/* Forms dürfen keinen eigenen Block/Spacing erzeugen */
+.pages-actions-inline form.form-reset{
+  display: inline-flex;
+  margin: 0;
+}
+
+/* Separator: kommt vor jedem Element ab dem 2. */
+.pages-actions-inline > * + *{
+  position: relative;
+}
+
+.pages-actions-inline > * + *::before{
+  content: "";
+  position: absolute;
+  left: calc(var(--actions-gap) / -2); /* exakt mittig im Abstand */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 16px;                        /* passt zu btn--badge/pages-badge */
+  background: var(--btn-border);
+  opacity: 0.7;
+}
+
+
+/* Action Buttons – Höhe an Badges angepasst */
+.btn--badge{
+  padding: 4px 10px;     /* identisch zur Badge-Höhe */
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 999px;  /* gleiche Pill-Form */
+}
+/* Startseite: grüner Haken */
+.pages-check{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1;
+  color: #32d583;
+}
+
+/* Das + als Button */
+.add-folder-btn {
+  padding: 8px;
+  font-size: 16px;
+  background: transparent;
+  border: 1px solid;
+  border-color: var(--btn-border);
+  color: var(--text);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.add-folder-btn:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 820px){
+  .flash{
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    z-index: 60;
+  }
+
+  .actions,
+  .controls{
+    width: 100%;
+    gap: 8px;
+  }
+
+  .btn{
+    min-height: 40px;
+    line-height: 1.15;
+  }
+
+  .panel-body .btn{
+    max-width: 100%;
+  }
+
+  .panel-body input[type="text"],
+  .panel-body input[type="email"],
+  .panel-body input[type="password"],
+  .panel-body input[type="number"],
+  .panel-body input[type="date"],
+  .panel-body input[type="url"],
+  .panel-body input[type="search"],
+  .panel-body textarea,
+  .panel-body select{
+    width: 100%;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .panel-body table{
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 640px){
+  .actions,
+  .controls{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions .btn,
+  .controls .btn{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pages-actions-inline{
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .pages-actions-inline > * + *::before{
+    display: none;
+  }
+}

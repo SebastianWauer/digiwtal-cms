@@ -1,0 +1,16 @@
+ALTER TABLE server_access
+    ADD COLUMN label VARCHAR(100) NOT NULL DEFAULT '' AFTER customer_id,
+    ADD COLUMN port SMALLINT UNSIGNED NOT NULL DEFAULT 22 AFTER host,
+    ADD COLUMN protocol ENUM('ssh', 'sftp', 'ftp') NOT NULL DEFAULT 'sftp' AFTER port,
+    ADD COLUMN username VARCHAR(255) NOT NULL DEFAULT '' AFTER protocol,
+    ADD COLUMN password_enc TEXT NULL AFTER username,
+    ADD COLUMN password_nonce VARCHAR(64) NOT NULL DEFAULT '' AFTER password_enc,
+    ADD COLUMN password_tag VARCHAR(64) NOT NULL DEFAULT '' AFTER password_nonce,
+    ADD COLUMN private_key_enc TEXT NULL AFTER password_tag,
+    ADD COLUMN private_key_nonce VARCHAR(64) NOT NULL DEFAULT '' AFTER private_key_enc,
+    ADD COLUMN private_key_tag VARCHAR(64) NOT NULL DEFAULT '' AFTER private_key_nonce,
+    ADD COLUMN server_path VARCHAR(255) NOT NULL DEFAULT '/cms' AFTER private_key_tag,
+    ADD COLUMN html_path VARCHAR(255) NOT NULL DEFAULT '/html' AFTER server_path,
+    ADD COLUMN deploy_token_enc TEXT NULL AFTER html_path,
+    ADD COLUMN deploy_token_nonce VARCHAR(64) NOT NULL DEFAULT '' AFTER deploy_token_enc,
+    ADD COLUMN deploy_token_tag VARCHAR(64) NOT NULL DEFAULT '' AFTER deploy_token_nonce;

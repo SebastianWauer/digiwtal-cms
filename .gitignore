@@ -1,0 +1,54 @@
+# macOS metadata
+.DS_Store
+._*
+__MACOSX/
+.AppleDouble
+.LSOverride
+.Spotlight-V100/
+.Trashes/
+.fseventsd/
+
+# IDE / editor
+.idea/
+.vscode/
+.claude/
+**/.claude/
+*.swp
+
+# Secrets
+.env
+
+# Runtime / logs / backups
+storage/
+storage/backups/
+storage/logs/
+
+# PHP / Composer
+vendor/
+composer
+.phpunit.result.cache
+
+# Archives / deploy helpers
+*.zip
+upload.sh
+
+# Webserver overrides
+.htaccess
+*.user.ini
+
+# Local certs / debug helpers
+Verwaltung/agent/certs/*.crt
+Verwaltung/agent/certs/*.key
+Verwaltung/public/phpinfo.php
+Verwaltung/public/.user.ini
+
+DIGIWTAL_Systemarchitektur_Final.md
+CMS-Systemanalyse.md
+Aufgabenliste.md
+Auffälligkeiten.md
+Datenschutzerklaerung.md
+secrets/
+.ssh/
+
+# Private keys
+Frontend/keys/

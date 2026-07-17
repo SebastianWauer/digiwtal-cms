@@ -1,0 +1,48 @@
+/* assets/css/admin-roles-edit.css */
+@import url("/assets/css/admin-pages-edit.css");
+
+/* Ersatz für: style="margin-top:12px;" */
+.pages-edit-card--spaced {
+  margin-top: 12px;
+}
+
+/* Ersatz für:
+   style="padding:10px 16px; border-top:1px solid rgba(0,0,0,.06); font-weight:700;"
+*/
+.roles-perm-group-title {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(0, 0, 0, .06);
+  font-weight: 700;
+}
+
+/* Ersatz für: style="padding:6px 16px 12px 16px;" */
+.roles-perm-group {
+  padding: 6px 16px 12px 16px;
+}
+
+/* Ersatz für:
+   style="display:flex; gap:10px; align-items:flex-start; margin:6px 0;"
+   (bleibt kompatibel mit .pages-edit-check)
+*/
+.roles-perm-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 6px 0;
+}
+
+/* Für die Textspalte neben der Checkbox */
+.roles-perm-item__text {
+  display: block;
+}
+
+/* Ersatz für: style="font-weight:600;" */
+.roles-perm-item__label {
+  display: block;
+  font-weight: 600;
+}
+
+/* Ersatz für: style="padding:10px 16px;" */
+.roles-perm-readonly {
+  padding: 10px 16px;
+}

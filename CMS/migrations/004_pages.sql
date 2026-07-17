@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS pages (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  slug VARCHAR(190) NOT NULL,
+  title VARCHAR(190) NOT NULL DEFAULT '',
+  content_json JSON NULL,
+
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+  deleted_at DATETIME NULL,
+
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_pages_slug (slug),
+  KEY idx_pages_deleted (is_deleted, deleted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

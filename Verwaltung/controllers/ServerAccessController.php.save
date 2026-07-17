@@ -1,0 +1,171 @@
+<?php
+declare(strict_types=1);
+
+class ServerAccessController
+{
+    private CustomerRepository $customerRepo;
+    private ServerAccessRepository $accessRepo;
+
+    public function __construct(CustomerRepository $customerRepo, ServerAccessRepository $accessRepo)
+    {
+        $this->customerRepo = $customerRepo;
+        $this->accessRepo = $accessRepo;
+    }
+
+    public function show(int $customerId): void
+    {
+        AdminAuth::requireAuth();
+        
+        $customer = $this->customerRepo->findById($customerId);
+        if ($customer === null) {
+            http_response_code(404);
+            echo '<!DOCTYPE html><html><head><title>404</title></head><body><h1>404 Not Found</h1></body></html>';
+            exit;
+        }
+        
+        $access = $this->accessRepo->findByCustomer($customerId);
+        $success = $_SESSION['flash_success'] ?? null;
+        $errors = $_SESSION['flash_errors'] ?? null;
+        $old = $_SESSION['flash_old'] ?? [];
+        unset($_SESSION['flash_success'], $_SESSION['flash_errors'], $_SESSION['flash_old']);
+        
+        require __DIR__ . '/../views/server_access/index.php';
+    }
+
+    public function save(int $customerId): void
+    {
+        AdminAuth::requireAuth();
+        
+        if (!Csrf::verify($_POST['csrf_token'] ?? '')) {
+            $_SESSION['flash_errors'] = ['CSRF token invalid'];
+            header('Location: /admin/customers/' . $customerId . '/access');
+            exit;
+        }
+
+        $customer = $this->customerRepo->findById($customerId);
+        if ($customer === null) {
+            http_response_code(404);
+            echo '<!DOCTYPE html><html><head><title>404</title></head><body><h1>404 Not Found</h1></body></html>';
+            exit;
+        }
+
+        $label = trim($_POST['label'] ?? '');
+        $host = trim($_POST['host'] ?? '');
+        $port = (int)($_POST['port'] ?? 22);
+        $protocol = (string)($_POST['protocol'] ?? 'sftp');
+        $username = trim($_POST['username'] ?? '');
+        $serverPath = trim($_POST['server_path'] ?? '/cms');
+        $htmlPath = trim($_POST['html_path'] ?? '/html');
+
+        $errors = [];
+
+        if (strlen($label) > 100) {
+            $errors[] = 'Label darf maximal 100 Zeichen lang sein.';
+        }
+
+        if (strlen($host) > 255) {
+            $errors[] = 'Host darf maximal 255 Zeichen lang sein.';
+        }
+
+        if (preg_match('#^https?://#i', $host) || str_contains($host, '/')) {
+            $errors[] = 'Host darf kein Protokoll oder Slashes enthalten.';
+        }
+
+        if ($port < 1 || $port > 65535) {
+            $errors[] = 'Port muss zwischen 1 und 65535 liegen.';
+        }
+
+        if (!in_array($protocol, ['ssh', 'sftp', 'ftp'], true)) {
+            $errors[] = 'Ungültiges Protokoll.';
+        }
+^X
+
+        if (!empty($errors)) {
+            $_SESSION['flash_errors'] = $errors;
+            $_SESSION['flash_old'] = compact('label', 'host', 'port', 'protocol', 'username', 'serverPath', 'htmlPath');
+            header('Location: /admin/customers/' . $customerId . '/access');
+            exit;
+        }
+
+        $data = [
+            'label' => $label,
+            'host' => $host,
+            'port' => $port,
+            'protocol' => $protocol,
+            'username' => $username,
+            'server_path' => $serverPath,
+            'html_path' => $htmlPath,
+        ];
+
+        $encrypted = [];
+        $aad = 'cust:' . $customerId;
+
+        $healthToken = trim($_POST['health_token'] ?? '');
+        if ($healthToken !== '') {
+            try {
+                $enc = VaultCrypto::encrypt($healthToken, $aad);
+                $encrypted['health_token_enc'] = $enc['ciphertext_b64'];
+                $encrypted['health_token_nonce'] = $enc['nonce_b64'];
+                $encrypted['health_token_tag'] = $enc['tag_b64'];
+            } catch (Throwable) {
+                $errors[] = 'Fehler beim Verschlüsseln des Health-Tokens.';
+            }
+        }
+
+        $deployToken = trim($_POST['deploy_token'] ?? '');
+        if ($deployToken !== '') {
+            try {
+                $enc = VaultCrypto::encrypt($deployToken, $aad);
+                $encrypted['deploy_token_enc'] = $enc['ciphertext_b64'];
+                $encrypted['deploy_token_nonce'] = $enc['nonce_b64'];
+                $encrypted['deploy_token_tag'] = $enc['tag_b64'];
+            } catch (Throwable) {
+                $errors[] = 'Fehler beim Verschlüsseln des Deploy-Tokens.';
+            }
+        }
+
+        $password = trim($_POST['password'] ?? '');
+        if ($password !== '') {
+            try {
+                $enc = VaultCrypto::encrypt($password, $aad);
+                $encrypted['password_enc'] = $enc['ciphertext_b64'];
+                $encrypted['password_nonce'] = $enc['nonce_b64'];
+                $encrypted['password_tag'] = $enc['tag_b64'];
+            } catch (Throwable $e) {
+                // ADDED: Detailed logging (no secrets)
+                $keySet = (getenv('VAULT_KEY_BASE64') !== false && getenv('VAULT_KEY_BASE64') !== '');
+                $keyLen = 0;
+                if ($keySet) {
+                    $decoded = base64_decode((string)getenv('VAULT_KEY_BASE64'), true);
+                    $keyLen = $decoded !== false ? strlen($decoded) : 0;
+                }
+                $gcmAvailable = in_array('aes-256-gcm', openssl_get_cipher_methods(), true);
+                
+                error_log(sprintf(
+                    "[VAULT_ERROR] Password encryption failed: %s | VAULT_KEY set: %s, len: %d | GCM available: %s | PHP: %s | OpenSSL: %s",
+                    $e->getMessage(),
+                    $keySet ? 'yes' : 'no',
+                    $keyLen,
+                    $gcmAvailable ? 'yes' : 'no',
+                    PHP_VERSION,
+                    OPENSSL_VERSION_TEXT ?? 'unknown'
+                ));
+                
+                $errors[] = 'Fehler beim Verschlüsseln des Passworts. (Error-ID: ' . substr(md5($e->getMessage()), 0, 8) . ')';
+            }
+        }
+
+        if (!empty($errors)) {
+            $_SESSION['flash_errors'] = $errors;
+            $_SESSION['flash_old'] = compact('label', 'host', 'port', 'protocol', 'username', 'serverPath', 'htmlPath');
+            header('Location: /admin/customers/' . $customerId . '/access');
+            exit;
+        }
+
+        $this->accessRepo->upsert($customerId, $data, $encrypted);
+
+        $_SESSION['flash_success'] = 'Serverzugang gespeichert.';
+        header('Location: /admin/customers/' . $customerId . '/access');
+        exit;
+    }
+}

@@ -1,0 +1,22 @@
+# Laufzeit-Daten
+storage/
+storage/backups/
+storage/logs/
+
+# Umgebung
+.env
+
+# macOS
+.DS_Store
+._*
+__MACOSX/
+.AppleDouble
+.LSOverride
+.Spotlight-V100/
+.Trashes/
+.fseventsd/
+
+# IDE
+.idea/
+.vscode/
+*.swp

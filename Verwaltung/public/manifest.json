@@ -1,0 +1,38 @@
+{
+  "name": "DIGIWTAL Verwaltung",
+  "short_name": "DIGIWTAL",
+  "description": "Fleet-Management für DIGIWTAL CMS-Installationen",
+  "start_url": "/admin/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f1f5f9",
+  "theme_color": "#2563eb",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/admin/dashboard",
+      "description": "Kunden-Übersicht"
+    },
+    {
+      "name": "Kunden",
+      "url": "/admin/customers",
+      "description": "Kunden verwalten"
+    }
+  ]
+}

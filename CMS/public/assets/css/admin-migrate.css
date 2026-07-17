@@ -1,0 +1,61 @@
+.migrate-card{
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.migrate-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.migrate-input{
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--btn-border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  min-width: 240px;
+}
+
+.migrate-input:focus{ border-color: var(--outline); }
+
+html[data-theme="light"] .migrate-input{
+  background: #fff;
+  border-color: var(--card-border);
+}
+
+.migrate-logtitle{
+  font-weight: 850;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.migrate-log{
+  border: 1px solid var(--card-border);
+  background: rgba(0,0,0,0.18);
+  border-radius: 14px;
+  padding: 12px;
+  min-height: 140px;
+  color: var(--text);
+  overflow:auto;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+html[data-theme="light"] .migrate-log{
+  background: #f6f7f9;
+}
+
+.migrate-foot{
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.migrate-actions--spaced{ margin-top:10px; }
