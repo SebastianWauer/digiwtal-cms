@@ -30,7 +30,7 @@ if (preg_match('/<[^>]+>/', $textRaw) === 1) {
         $normalized = preg_replace('#(?:<br\s*/?>\s*)+$#i', '', $normalized) ?? $normalized;
     }
 
-    $text = strip_tags($normalized, $allowedTags);
+    $text = sanitize_rich_text_hrefs(strip_tags($normalized, $allowedTags));
 } else {
     $text = nl2br(htmlspecialchars($textRaw, ENT_QUOTES, 'UTF-8'));
 }

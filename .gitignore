@@ -53,6 +53,9 @@ secrets/
 # Private keys
 Frontend/keys/
 
+# Local-only notes/state
+.local/
+
 # Stray temp/junk files
 /tmp_forms_check.php
 /ziYjQtvy

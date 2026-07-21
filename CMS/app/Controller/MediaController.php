@@ -750,7 +750,8 @@ final class MediaController
         }
 
         header('Content-Length: ' . (string)filesize($path));
-        header('Content-Disposition: inline; filename="' . $this->safeHeaderFilename((string)($row['original_filename'] ?? 'file')) . '"');
+        $disposition = ($ext === 'svg') ? 'attachment' : 'inline';
+        header('Content-Disposition: ' . $disposition . '; filename="' . $this->safeHeaderFilename((string)($row['original_filename'] ?? 'file')) . '"');
 
         readfile($path);
         exit;
@@ -802,9 +803,10 @@ final class MediaController
 
         if ($ext === 'pdf') {
             $svg = $this->buildPdfThumbSvg($row);
+            header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'none'; sandbox");
             header('Content-Type: image/svg+xml; charset=UTF-8');
             header('Content-Length: ' . (string)strlen($svg));
-            header('Content-Disposition: inline; filename="pdf-thumb-' . $id . '.svg"');
+            header('Content-Disposition: attachment; filename="pdf-thumb-' . $id . '.svg"');
             echo $svg;
             exit;
         }
@@ -817,12 +819,13 @@ final class MediaController
         }
 
         header('Content-Length: ' . (string)filesize($path));
-        header('Content-Disposition: inline; filename="' . $this->safeHeaderFilename((string)($row['original_filename'] ?? 'file')) . '"');
+        $disposition = ($ext === 'svg') ? 'attachment' : 'inline';
+        header('Content-Disposition: ' . $disposition . '; filename="' . $this->safeHeaderFilename((string)($row['original_filename'] ?? 'file')) . '"');
 
         readfile($path);
         exit;
     }
-    
+
     public function purge(): void
     {
         $user = \admin_require_perm('media.delete');

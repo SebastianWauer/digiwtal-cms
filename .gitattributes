@@ -1,0 +1,3 @@
+# Normalize all text files to UTF-8 + LF on checkin, regardless of the
+# checkout platform's line-ending conventions.
+* text=auto eol=lf
