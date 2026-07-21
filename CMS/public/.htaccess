@@ -1,0 +1,19 @@
+# Front-Controller-Routing für das CMS (Admin unter index.php, API unter api.php).
+# Echte Dateien/Verzeichnisse (assets/, api.php, index.php, web.php, ...) werden
+# direkt ausgeliefert; alles andere geht an index.php (eigener Router in App\Http\Router).
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# app/, config/, migrations/, vendor/, storage/ liegen außerhalb dieses
+# Verzeichnisses (Document Root = public/) und sind dadurch bereits nicht
+# direkt aufrufbar.

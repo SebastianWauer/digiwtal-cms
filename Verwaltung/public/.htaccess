@@ -1,0 +1,19 @@
+# Front-Controller-Routing für die Verwaltung (alle Routen unter /admin/... via index.php).
+# Echte Dateien/Verzeichnisse (assets/, icons/, manifest.json, sw.js, ping.php, ...)
+# werden direkt ausgeliefert; alles andere geht an index.php (eigener Router in Router.php).
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# app/, controllers/, services/, repositories/, migrations/ liegen außerhalb
+# dieses Verzeichnisses (Document Root = public/) und sind dadurch bereits
+# nicht direkt aufrufbar.
