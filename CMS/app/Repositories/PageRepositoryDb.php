@@ -226,7 +226,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
                is_home, nav_visible, nav_label, nav_area, nav_order,
                is_deleted, deleted_at)
             VALUES
-              (:s, :t, :ft, :st, :status, CAST(:c AS JSON),
+              (:s, :t, :ft, :st, :status, :c,
                :home, :nv, :nl, :na, :no,
                0, NULL)
         ");
@@ -269,7 +269,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
               frontend_title = :ft,
               subtitle = :st,
               status = :status,
-              content_json = CAST(:c AS JSON),
+              content_json = :c,
               is_home = :home,
               nav_visible = :nv,
               nav_label = :nl,
