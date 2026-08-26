@@ -22,13 +22,13 @@ echo flash_render($flash ?? null);
 
 <div class="migrate-card">
 
-  <form method="post" action="/migrate/run" class="migrate-actions">
+  <form method="post" action="<?= cms_base_path() ?>/migrate/run" class="migrate-actions">
     <?= admin_csrf_field() ?>
     <button type="submit" class="btn">Migrationen ausführen</button>
-    <a class="btn btn--ghost" href="/">Dashboard</a>
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/">Dashboard</a>
   </form>
 
-  <form method="post" action="/migrate/baseline" class="migrate-actions" style="margin-top:10px;">
+  <form method="post" action="<?= cms_base_path() ?>/migrate/baseline" class="migrate-actions" style="margin-top:10px;">
     <?= admin_csrf_field() ?>
     <button type="submit" class="btn btn--ghost btn--warn" <?= $baselineAllowed ? '' : 'disabled' ?>>
       Baseline setzen (als angewendet markieren)

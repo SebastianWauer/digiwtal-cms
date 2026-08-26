@@ -9,10 +9,10 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 $selectedCategoryId = (int)($_GET['category_id'] ?? 0);
 ?>
 <div class="pages-actions">
-  <?php if ($canCreate): ?><a class="btn" href="/news/edit">Neue News</a><?php endif; ?>
+  <?php if ($canCreate): ?><a class="btn" href="<?= cms_base_path() ?>/news/edit">Neue News</a><?php endif; ?>
   <div class="pages-actions-right">
-    <a class="btn btn--ghost" href="/news/categories">Kategorien</a>
-    <form method="get" action="/news" class="form-reset" style="display:flex;gap:.5rem;align-items:center;">
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/news/categories">Kategorien</a>
+    <form method="get" action="<?= cms_base_path() ?>/news" class="form-reset" style="display:flex;gap:.5rem;align-items:center;">
       <select class="pages-edit-input" name="category_id" style="min-width:220px;">
         <option value="0">Alle Kategorien</option>
         <?php foreach ($allCategories as $cat): $cid = (int)($cat['id'] ?? 0); ?>
@@ -21,7 +21,7 @@ $selectedCategoryId = (int)($_GET['category_id'] ?? 0);
       </select>
       <button type="submit" class="btn btn--ghost">Filtern</button>
     </form>
-    <?php if (($deletedCount ?? 0) > 0): ?><a class="btn btn--ghost" href="/news/deleted">Geloeschte News (<?= (int)$deletedCount ?>)</a><?php endif; ?>
+    <?php if (($deletedCount ?? 0) > 0): ?><a class="btn btn--ghost" href="<?= cms_base_path() ?>/news/deleted">Geloeschte News (<?= (int)$deletedCount ?>)</a><?php endif; ?>
   </div>
 </div>
 
@@ -44,9 +44,9 @@ $selectedCategoryId = (int)($_GET['category_id'] ?? 0);
         <td><?= $publishedAt !== '' ? h((string)date('d.m.Y H:i', (int)strtotime($publishedAt))) : '<span class="pages-hint">-</span>' ?></td>
         <td class="pages-col-actions">
           <div class="pages-actions-inline">
-            <?php if ($canEdit): ?><a class="btn btn--ghost btn--badge btn--warn" href="/news/edit?id=<?= $id ?>">Bearbeiten</a><?php endif; ?>
+            <?php if ($canEdit): ?><a class="btn btn--ghost btn--badge btn--warn" href="<?= cms_base_path() ?>/news/edit?id=<?= $id ?>">Bearbeiten</a><?php endif; ?>
             <?php if ($canDelete): ?>
-            <form method="post" action="/news/delete" class="form-reset"><?= $csrfField ?><input type="hidden" name="id" value="<?= $id ?>"><button type="submit" class="btn btn--ghost btn--badge btn--danger">Loeschen</button></form>
+            <form method="post" action="<?= cms_base_path() ?>/news/delete" class="form-reset"><?= $csrfField ?><input type="hidden" name="id" value="<?= $id ?>"><button type="submit" class="btn btn--ghost btn--badge btn--danger">Loeschen</button></form>
             <?php endif; ?>
           </div>
         </td>

@@ -246,7 +246,7 @@ final class MediaController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -261,13 +261,13 @@ final class MediaController
 
         if (!$folderRepo->findById($folderId)) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Invalid folder'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
         if (!isset($_FILES['files'])) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'No files uploaded'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -278,7 +278,7 @@ final class MediaController
             $_SESSION['flash'] = ['type' => 'error', 'msg' => $e->getMessage()];
         }
 
-        header('Location: /media?folder=' . $folderId);
+        header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
         exit;
     }
 
@@ -290,7 +290,7 @@ final class MediaController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -302,14 +302,14 @@ final class MediaController
         $name = trim((string)($_POST['name'] ?? ''));
         if ($name === '') {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordnername fehlt.'];
-            header('Location: /media?folder=' . $parentId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $parentId);
             exit;
         }
 
         $existingFolder = $folderRepo->findByParentAndName($parentId, $name);
         if ($existingFolder) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordnername bereits vergeben.'];
-            header('Location: /media?folder=' . $parentId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $parentId);
             exit;
         }
 
@@ -320,7 +320,7 @@ final class MediaController
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Fehler beim Erstellen des Ordners.'];
         }
 
-        header('Location: /media?folder=' . $parentId);
+        header('Location: ' . cms_base_path() . '/media?folder=' . $parentId);
         exit;
     }
 
@@ -332,7 +332,7 @@ final class MediaController
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -343,51 +343,51 @@ final class MediaController
 
         if ($folderId <= 1) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Dieser Ordner kann nicht verschoben werden.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
         $folder = $folderRepo->findById($folderId);
         if (!is_array($folder)) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordner nicht gefunden.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
         if ($targetParentId <= 0) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Zielordner ist ungültig.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
         $targetParent = $folderRepo->findById($targetParentId);
         if (!is_array($targetParent)) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Zielordner wurde nicht gefunden.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
         if ($targetParentId === $folderId || $this->folderIsDescendantOf($targetParentId, $folderId, $folderRepo)) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ein Ordner kann nicht in sich selbst oder einen Unterordner verschoben werden.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
         $existing = $folderRepo->findByParentAndName($targetParentId, (string)($folder['name'] ?? ''));
         if (is_array($existing) && (int)($existing['id'] ?? 0) !== $folderId) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Im Zielordner gibt es bereits einen Ordner mit diesem Namen.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
         if ($folderRepo->moveFolder($folderId, $targetParentId)) {
             $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Ordner wurde verschoben.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordner konnte nicht verschoben werden.'];
-        header('Location: /media?folder=' . $folderId);
+        header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
         exit;
     }
 
@@ -399,7 +399,7 @@ final class MediaController
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -408,26 +408,26 @@ final class MediaController
         $folderId = (int)($_POST['folder_id'] ?? 0);
         if ($folderId <= 1) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Dieser Ordner kann nicht gelöscht werden.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
         $folder = $folderRepo->findById($folderId);
         if (!is_array($folder)) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordner nicht gefunden.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
         if ($folderRepo->countChildren($folderId) > 0) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordner kann nur gelöscht werden, wenn er keine Unterordner enthält.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
         if ($folderRepo->countMediaItems($folderId) > 0) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordner kann nur gelöscht werden, wenn er keine Medien enthält.'];
-            header('Location: /media?folder=' . $folderId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
             exit;
         }
 
@@ -438,12 +438,12 @@ final class MediaController
 
         if ($folderRepo->deleteFolder($folderId)) {
             $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Ordner wurde gelöscht.'];
-            header('Location: /media?folder=' . $parentId);
+            header('Location: ' . cms_base_path() . '/media?folder=' . $parentId);
             exit;
         }
 
         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ordner konnte nicht gelöscht werden.'];
-        header('Location: /media?folder=' . $folderId);
+        header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
         exit;
     }
 
@@ -455,7 +455,7 @@ final class MediaController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -464,14 +464,14 @@ final class MediaController
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Invalid ID'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
         $row = $mediaRepo->findById($id);
         if (!$row) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Not found'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -522,7 +522,7 @@ final class MediaController
             $_SESSION['flash'] = ['type' => 'error', 'msg' => $e->getMessage()];
         }
 
-        header('Location: /media/edit?id=' . $id);
+        header('Location: ' . cms_base_path() . '/media/edit?id=' . $id);
         exit;
     }
 
@@ -534,7 +534,7 @@ final class MediaController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -548,7 +548,7 @@ final class MediaController
         $ids = array_values(array_filter(array_map('intval', $idsRaw), static fn($v) => $v > 0));
         if (!$ids) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Keine Medien ausgewählt.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -558,7 +558,7 @@ final class MediaController
             ? ['type' => 'success', 'msg' => $deleted . ' Medium/Medien in Papierkorb verschoben.']
             : ['type' => 'error', 'msg' => 'Konnte nicht gelöscht werden'];
 
-        header('Location: /media');
+        header('Location: ' . cms_base_path() . '/media');
         exit;
     }
 
@@ -581,7 +581,7 @@ final class MediaController
         $ids = array_values(array_filter(array_map('intval', $ids), static fn($v) => $v > 0));
         if (!$ids) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Keine Medien ausgewählt.'];
-            header('Location: /media/deleted');
+            header('Location: ' . cms_base_path() . '/media/deleted');
             exit;
         }
 
@@ -610,7 +610,7 @@ final class MediaController
         $view = $_GET['view'] ?? 'grid';
         $folderId = $_GET['folder'] ?? 0;
 
-        header('Location: /media?view=' . urlencode((string)$view) . '&folder=' . urlencode((string)$folderId));
+        header('Location: ' . cms_base_path() . '/media?view=' . urlencode((string)$view) . '&folder=' . urlencode((string)$folderId));
         exit;
     }
 
@@ -667,7 +667,7 @@ final class MediaController
         if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
             http_response_code(405);
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Method Not Allowed'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -676,7 +676,7 @@ final class MediaController
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ungültige Medien-ID.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -686,7 +686,7 @@ final class MediaController
         $row = $mediaRepo->findById($id);
         if (!$row || (int)($row['is_deleted'] ?? 0) === 1) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Medium nicht gefunden.'];
-            header('Location: /media');
+            header('Location: ' . cms_base_path() . '/media');
             exit;
         }
 
@@ -697,7 +697,7 @@ final class MediaController
             $_SESSION['flash'] = ['type' => 'error', 'msg' => $e->getMessage()];
         }
 
-        header('Location: /media/edit?id=' . $id);
+        header('Location: ' . cms_base_path() . '/media/edit?id=' . $id);
         exit;
     }
 
@@ -842,7 +842,7 @@ final class MediaController
         $rows = $mediaRepo->listDeletedForPurge();
         if (!$rows) {
             $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Papierkorb ist bereits leer.'];
-            header('Location: /media/deleted');
+            header('Location: ' . cms_base_path() . '/media/deleted');
             exit;
         }
 
@@ -876,7 +876,7 @@ final class MediaController
             ? ['type' => 'success', 'msg' => 'Papierkorb geleert (' . $n . ').']
             : ['type' => 'success', 'msg' => 'Papierkorb ist bereits leer.'];
 
-        header('Location: /media/deleted');
+        header('Location: ' . cms_base_path() . '/media/deleted');
         exit;
     }
 

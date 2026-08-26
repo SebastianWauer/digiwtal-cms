@@ -17,3 +17,25 @@
 # app/, config/, migrations/, vendor/, storage/ liegen außerhalb dieses
 # Verzeichnisses (Document Root = public/) und sind dadurch bereits nicht
 # direkt aufrufbar.
+
+# -------------------------------------------------------------------------
+# Pfad-Deployment (optional, pro Installation)
+# -------------------------------------------------------------------------
+# Standardfall ist eine eigene Subdomain, bei der public/ das Document Root
+# ist. Dann ist hier nichts zu tun.
+#
+# Liegt das CMS stattdessen in einem Unterverzeichnis der Hauptdomain, oder
+# liegt der app/-Baum nicht direkt neben public/, setzt die Installation die
+# beiden Werte in ihrer .env (CMS_BASE_PATH) bzw. hier per SetEnv:
+#
+#   <IfModule mod_env.c>
+#     SetEnv CMS_APP_ROOT  /absoluter/pfad/zum/cms-app
+#     SetEnv CMS_BASE_PATH /unterverzeichnis
+#   </IfModule>
+#
+# CMS_APP_ROOT muss vom Webserver kommen - es wird gebraucht, um überhaupt
+# app/bootstrap.php zu finden, also bevor die .env gelesen werden kann.
+# CMS_BASE_PATH kann auch einfach in der .env stehen.
+#
+# Diese Datei ist Produktcode und für alle Installationen identisch.
+# Installationsspezifische Werte gehören NICHT hierher.

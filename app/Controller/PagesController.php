@@ -964,7 +964,7 @@ final class PagesController
             return;
         }
 
-        // âœ… CSRF prüfen (POST + Sideeffect)
+        // CSRF pruefen (POST + Sideeffect)
         \admin_verify_csrf();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -976,7 +976,7 @@ final class PagesController
             \admin_require_perm('pages.create');
         }
 
-        // Status-Änderung ist separat
+        // Status-Aenderung ist separat
         $postedStatus = (string)($_POST['status'] ?? 'live');
         if (!in_array($postedStatus, ['live', 'draft'], true)) $postedStatus = 'live';
 
@@ -1041,7 +1041,7 @@ final class PagesController
         $flash = $res['flash'] ?? null;
 
         if (!empty($_POST['save_return']) && $id2 > 0) {
-            header('Location: /pages');
+            header('Location: ' . cms_base_path() . '/pages');
             exit;
         }
         
@@ -1183,13 +1183,13 @@ final class PagesController
             return;
         }
 
-        // âœ… CSRF prüfen
+        // CSRF pruefen
         \admin_verify_csrf();
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id > 0) $repo->softDelete($id);
 
-        header('Location: /pages');
+        header('Location: ' . cms_base_path() . '/pages');
         exit;
     }
 
@@ -1205,13 +1205,13 @@ final class PagesController
             return;
         }
 
-        // âœ… CSRF prüfen
+        // CSRF pruefen
         \admin_verify_csrf();
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id > 0) $repo->restore($id);
 
-        header('Location: /pages/deleted');
+        header('Location: ' . cms_base_path() . '/pages/deleted');
         exit;
     }
     public function purge(): void
@@ -1232,7 +1232,7 @@ final class PagesController
             ? ['type' => 'success', 'msg' => 'Papierkorb geleert (' . $n . ').']
             : ['type' => 'success', 'msg' => 'Papierkorb ist bereits leer.'];
 
-        header('Location: /pages/deleted');
+        header('Location: ' . cms_base_path() . '/pages/deleted');
         exit;
     }
 

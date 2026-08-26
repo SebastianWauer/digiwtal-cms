@@ -168,7 +168,7 @@ final class EventsController
 
         if ($id <= 0 || $name === '') {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Kategorie-ID und Name sind erforderlich.'];
-            header('Location: /events/categories');
+            header('Location: ' . cms_base_path() . '/events/categories');
             exit;
         }
 
@@ -176,7 +176,7 @@ final class EventsController
             $existing = $categories->findById($id);
             if (!is_array($existing)) {
                 $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Kategorie nicht gefunden.'];
-                header('Location: /events/categories');
+                header('Location: ' . cms_base_path() . '/events/categories');
                 exit;
             }
             $categories->update($id, $name, $colorHex, $logoMediaId);
@@ -186,7 +186,7 @@ final class EventsController
                 $savedColor = strtoupper(trim((string)($saved['color_hex'] ?? '')));
                 if ($savedColor !== $colorHex) {
                     $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Farbe konnte nicht gespeichert werden (DB-Spalte color_hex fehlt oder ist nicht beschreibbar).'];
-                    header('Location: /events/categories');
+                    header('Location: ' . cms_base_path() . '/events/categories');
                     exit;
                 }
             }
@@ -195,7 +195,7 @@ final class EventsController
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Kategorie konnte nicht gespeichert werden: ' . $e->getMessage()];
         }
 
-        header('Location: /events/categories');
+        header('Location: ' . cms_base_path() . '/events/categories');
         exit;
     }
 
@@ -237,7 +237,7 @@ final class EventsController
             ];
         }
         if (!empty($row['is_deleted'])) {
-            header('Location: /events/deleted');
+            header('Location: ' . cms_base_path() . '/events/deleted');
             exit;
         }
 
@@ -359,51 +359,51 @@ final class EventsController
 
                 if ($label === '') {
                     $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Bitte eine Beschriftung pro Eintrag angeben.'];
-                    header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                    header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                     exit;
                 }
 
                 if ($type === 'youtube') {
                     if ($url === '' || preg_match('#^(https?://(www\.)?(youtube\.com|youtu\.be)/)#i', $url) !== 1) {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'YouTube-Einträge benötigen eine gültige YouTube-URL.'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                     if ($youtubeStartAtRaw !== '' && $youtubeStartAt === null) {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'YouTube-Startzeit ist ungültig.'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                     if ($youtubeEndAtRaw !== '' && $youtubeEndAt === null) {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'YouTube-Endzeit ist ungültig.'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                     if ($youtubeStartAt !== null && $youtubeEndAt !== null && $youtubeEndAt <= $youtubeStartAt) {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'YouTube-Endzeit muss nach der Startzeit liegen.'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                 } elseif ($type === 'pdf') {
                     if ($pdfMediaId <= 0 && $url === '') {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'PDF-Einträge benötigen entweder eine PDF-Media-ID oder eine PDF-URL.'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                     if ($url !== '' && preg_match('#^(https?://|/)#i', $url) !== 1) {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'PDF-URL ist ungültig. Erlaubt: https://, http:// oder /pfad'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                 } else {
                     if ($url === '') {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Weiterleitungs-Einträge benötigen eine URL.'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                     if (preg_match('#^(https?://|mailto:|tel:|/)#i', $url) !== 1) {
                         $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Ungültige Link-URL. Erlaubt: https://, http://, mailto:, tel: oder /pfad'];
-                        header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+                        header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
                         exit;
                     }
                 }
@@ -434,13 +434,13 @@ final class EventsController
 
         if ($title === '') {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Titel ist erforderlich.'];
-            header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+            header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
             exit;
         }
 
         if ($youtubeUrl !== '' && preg_match('#^(https?://(www\.)?(youtube\.com|youtu\.be)/)#i', $youtubeUrl) !== 1) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'YouTube-URL ist ungültig.'];
-            header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+            header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
             exit;
         }
 
@@ -472,7 +472,7 @@ final class EventsController
         }
         if ($eventDateFrom !== null && $eventDateTo !== null && $eventDateTo < $eventDateFrom) {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Bis-Datum darf nicht vor Von-Datum liegen.'];
-            header('Location: /events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+            header('Location: ' . cms_base_path() . '/events/edit' . ($id > 0 ? ('?id=' . $id) : ''));
             exit;
         }
 
@@ -525,10 +525,10 @@ final class EventsController
 
         $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Event gespeichert.'];
         if (!empty($_POST['save_return'])) {
-            header('Location: /events');
+            header('Location: ' . cms_base_path() . '/events');
             exit;
         }
-        header('Location: /events');
+        header('Location: ' . cms_base_path() . '/events');
         exit;
     }
 
@@ -547,7 +547,7 @@ final class EventsController
             $events = new EventRepositoryDb(\admin_pdo());
             $events->softDelete($id);
         }
-        header('Location: /events');
+        header('Location: ' . cms_base_path() . '/events');
         exit;
     }
 
@@ -600,7 +600,7 @@ final class EventsController
                 $this->mediaUsageService()->syncEventUsages($id, $categoryMap, $categoryPdfMap);
             }
         }
-        header('Location: /events/deleted');
+        header('Location: ' . cms_base_path() . '/events/deleted');
         exit;
     }
 
@@ -630,7 +630,7 @@ final class EventsController
         }
         $n = $events->purgeDeleted();
         $_SESSION['flash'] = ['type' => 'success', 'msg' => $n > 0 ? ('Papierkorb geleert (' . $n . ').') : 'Papierkorb ist bereits leer.'];
-        header('Location: /events/deleted');
+        header('Location: ' . cms_base_path() . '/events/deleted');
         exit;
     }
 }

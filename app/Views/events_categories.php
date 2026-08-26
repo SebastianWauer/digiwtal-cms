@@ -8,7 +8,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 ?>
 
 <div class="pages-actions">
-  <a class="btn btn--ghost" href="/events">Zurück zu Events</a>
+  <a class="btn btn--ghost" href="<?= cms_base_path() ?>/events">Zurück zu Events</a>
 </div>
 
 <div class="pages-card" style="margin-bottom:1rem;border-left:4px solid #f59e0b;">
@@ -61,7 +61,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
             </div>
             <div class="mp__preview">
               <?php if ($logoMediaId > 0): ?>
-                <img src="/media/thumb?id=<?= $logoMediaId ?>" alt="">
+                <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $logoMediaId ?>" alt="">
               <?php endif; ?>
             </div>
           </div>
@@ -71,7 +71,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
         </td>
         <td><code><?= h($slug) ?></code></td>
         <td>
-          <form id="<?= h($formId) ?>" method="post" action="/events/categories/save" class="form-reset">
+          <form id="<?= h($formId) ?>" method="post" action="<?= cms_base_path() ?>/events/categories/save" class="form-reset">
             <?= $csrfField ?>
             <input type="hidden" name="id" value="<?= $id ?>">
             <?php if ($canEdit): ?>

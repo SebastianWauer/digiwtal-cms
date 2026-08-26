@@ -75,6 +75,20 @@ require_once $ROOT . '/app/Core/Env.php';
 \App\Core\Env::load($ROOT);
 
 /**
+ * Basis-Pfad, falls das CMS nicht am Domain-Root liegt (z.B. Pfad-Deployment
+ * unter /verwaltung statt eigener Subdomain). Wird per Apache SetEnv gesetzt
+ * (siehe public/.htaccess). Leer = Domain-Root (Standardfall, Subdomain, lokal).
+ */
+if (!function_exists('cms_base_path')) {
+    function cms_base_path(): string
+    {
+        $base = trim((string)(getenv('CMS_BASE_PATH') ?: ''));
+        if ($base === '' || $base === '/') return '';
+        return '/' . trim($base, '/');
+    }
+}
+
+/**
  * Composer Autoload (falls vorhanden)
  */
 $composer = $ROOT . '/vendor/autoload.php';

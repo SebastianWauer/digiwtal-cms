@@ -13,8 +13,8 @@ $old = is_array($old) ? $old : [];
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CMS Setup – Schritt 3</title>
-  <link rel="stylesheet" href="/assets/css/admin-layout.css">
-  <link rel="stylesheet" href="/assets/css/admin-components.css">
+  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin-layout.css">
+  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin-components.css">
   <style>
     body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg-page,#111); }
     .setup-card { background:var(--bg-card,#1e1e1e); border:1px solid var(--border,#333); border-radius:10px; padding:2.5rem; width:100%; max-width:560px; }
@@ -50,7 +50,7 @@ $old = is_array($old) ? $old : [];
     </div>
   <?php endif; ?>
 
-  <form method="post" action="/setup/finish" autocomplete="off">
+  <form method="post" action="<?= cms_base_path() ?>/setup/finish" autocomplete="off">
     <?= admin_csrf_field() ?>
 
     <!-- Admin Account -->
@@ -99,7 +99,7 @@ $old = is_array($old) ? $old : [];
     <hr class="setup-separator">
 
     <div class="setup-actions">
-      <a href="/setup/step2" class="btn btn--ghost btn--sm">← Zurück</a>
+      <a href="<?= cms_base_path() ?>/setup/step2" class="btn btn--ghost btn--sm">← Zurück</a>
       <button type="submit" class="btn btn--primary">Setup abschließen ✓</button>
     </div>
   </form>

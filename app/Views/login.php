@@ -55,7 +55,7 @@ if ($logoUrl === null) {
         </div>
       <?php endif; ?>
 
-      <form method="post" action="/login" class="login-form">
+      <form method="post" action="<?= cms_base_path() ?>/login" class="login-form">
         <?= admin_csrf_field() ?>
 
         <div class="login-field">
@@ -85,7 +85,7 @@ if ($logoUrl === null) {
 
         <div class="login-actions">
           <button type="submit" class="btn login-submit">Login</button>
-          <a href="/password-reset" class="btn btn--ghost login-reset">Passwort vergessen?</a>
+          <a href="<?= cms_base_path() ?>/password-reset" class="btn btn--ghost login-reset">Passwort vergessen?</a>
         </div>
       </form>
     </div>

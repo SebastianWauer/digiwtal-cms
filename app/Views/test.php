@@ -24,6 +24,6 @@
   </table>
 
   <p style="margin-top:1.5rem; margin-bottom:0;">
-    <a href="/" style="color:var(--color-primary, #3b82f6);">&larr; Zurück zum Dashboard</a>
+    <a href="<?= cms_base_path() ?>/" style="color:var(--color-primary, #3b82f6);">&larr; Zurück zum Dashboard</a>
   </p>
 </div>

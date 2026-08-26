@@ -78,16 +78,16 @@ $usages = $usages ?? [];
       </div>
 
       <div class="media-edit__actions">
-        <a class="btn btn--ghost btn--sm" href="/media?folder=<?= (int)$fid ?>">Zurück zur Medienübersicht</a>
-        <a class="btn btn--ghost btn--sm" href="/media/file?id=<?= (int)$id ?>" target="_blank" rel="noopener">Datei öffnen</a>
+        <a class="btn btn--ghost btn--sm" href="<?= cms_base_path() ?>/media?folder=<?= (int)$fid ?>">Zurück zur Medienübersicht</a>
+        <a class="btn btn--ghost btn--sm" href="<?= cms_base_path() ?>/media/file?id=<?= (int)$id ?>" target="_blank" rel="noopener">Datei öffnen</a>
         <?php if ($canRotate): ?>
-          <form method="post" action="/media/rotate" class="media-edit__inline-form">
+          <form method="post" action="<?= cms_base_path() ?>/media/rotate" class="media-edit__inline-form">
             <?= admin_csrf_field() ?>
             <input type="hidden" name="id" value="<?= (int)$id ?>">
             <input type="hidden" name="direction" value="ccw">
             <button type="submit" class="btn btn--ghost btn--sm" title="90° gegen den Uhrzeigersinn">↺ 90°</button>
           </form>
-          <form method="post" action="/media/rotate" class="media-edit__inline-form">
+          <form method="post" action="<?= cms_base_path() ?>/media/rotate" class="media-edit__inline-form">
             <?= admin_csrf_field() ?>
             <input type="hidden" name="id" value="<?= (int)$id ?>">
             <input type="hidden" name="direction" value="cw">
@@ -100,7 +100,7 @@ $usages = $usages ?? [];
     <!-- RIGHT: Form -->
     <section class="media-edit__right card">
 
-      <form method="post" action="/media/save" class="media-edit__form">
+      <form method="post" action="<?= cms_base_path() ?>/media/save" class="media-edit__form">
         <?= admin_csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int)$id ?>">
 
@@ -224,7 +224,7 @@ $usages = $usages ?? [];
         <div class="form-actions">
           <?php if ($canEdit): ?>
             <button class="btn btn--primary" type="submit">Metadaten speichern</button>
-            <a class="btn btn--ghost" href="/media/edit?id=<?= (int)$id ?>">Abbrechen</a>
+            <a class="btn btn--ghost" href="<?= cms_base_path() ?>/media/edit?id=<?= (int)$id ?>">Abbrechen</a>
           <?php else: ?>
             <div class="no-perm">Hinweis: Du hast keine Berechtigung zum Bearbeiten (<code>media.edit</code>).</div>
           <?php endif; ?>

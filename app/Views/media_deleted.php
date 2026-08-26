@@ -27,7 +27,7 @@ foreach ($folders as $f) {
 
 <div class="media-page">
 
-  <form method="get" action="/media/deleted" class="media-filters" id="mediaDeletedFilters">
+  <form method="get" action="<?= cms_base_path() ?>/media/deleted" class="media-filters" id="mediaDeletedFilters">
     <div class="media-filters__row">
       <div class="media-filters__field">
         <div class="media-filters__label">Ansicht</div>
@@ -53,12 +53,12 @@ foreach ($folders as $f) {
       </div>
 
       <button class="btn btn--sm" type="submit">Filter anwenden</button>
-      <a class="btn btn--ghost btn--sm" href="/media">Zurück</a>
+      <a class="btn btn--ghost btn--sm" href="<?= cms_base_path() ?>/media">Zurück</a>
     </div>
   </form>
 
 <div class="media-content__bar">
-  <form method="post" action="/media/restore" id="mediaRestoreForm" class="media-bulk">
+  <form method="post" action="<?= cms_base_path() ?>/media/restore" id="mediaRestoreForm" class="media-bulk">
     <?= admin_csrf_field() ?>
 
     <button type="submit" class="btn btn--ghost btn--sm">
@@ -67,7 +67,7 @@ foreach ($folders as $f) {
   </form>
 
   <form method="post"
-        action="/media/purge"
+        action="<?= cms_base_path() ?>/media/purge"
         class="media-bulk"
         onsubmit="return confirm('Papierkorb wirklich leeren?');">
     <?= admin_csrf_field() ?>
@@ -121,9 +121,9 @@ foreach ($folders as $f) {
                 </td>
                 <td class="media-col-preview">
                   <?php if (strtolower($extR) === 'pdf'): ?>
-                    <iframe class="media-preview-embed media-preview-embed--table" src="/media/file?id=<?= $id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
+                    <iframe class="media-preview-embed media-preview-embed--table" src="<?= cms_base_path() ?>/media/file?id=<?= $id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
                   <?php else: ?>
-                    <img src="/media/thumb?id=<?= $id ?>" alt="">
+                    <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $id ?>" alt="">
                   <?php endif; ?>
                 </td>
                 <td>
@@ -159,9 +159,9 @@ foreach ($folders as $f) {
           <div class="media-card">
             <div class="media-card__thumb">
               <?php if (strtolower($extR) === 'pdf'): ?>
-                <iframe class="media-preview-embed" src="/media/file?id=<?= $id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
+                <iframe class="media-preview-embed" src="<?= cms_base_path() ?>/media/file?id=<?= $id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
               <?php else: ?>
-                <img src="/media/thumb?id=<?= $id ?>" alt="">
+                <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $id ?>" alt="">
               <?php endif; ?>
               <label class="media-card__check">
                 <input type="checkbox" name="id[]" form="mediaRestoreForm" value="<?= $id ?>">
@@ -202,7 +202,7 @@ foreach ($folders as $f) {
       body.set('pref_key', 'media.view');
       body.set('pref_value', v);
 
-      fetch('/prefs', {
+      fetch('<?= cms_base_path() ?>/prefs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',

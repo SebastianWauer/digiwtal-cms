@@ -179,7 +179,7 @@ final class RolesController
         }
 
         if (!empty($row['is_deleted'])) {
-            header('Location: /roles/deleted');
+            header('Location: ' . cms_base_path() . '/roles/deleted');
             exit;
         }
 
@@ -394,7 +394,7 @@ final class RolesController
             }
         }
 
-        header('Location: /roles/edit?id=' . (int)$id2);
+        header('Location: ' . cms_base_path() . '/roles/edit?id=' . (int)$id2);
         exit;
     }
 
@@ -413,7 +413,7 @@ final class RolesController
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
-            header('Location: /roles');
+            header('Location: ' . cms_base_path() . '/roles');
             exit;
         }
 
@@ -439,7 +439,7 @@ final class RolesController
         $st = $pdo->prepare("UPDATE roles SET is_deleted=1, deleted_at=NOW() WHERE id=:id");
         $st->execute([':id' => $id]);
 
-        header('Location: /roles');
+        header('Location: ' . cms_base_path() . '/roles');
         exit;
     }
 
@@ -458,7 +458,7 @@ final class RolesController
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
-            header('Location: /roles');
+            header('Location: ' . cms_base_path() . '/roles');
             exit;
         }
 
@@ -475,7 +475,7 @@ final class RolesController
         $st = $pdo->prepare("UPDATE roles SET is_deleted=0, deleted_at=NULL WHERE id=:id");
         $st->execute([':id' => $id]);
 
-        header('Location: /roles');
+        header('Location: ' . cms_base_path() . '/roles');
         exit;
     }
     public function purge(): void
@@ -498,7 +498,7 @@ final class RolesController
             ? ['type' => 'success', 'msg' => 'Papierkorb geleert (' . $n . ').']
             : ['type' => 'success', 'msg' => 'Papierkorb ist bereits leer.'];
 
-        header('Location: /roles/deleted');
+        header('Location: ' . cms_base_path() . '/roles/deleted');
         exit;
     }
 }

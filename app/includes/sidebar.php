@@ -86,7 +86,7 @@ function sidebar_render(array $params): void
       <!-- Hauptnavigation -->
       <nav class="nav">
         <?php if ($can('dashboard.view')): ?>
-          <a class="nav__item <?= $isActive('dashboard') ?>" href="<?= h(Paths::DASHBOARD) ?>">
+          <a class="nav__item <?= $isActive('dashboard') ?>" href="<?= h(cms_base_path() . Paths::DASHBOARD) ?>">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
@@ -99,7 +99,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('pages.view')): ?>
-          <a class="nav__item <?= $isActive('pages') ?>" href="/pages">
+          <a class="nav__item <?= $isActive('pages') ?>" href="<?= cms_base_path() ?>/pages">
             <span class="nav__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 3h9l3 3v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
@@ -110,7 +110,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('media.view')): ?>
-          <a class="nav__item <?= $isActive('media') ?>" href="/media">
+          <a class="nav__item <?= $isActive('media') ?>" href="<?= cms_base_path() ?>/media">
             <span class="nav__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M4 7a2 2 0 0 1 2-2h8l4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
@@ -122,7 +122,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('events.view')): ?>
-          <a class="nav__item <?= $isActive('events') ?>" href="/events">
+          <a class="nav__item <?= $isActive('events') ?>" href="<?= cms_base_path() ?>/events">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -134,7 +134,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('news.view')): ?>
-          <a class="nav__item <?= $isActive('news') ?>" href="/news">
+          <a class="nav__item <?= $isActive('news') ?>" href="<?= cms_base_path() ?>/news">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8"/>
@@ -145,7 +145,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('forms.view')): ?>
-          <a class="nav__item <?= $isActive('forms') ?>" href="/forms/submissions">
+          <a class="nav__item <?= $isActive('forms') ?>" href="<?= cms_base_path() ?>/forms/submissions">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8"/>
@@ -156,7 +156,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('users.view')): ?>
-          <a class="nav__item <?= $isActive('users') ?>" href="/users">
+          <a class="nav__item <?= $isActive('users') ?>" href="<?= cms_base_path() ?>/users">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8"/>
@@ -167,7 +167,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('roles.view')): ?>
-          <a class="nav__item <?= $isActive('roles') ?>" href="/roles">
+          <a class="nav__item <?= $isActive('roles') ?>" href="<?= cms_base_path() ?>/roles">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4Z"
@@ -179,7 +179,7 @@ function sidebar_render(array $params): void
         <?php endif; ?>
 
         <?php if ($can('settings.view')): ?>
-          <a class="nav__item <?= $isActive('settings') ?>" href="/settings">
+          <a class="nav__item <?= $isActive('settings') ?>" href="<?= cms_base_path() ?>/settings">
             <span class="nav__icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"
@@ -191,7 +191,7 @@ function sidebar_render(array $params): void
           </a>
         <?php endif; ?>
 
-        <a class="nav__item <?= $isActive('changelog') ?>" href="/changelog">
+        <a class="nav__item <?= $isActive('changelog') ?>" href="<?= cms_base_path() ?>/changelog">
           <span class="nav__icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -206,7 +206,7 @@ function sidebar_render(array $params): void
       <?php if ($showSystemBlock): ?>
         <nav class="nav nav--system">
           <?php if ($isSystemUser): ?>
-            <a class="nav__item <?= $isActive('health') ?>" href="/system/health">
+            <a class="nav__item <?= $isActive('health') ?>" href="<?= cms_base_path() ?>/system/health">
               <span class="nav__icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M20.8 5.9a4.9 4.9 0 0 0-6.9 0L12 7.8l-1.9-1.9a4.9 4.9 0 0 0-6.9 6.9l1.9 1.9L12 21l6.9-6.3 1.9-1.9a4.9 4.9 0 0 0 0-6.9Z"
@@ -216,7 +216,7 @@ function sidebar_render(array $params): void
                 </svg>
               </span><span>System Health</span>
             </a>
-            <a class="nav__item <?= $isActive('backup') ?>" href="/backup">
+            <a class="nav__item <?= $isActive('backup') ?>" href="<?= cms_base_path() ?>/backup">
               <span class="nav__icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M12 3v10M8 9l4 4 4-4"
@@ -230,7 +230,7 @@ function sidebar_render(array $params): void
           <?php endif; ?>
 
           <?php if ($isAdmin): ?>
-            <a class="nav__item <?= $isActive('migrate') ?>" href="/migrate">
+            <a class="nav__item <?= $isActive('migrate') ?>" href="<?= cms_base_path() ?>/migrate">
               <span class="nav__icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M12 3v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -250,7 +250,7 @@ function sidebar_render(array $params): void
             <div class="userbox__role"><?= h($role) ?></div>
           </div>
 
-          <form method="post" action="<?= h(Paths::LOGOUT) ?>" class="form-reset userbox__logout">
+          <form method="post" action="<?= h(cms_base_path() . Paths::LOGOUT) ?>" class="form-reset userbox__logout">
             <?= function_exists('admin_csrf_field') ? admin_csrf_field() : '' ?>
             <button type="submit" class="sidebtn sidebtn--sm">Logout</button>
           </form>
@@ -261,14 +261,14 @@ function sidebar_render(array $params): void
           <div class="theme-slider" role="group" aria-label="Theme">
             <span class="theme-slider__thumb" aria-hidden="true"></span>
 
-            <form method="post" action="<?= h(Paths::THEME) ?>" class="form-reset theme-slider__form">
+            <form method="post" action="<?= h(cms_base_path() . Paths::THEME) ?>" class="form-reset theme-slider__form">
               <?= function_exists('admin_csrf_field') ? admin_csrf_field() : '' ?>
               <input type="hidden" name="next" value="<?= h($next) ?>">
               <input type="hidden" name="theme" value="dark">
               <button type="submit" class="theme-slider__btn" title="Dark Mode" aria-label="Dark Mode">🌙</button>
             </form>
 
-            <form method="post" action="<?= h(Paths::THEME) ?>" class="form-reset theme-slider__form">
+            <form method="post" action="<?= h(cms_base_path() . Paths::THEME) ?>" class="form-reset theme-slider__form">
               <?= function_exists('admin_csrf_field') ? admin_csrf_field() : '' ?>
               <input type="hidden" name="next" value="<?= h($next) ?>">
               <input type="hidden" name="theme" value="light">
