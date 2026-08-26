@@ -46,6 +46,12 @@ final class Env
                 $last  = $value[strlen($value) - 1];
                 if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
                     $value = substr($value, 1, -1);
+
+                    // Maskierungen aufloesen. Die Verwaltung schreibt .env-Dateien
+                    // mit escapten Anfuehrungszeichen und Backslashes; ohne diesen
+                    // Schritt kaeme ein Passwort mit " oder \ verfaelscht an und
+                    // die Instanz meldet nur "Zugriff verweigert".
+                    $value = preg_replace('/\\\\(["\\\\])/', '$1', $value) ?? $value;
                 }
             }
 

@@ -21,9 +21,12 @@ declare(strict_types=1);
         }
         $k = trim(substr($line, 0, $eq));
         $v = trim(substr($line, $eq + 1));
-        // Strip surrounding quotes
+        // Strip surrounding quotes + Maskierungen aufloesen (die Verwaltung
+        // schreibt diese Datei mit escapten " und \ - ohne diesen Schritt kaeme
+        // z.B. ein API-Token mit Sonderzeichen verfaelscht an).
         if (strlen($v) >= 2 && $v[0] === $v[-1] && ($v[0] === '"' || $v[0] === "'")) {
             $v = substr($v, 1, -1);
+            $v = preg_replace('/\\\\(["\\\\])/', '$1', $v) ?? $v;
         }
         putenv($k . '=' . $v);
         $_ENV[$k] = $v;
