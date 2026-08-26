@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS `event_category_map` (
     FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_event_category_map_category`
     FOREIGN KEY (`category_id`) REFERENCES `event_categories`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Backfill mapping from legacy single category column
 INSERT IGNORE INTO `event_category_map` (`event_id`, `category_id`)

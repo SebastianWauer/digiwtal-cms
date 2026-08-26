@@ -11,12 +11,12 @@ $canDelete = function_exists('admin_can') && admin_can('pages.delete');
 
 <div class="pages-actions">
   <?php if ($canCreate): ?>
-    <a class="btn" href="/pages/edit">Neue Seite anlegen</a>
+    <a class="btn" href="<?= cms_base_path() ?>/pages/edit">Neue Seite anlegen</a>
   <?php endif; ?>
 
   <div class="pages-actions-right">
     <?php if ($deletedCount > 0): ?>
-      <a class="btn btn--ghost" href="/pages/deleted">
+      <a class="btn btn--ghost" href="<?= cms_base_path() ?>/pages/deleted">
         Gelöschte Seiten (<?= (int)$deletedCount ?>)
       </a>
     <?php else: ?>
@@ -80,11 +80,11 @@ $canDelete = function_exists('admin_can') && admin_can('pages.delete');
           <td class="pages-col-actions">
             <div class="pages-actions-inline">
               <?php if ($canEdit): ?>
-                <a class="btn btn--ghost btn--badge btn--warn" href="/pages/edit?id=<?= (int)$id ?>">Bearbeiten</a>
+                <a class="btn btn--ghost btn--badge btn--warn" href="<?= cms_base_path() ?>/pages/edit?id=<?= (int)$id ?>">Bearbeiten</a>
               <?php endif; ?>
 
               <?php if ($canDelete): ?>
-                <form method="post" action="/pages/delete" class="form-reset">
+                <form method="post" action="<?= cms_base_path() ?>/pages/delete" class="form-reset">
                   <?= admin_csrf_field() ?>
                   <input type="hidden" name="id" value="<?= (int)$id ?>">
                   <button type="submit" class="btn btn--ghost btn--badge btn--danger">Löschen</button>

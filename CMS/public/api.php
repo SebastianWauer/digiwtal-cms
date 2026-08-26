@@ -2,19 +2,21 @@
 declare(strict_types=1);
 
 // public/api.php
-require_once __DIR__ . '/../app/bootstrap.php';
+$__appRoot = getenv('CMS_APP_ROOT');
+$__appRoot = ($__appRoot !== false && $__appRoot !== '') ? rtrim($__appRoot, '/') : (__DIR__ . '/..');
+require_once $__appRoot . '/app/bootstrap.php';
 
 if (!function_exists('cms_api_log_path')) {
     function cms_api_log_path(): string
     {
-        return dirname(__DIR__) . '/storage/api_error.log';
+        return (getenv('CMS_APP_ROOT') ?: dirname(__DIR__)) . '/storage/api_error.log';
     }
 }
 
 if (!function_exists('cms_api_debug_log')) {
     function cms_api_debug_log(string $message): void
     {
-        $dir = dirname(__DIR__) . '/storage';
+        $dir = (getenv('CMS_APP_ROOT') ?: dirname(__DIR__)) . '/storage';
         if (!is_dir($dir)) {
             @mkdir($dir, 0775, true);
         }
@@ -88,7 +90,7 @@ if (!function_exists('request_path')) {
 // --------------------------------------------------
 $fullPath = request_path();
 
-$prefix = '/api.php';
+$prefix = (function_exists('cms_base_path') ? cms_base_path() : '') . '/api.php';
 $path = $fullPath;
 
 if (str_starts_with($path, $prefix)) {
@@ -339,7 +341,7 @@ enforce_api_rate_limit(60, 60);
 // --------------------------------------------------
 function manifest_path(): string
 {
-    return dirname(__DIR__) . '/cms-manifest.json';
+    return (getenv('CMS_APP_ROOT') ?: dirname(__DIR__)) . '/cms-manifest.json';
 }
 
 function read_manifest(): ?array
@@ -504,7 +506,7 @@ if ($method === 'GET' && $path === '/api/health') {
 
     // CMS-Version: Manifest > config/version.php > Fallback
     $versionCfg = (static function () {
-        $f = dirname(__DIR__) . '/config/version.php';
+        $f = (getenv('CMS_APP_ROOT') ?: dirname(__DIR__)) . '/config/version.php';
         if (!is_file($f)) return [];
         $v = include $f;
         return is_array($v) ? $v : [];
@@ -539,7 +541,7 @@ if ($method === 'GET' && $path === '/api/health') {
     }
 
     // Storage beschreibbar?
-    $storageDir      = dirname(__DIR__) . '/storage';
+    $storageDir      = (getenv('CMS_APP_ROOT') ?: dirname(__DIR__)) . '/storage';
     $storageWritable = false;
     if (!is_dir($storageDir)) {
         $storageWritable = (bool)@mkdir($storageDir, 0755, true);
@@ -603,7 +605,7 @@ if (str_starts_with($path, '/api/internal/')) {
             json_response(['ok' => false, 'error' => 'backup_failed', 'message' => 'ZipArchive extension not available.'], 500);
         }
 
-        $root      = dirname(__DIR__);
+        $root      = (getenv('CMS_APP_ROOT') ?: dirname(__DIR__));
         $backupDir = rtrim((string)(\App\Core\Env::get('BACKUP_DIR', '') ?: $root . '/storage/backups'), '/');
         $filename  = 'cms-backup-' . gmdate('Ymd-His') . '.zip';
         $filepath  = $backupDir . '/' . $filename;
@@ -1406,6 +1408,24 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
     ");
     $stmt->execute([':s' => $slugDb]);
     $row = $stmt->fetch();
+
+    // Fallback: Frontend fragt fuer die Startseite immer "home" ab; die Startseite
+    // selbst kann aber mit Slug "/" gepflegt sein (is_home=1). Dann darueber matchen.
+    if (!is_array($row) && strtolower($slugRaw) === 'home') {
+        $stmtHome = $pdo->prepare("
+            SELECT
+                p.id, p.slug, p.title, p.frontend_title, p.subtitle,
+                sm.meta_title, sm.meta_description, p.content_json, p.updated_at
+            FROM pages p
+            LEFT JOIN seo_meta sm
+                ON sm.entity_type = 'page' AND sm.entity_id = p.id
+            WHERE p.is_home = 1 AND p.is_deleted = 0 AND p.status = 'live'
+            LIMIT 1
+        ");
+        $stmtHome->execute();
+        $row = $stmtHome->fetch();
+    }
+
     if (!is_array($row)) {
         json_response(['ok' => false, 'error' => 'not_found'], 404);
     }

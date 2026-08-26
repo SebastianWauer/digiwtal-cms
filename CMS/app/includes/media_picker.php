@@ -38,7 +38,7 @@ function media_picker_render(string $label, string $name, $value, array $opts = 
       <?php if ($showPreview): ?>
         <div class="mp__preview">
           <?php if ($id > 0): ?>
-            <img src="/media/thumb?id=<?= $id ?>" alt="">
+            <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $id ?>" alt="">
           <?php endif; ?>
         </div>
       <?php endif; ?>

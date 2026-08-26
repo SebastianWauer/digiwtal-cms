@@ -17,16 +17,16 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 ?>
 <div class="pages-actions">
   <?php if ($canCreate): ?>
-    <a class="btn" href="/roles/edit">Neue Rolle</a>
+    <a class="btn" href="<?= cms_base_path() ?>/roles/edit">Neue Rolle</a>
   <?php endif; ?>
 
   <div class="pages-actions-right">
     <?php if ($canViewUsers): ?>
-      <a class="btn btn--ghost" href="/users">Benutzer</a>
+      <a class="btn btn--ghost" href="<?= cms_base_path() ?>/users">Benutzer</a>
     <?php endif; ?>
 
     <?php if ($deletedCount > 0): ?>
-      <a class="btn btn--ghost" href="/roles/deleted">
+      <a class="btn btn--ghost" href="<?= cms_base_path() ?>/roles/deleted">
         Gelöschte Rollen (<?= (int)$deletedCount ?>)
       </a>
     <?php else: ?>
@@ -59,14 +59,14 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
         <td class="pages-col-actions">
           <div class="pages-actions-inline">
             <?php if ($canEdit): ?>
-              <a class="btn btn--ghost btn--badge btn--warn" href="/roles/edit?id=<?= (int)$id ?>">Bearbeiten</a>
+              <a class="btn btn--ghost btn--badge btn--warn" href="<?= cms_base_path() ?>/roles/edit?id=<?= (int)$id ?>">Bearbeiten</a>
             <?php endif; ?>
 
             <?php if ($canDelete): ?>
               <?php if ($isAdmin): ?>
                 <span class="pages-hint">admin geschützt</span>
               <?php else: ?>
-                <form method="post" action="/roles/delete" class="form-reset">
+                <form method="post" action="<?= cms_base_path() ?>/roles/delete" class="form-reset">
                   <?= $csrfField ?>
                   <input type="hidden" name="id" value="<?= (int)$id ?>">
                   <button type="submit" class="btn btn--ghost btn--badge btn--danger">Löschen</button>

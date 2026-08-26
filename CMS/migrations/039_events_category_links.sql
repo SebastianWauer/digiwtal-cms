@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `event_category_links` (
   `link_type` VARCHAR(20) NOT NULL DEFAULT 'link',
   `label` VARCHAR(120) NOT NULL,
   `url` VARCHAR(2048) NULL DEFAULT NULL,
-  `pdf_media_id` BIGINT UNSIGNED NULL DEFAULT NULL,
+  `pdf_media_id` INT UNSIGNED NULL DEFAULT NULL,
   `sort_order` INT NOT NULL DEFAULT 10,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -21,4 +21,4 @@ CREATE TABLE IF NOT EXISTS `event_category_links` (
     FOREIGN KEY (`category_id`) REFERENCES `event_categories`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_event_category_links_pdf_media`
     FOREIGN KEY (`pdf_media_id`) REFERENCES `media_items`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

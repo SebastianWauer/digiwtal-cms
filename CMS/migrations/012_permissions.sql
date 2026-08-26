@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_permissions_key` (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default Permissions (idempotent)
 INSERT INTO `permissions` (`key`, `label`, `group_key`) VALUES

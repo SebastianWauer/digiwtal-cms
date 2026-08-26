@@ -25,7 +25,7 @@ final class EnsureDefaultPages
 
         $stmt = $pdo->prepare("
             INSERT INTO pages (slug, title, content_json, is_deleted, deleted_at)
-            VALUES (:slug, :title, CAST(:content AS JSON), 0, NULL)
+            VALUES (:slug, :title, :content, 0, NULL)
         ");
 
         $pdo->beginTransaction();

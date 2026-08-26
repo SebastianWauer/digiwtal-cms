@@ -21,9 +21,12 @@ declare(strict_types=1);
         }
         $k = trim(substr($line, 0, $eq));
         $v = trim(substr($line, $eq + 1));
-        // Strip surrounding quotes
+        // Strip surrounding quotes + Maskierungen aufloesen (die Verwaltung
+        // schreibt diese Datei mit escapten " und \ - ohne diesen Schritt kaeme
+        // z.B. ein API-Token mit Sonderzeichen verfaelscht an).
         if (strlen($v) >= 2 && $v[0] === $v[-1] && ($v[0] === '"' || $v[0] === "'")) {
             $v = substr($v, 1, -1);
+            $v = preg_replace('/\\\\(["\\\\])/', '$1', $v) ?? $v;
         }
         putenv($k . '=' . $v);
         $_ENV[$k] = $v;
@@ -100,7 +103,7 @@ function renderErrorPage(int $statusCode, string $siteName, string $title, strin
     header('Pragma: no-cache');
 
     $pageTitle = $title;
-    $fullTitle = $title . ' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ' . $siteName;
+    $fullTitle = $title . ' – ' . $siteName;
     $slug = 'error';
     $navItems = [];
     $blocks = [
@@ -132,7 +135,7 @@ function render404(string $siteName = 'Website'): never {
     renderErrorPage(
         404,
         $siteName,
-        '404 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Seite nicht gefunden',
+        '404 – Seite nicht gefunden',
         'Die angeforderte Seite existiert nicht oder wurde verschoben.'
     );
 }
@@ -141,8 +144,8 @@ function render500(string $siteName = 'Website'): never {
     renderErrorPage(
         500,
         $siteName,
-        '500 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Interner Serverfehler',
-        'Der Server ist momentan nicht erreichbar. Bitte versuche es spÃƒÆ’Ã‚Â¤ter erneut.'
+        '500 – Interner Serverfehler',
+        'Der Server ist momentan nicht erreichbar. Bitte versuche es später erneut.'
     );
 }
 
@@ -790,7 +793,7 @@ function enrichBlockFocusWithMedia(array $blocks, CmsApiClient $client, string $
                 if (!isset($value[$targetField]) || (string)$value[$targetField] === '') {
                     $value[$targetField] = $mediaUrl;
                 }
-                // Bei Image-Blocks mit media_id zusÃƒÆ’Ã‚Â¤tzlich "url" setzen.
+                // Bei Image-Blocks mit media_id zusätzlich "url" setzen.
                 if ($key === 'media_id' && (!isset($value['url']) || (string)$value['url'] === '')) {
                     $value['url'] = $mediaUrl;
                 }

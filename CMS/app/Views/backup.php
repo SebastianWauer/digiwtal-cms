@@ -13,7 +13,7 @@ $h = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
     <h3>Datenbank exportieren</h3>
     <p class="bk-sub">Exportiert alle relevanten Tabellen als SQL-Datei und speichert sie zusätzlich unter <code>storage/backups/</code>.</p>
 
-    <form method="post" action="/backup/db" class="bk-form">
+    <form method="post" action="<?= cms_base_path() ?>/backup/db" class="bk-form">
       <?= admin_csrf_field() ?>
       <button type="submit" class="btn btn--primary">SQL-Backup herunterladen</button>
     </form>

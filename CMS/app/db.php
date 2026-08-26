@@ -116,6 +116,42 @@ function db_migration_files(): array
     return $files;
 }
 
+/**
+ * Legt die Statustabelle an, falls sie fehlt.
+ *
+ * Einziger Ort, an dem das Schema von schema_migrations definiert wird -
+ * frueher existierte in scripts/migrate.php eine zweite, unvertraegliche
+ * Definition mit der Spalte `version` statt `id`.
+ */
+function db_ensure_migrations_table(PDO $pdo): void
+{
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            id VARCHAR(190) NOT NULL,
+            applied_at DATETIME NOT NULL,
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+}
+
+/**
+ * Liefert die bereits angewendeten Migrations-IDs.
+ *
+ * @return array<string, true>
+ */
+function db_applied_migrations(PDO $pdo): array
+{
+    $applied = [];
+    $rows = $pdo->query("SELECT id FROM schema_migrations")->fetchAll();
+    if (is_array($rows)) {
+        foreach ($rows as $r) {
+            if (!is_array($r)) continue;
+            $applied[(string)($r['id'] ?? '')] = true;
+        }
+    }
+    return $applied;
+}
+
 function db_apply_migration(PDO $pdo, string $id, string $sql): void
 {
     $parts = preg_split('/;\s*(\r\n|\r|\n)/', $sql);
@@ -126,17 +162,64 @@ function db_apply_migration(PDO $pdo, string $id, string $sql): void
         foreach ($parts as $part) {
             $part = trim((string)$part);
             if ($part === '') continue;
-            $pdo->exec($part);
+            db_run_migration_statement($pdo, $part);
         }
 
         $stmt = $pdo->prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (:id, NOW())");
         $stmt->execute([':id' => $id]);
 
-        $pdo->commit();
+        // DDL loest in MySQL/MariaDB einen impliziten Commit aus. Die Transaktion
+        // kann hier also bereits beendet sein - dann waere commit() ein Fehler.
+        if ($pdo->inTransaction()) {
+            $pdo->commit();
+        }
     } catch (Throwable $e) {
-        $pdo->rollBack();
-        throw $e;
+        // Aus demselben Grund darf rollBack() nur laufen, wenn wirklich eine
+        // Transaktion offen ist. Sonst wirft PDO "There is no active transaction"
+        // und ueberschreibt damit die eigentliche Fehlerursache.
+        if ($pdo->inTransaction()) {
+            try {
+                $pdo->rollBack();
+            } catch (Throwable) {
+                // bewusst ignorieren - die Originalmeldung ist wichtiger
+            }
+        }
+
+        throw new RuntimeException(
+            'Migration ' . $id . ' fehlgeschlagen: ' . $e->getMessage(),
+            0,
+            $e
+        );
     }
+}
+
+/**
+ * Fuehrt eine einzelne Migrations-Anweisung aus.
+ *
+ * Bewusst query() statt exec(): Manche Migrationen enden mit einer Report-
+ * Abfrage (z.B. 007, das nicht zuordenbare Navigationseintraege auflistet).
+ * exec() laesst deren Result-Set an der Verbindung haengen, die naechste
+ * Anweisung scheitert dann mit
+ *   SQLSTATE[HY000] 2014 Cannot execute queries while other unbuffered
+ *   queries are active
+ * Hier wird jedes Result-Set vollstaendig geleert und der Cursor geschlossen.
+ */
+function db_run_migration_statement(PDO $pdo, string $sql): void
+{
+    $stmt = $pdo->query($sql);
+    if (!($stmt instanceof PDOStatement)) {
+        return;
+    }
+
+    try {
+        do {
+            $stmt->fetchAll();
+        } while ($stmt->nextRowset());
+    } catch (Throwable) {
+        // nextRowset() wirft bei manchen Anweisungen statt false zu liefern
+    }
+
+    $stmt->closeCursor();
 }
 
 function db_migrate_if_needed(): void
@@ -162,14 +245,7 @@ function db_migrate_if_needed(): void
 
     $pdo = db();
 
-    // Ensure schema_migrations exists (stable collation)
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS schema_migrations (
-            id VARCHAR(190) NOT NULL,
-            applied_at DATETIME NOT NULL,
-            PRIMARY KEY (id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    db_ensure_migrations_table($pdo);
 
     $applied = [];
     $rows = $pdo->query("SELECT id FROM schema_migrations")->fetchAll();

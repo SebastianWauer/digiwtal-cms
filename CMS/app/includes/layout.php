@@ -17,13 +17,13 @@ function admin_asset_css(string $file): string
 
     // Sicherheit: nur "admin-*.css" bzw. "*.css" ohne Pfadtricks zulassen
     if (!preg_match('/^[a-z0-9._-]+\.css$/i', $file)) {
-        return '/assets/css/' . rawurlencode($file);
+        return cms_base_path() . '/assets/css/' . rawurlencode($file);
     }
 
     $abs = __DIR__ . '/../../public/assets/css/' . $file;
     $ver = is_file($abs) ? (string)filemtime($abs) : '';
 
-    return '/assets/css/' . rawurlencode($file) . ($ver !== '' ? ('?v=' . $ver) : '');
+    return cms_base_path() . '/assets/css/' . rawurlencode($file) . ($ver !== '' ? ('?v=' . $ver) : '');
 }
 
 /**
@@ -36,13 +36,13 @@ function admin_asset_js(string $file): string
 
     // Sicherheit: nur "*.js" ohne Pfadtricks zulassen
     if (!preg_match('/^[a-z0-9._-]+\.js$/i', $file)) {
-        return '/assets/js/' . rawurlencode($file);
+        return cms_base_path() . '/assets/js/' . rawurlencode($file);
     }
 
     $abs = __DIR__ . '/../../public/assets/js/' . $file;
     $ver = is_file($abs) ? (string)filemtime($abs) : '';
 
-    return '/assets/js/' . rawurlencode($file) . ($ver !== '' ? ('?v=' . $ver) : '');
+    return cms_base_path() . '/assets/js/' . rawurlencode($file) . ($ver !== '' ? ('?v=' . $ver) : '');
 }
 
 function admin_layout_begin(array $p): void
@@ -80,7 +80,7 @@ function admin_layout_begin(array $p): void
       <?php endif; ?>
 
       <meta name="csrf-token" content="<?= h(admin_csrf_token()) ?>">
-      <meta name="prefs-endpoint" content="<?= h(\App\Core\Paths::PREFS) ?>">
+      <meta name="prefs-endpoint" content="<?= h(cms_base_path() . \App\Core\Paths::PREFS) ?>">
 
       <link rel="stylesheet" href="<?= h(admin_asset_css('admin-layout.css')) ?>">
       <link rel="stylesheet" href="<?= h(admin_asset_css('admin-sidebar.css')) ?>">

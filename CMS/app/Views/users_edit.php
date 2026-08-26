@@ -33,7 +33,7 @@ $statusLabel      = $enabled ? 'Aktiv' : 'Gesperrt';
 $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 ?>
 
-<form method="post" action="/users/save" class="pages-edit-form">
+<form method="post" action="<?= cms_base_path() ?>/users/save" class="pages-edit-form">
   <?= $csrfField ?>
   <input type="hidden" name="id" value="<?= (int)$id ?>">
 
@@ -92,7 +92,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 
       <div class="pages-edit-actionsbar">
         <button type="submit" class="btn">Speichern</button>
-        <a class="btn btn--ghost" href="/users">Zurück</a>
+        <a class="btn btn--ghost" href="<?= cms_base_path() ?>/users">Zurück</a>
 
         <div class="pages-edit-actionsbar-spacer"></div>
 
@@ -102,7 +102,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
               type="submit"
               class="btn btn--ghost btn--danger btn--sm"
               formmethod="post"
-              formaction="/users/delete"
+              formaction="<?= cms_base_path() ?>/users/delete"
               formnovalidate
             >Löschen</button>
           <?php else: ?>
@@ -116,7 +116,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
               type="submit"
               class="btn btn--ghost btn--warn btn--sm"
               formmethod="post"
-              formaction="/users/restore"
+              formaction="<?= cms_base_path() ?>/users/restore"
               formnovalidate
             >Wiederherstellen</button>
           <?php endif; ?>

@@ -2,7 +2,7 @@
 
 <h1 class="ss-title">Einstellungen</h1>
 
-<form method="post" action="/settings">
+<form method="post" action="<?= cms_base_path() ?>/settings">
   <?= admin_csrf_field() ?>
 
   <div class="ss-layout">
@@ -44,7 +44,7 @@
             <div class="ss-preview">
               <?php $id = (int)($data['cms_logo_light_media_id'] ?? 0); ?>
               <?php if ($id > 0): ?>
-                <img src="/media/thumb?id=<?= $id ?>" alt="">
+                <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $id ?>" alt="">
               <?php endif; ?>
             </div>
           </div>
@@ -54,7 +54,7 @@
             <div class="ss-preview">
               <?php $id = (int)($data['cms_logo_dark_media_id'] ?? 0); ?>
               <?php if ($id > 0): ?>
-                <img src="/media/thumb?id=<?= $id ?>" alt="">
+                <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $id ?>" alt="">
               <?php endif; ?>
             </div>
           </div>
@@ -64,7 +64,7 @@
             <div class="ss-preview">
               <?php $id = (int)($data['favicon_media_id'] ?? 0); ?>
               <?php if ($id > 0): ?>
-                <img src="/media/thumb?id=<?= $id ?>" alt="">
+                <img src="<?= cms_base_path() ?>/media/thumb?id=<?= $id ?>" alt="">
               <?php endif; ?>
             </div>
           </div>

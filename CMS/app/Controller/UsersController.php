@@ -127,7 +127,7 @@ final class UsersController
         }
 
         if (!empty($row['is_deleted'])) {
-            header('Location: /users/deleted');
+            header('Location: ' . cms_base_path() . '/users/deleted');
             exit;
         }
 
@@ -350,7 +350,7 @@ final class UsersController
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
-            header('Location: /users');
+            header('Location: ' . cms_base_path() . '/users');
             exit;
         }
 
@@ -376,7 +376,7 @@ final class UsersController
 
         $users->softDelete($id);
 
-        header('Location: /users');
+        header('Location: ' . cms_base_path() . '/users');
         exit;
     }
 
@@ -404,7 +404,7 @@ final class UsersController
 
         if ($id > 0) $users->restore($id);
 
-        header('Location: /users');
+        header('Location: ' . cms_base_path() . '/users');
         exit;
     }
     public function purge(): void
@@ -425,7 +425,7 @@ final class UsersController
             ? ['type' => 'success', 'msg' => 'Papierkorb geleert (' . $n . ').']
             : ['type' => 'success', 'msg' => 'Papierkorb ist bereits leer.'];
 
-        header('Location: /users/deleted');
+        header('Location: ' . cms_base_path() . '/users/deleted');
         exit;
     }
 }

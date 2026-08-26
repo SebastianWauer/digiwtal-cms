@@ -201,24 +201,6 @@ class DeployService
                 (string)($encData['db_password_tag'] ?? ''),
                 $aad
             );
-            $setupToken = '';
-            if (
-                !empty($encData['deploy_token_enc'])
-                && !empty($encData['deploy_token_nonce'])
-                && !empty($encData['deploy_token_tag'])
-            ) {
-                try {
-                    $setupToken = VaultCrypto::decrypt(
-                        (string)$encData['deploy_token_enc'],
-                        (string)$encData['deploy_token_nonce'],
-                        (string)$encData['deploy_token_tag'],
-                        $aad
-                    );
-                } catch (Throwable) {
-                    $setupToken = '';
-                }
-            }
-
             $method = $this->resolveTransferMethod($access);
             if ($method === null) {
                 $this->log($deploymentId, '[ERROR] Keine passende Transfermethode verfügbar. Für SFTP/SSH wird die PHP-Erweiterung ssh2 benötigt, für FTP die cURL-FTP-Unterstützung.');
@@ -301,13 +283,40 @@ class DeployService
                 $this->log($deploymentId, "[INFO] {$uploaded}/{$totalFiles} Dateien übertragen.");
             }
 
-            $envContent = $this->cmsProvisioner->buildEnvContent($access, $dbPassword, $setupToken);
+            $cmsBaseUrl      = $this->cmsProvisioner->resolveCmsBaseUrl($customer, $access);
+            $frontendBaseUrl = $this->cmsProvisioner->resolveFrontendBaseUrl($customer, $access);
+            $tokens          = $this->cmsProvisioner->resolveTokens($customerId, $access, $encData);
+
+            foreach (['health' => 'HEALTH_TOKEN', 'deploy' => 'DEPLOY_TOKEN'] as $key => $envKey) {
+                if (trim((string)($tokens[$key] ?? '')) === '') {
+                    $this->log($deploymentId, "[WARN] Kein {$envKey} im Vault hinterlegt. Die Instanz laesst sich damit nicht fernsteuern bzw. nicht ueberwachen.");
+                }
+            }
+
+            $envContent = $this->cmsProvisioner->buildEnvContent($access, $dbPassword, $tokens, $cmsBaseUrl);
             if (!$this->uploadRemoteTextFile($access, $password, $remotePath . '/.env', $envContent, $method)) {
                 $this->log($deploymentId, '[ERROR] .env konnte nicht auf den Zielserver geschrieben werden.');
                 $this->deployRepo->markFinished($deploymentId, 'failed');
                 return false;
             }
-            $this->log($deploymentId, '[INFO] .env auf Zielserver geschrieben.');
+            $basePath = CmsProvisioningService::basePathFromUrl($cmsBaseUrl);
+            $this->log($deploymentId, '[INFO] CMS-.env geschrieben (Basis-Pfad: ' . ($basePath !== '' ? $basePath : 'Domain-Root') . ').');
+
+            // Frontend-.env: ohne CMS_API_URL steht das CMS, aber die Website bleibt leer.
+            if ($this->deploysFrontend($type)) {
+                $htmlPath = rtrim((string)($access['html_path'] ?? '/Frontend'), '/');
+                if ($cmsBaseUrl === null) {
+                    $this->log($deploymentId, '[WARN] Keine CMS-URL ermittelbar - Frontend-.env wird uebersprungen. Bitte health_cms_url oder canonical_base setzen.');
+                } else {
+                    $frontendEnv = $this->cmsProvisioner->buildFrontendEnvContent($cmsBaseUrl, $frontendBaseUrl);
+                    if (!$this->uploadRemoteTextFile($access, $password, $htmlPath . '/.env', $frontendEnv, $method)) {
+                        $this->log($deploymentId, '[ERROR] Frontend-.env konnte nicht geschrieben werden.');
+                        $this->deployRepo->markFinished($deploymentId, 'failed');
+                        return false;
+                    }
+                    $this->log($deploymentId, '[INFO] Frontend-.env geschrieben (API: ' . rtrim($cmsBaseUrl, '/') . '/api.php/api/v1).');
+                }
+            }
 
             $this->cmsProvisioner->provisionCustomer($customer, $access, $encData, function (string $message) use ($deploymentId): void {
                 $this->log($deploymentId, $message);
@@ -481,6 +490,12 @@ class DeployService
     /**
      * @return array<int,array{label:string,source_dir:string,remote_path:string,ignore:array<int,string>}>
      */
+    /** Wird bei diesem Deploy-Typ auch das Frontend ausgerollt? */
+    private function deploysFrontend(string $type): bool
+    {
+        return in_array($type, ['frontend', 'combined', 'full'], true);
+    }
+
     private function buildDeployOperations(string $type, string $cmsSourceDir, string $frontendSourceDir, array $access): array
     {
         $serverPath = rtrim((string)($access['server_path'] ?? '/CMS'), '/');

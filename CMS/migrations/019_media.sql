@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `media_folders` (
   CONSTRAINT `fk_media_folders_parent`
     FOREIGN KEY (`parent_id`) REFERENCES `media_folders`(`id`)
     ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Root-Ordner (idempotent, feste ID=1)
 INSERT INTO `media_folders` (`id`, `parent_id`, `name`, `sort_order`)
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `media_items` (
   CONSTRAINT `fk_media_items_folder`
     FOREIGN KEY (`folder_id`) REFERENCES `media_folders`(`id`)
     ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Volltextsuche für "Dateiname, Titel, Beschreibung..."
 -- Hinweis: FULLTEXT ist auf InnoDB/utf8mb4 ok (MySQL >= 5.6).
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `media_usages` (
   CONSTRAINT `fk_media_usages_media`
     FOREIGN KEY (`media_id`) REFERENCES `media_items`(`id`)
     ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
 -- 4) Permission: media.view (Sidebar erwartet diesen Key bereits)

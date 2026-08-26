@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CMS – Passwort zurücksetzen</title>
-  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin.css">
 </head>
 <body>
 <main class="container">
@@ -21,7 +21,7 @@
     </div>
   <?php endif; ?>
 
-  <form method="post" action="/password-reset">
+  <form method="post" action="<?= cms_base_path() ?>/password-reset">
     <?= admin_csrf_field() ?>
     <ul class="list">
       <li class="row">
@@ -32,7 +32,7 @@
           </label>
           <div class="actions">
             <button type="submit" class="btn">Reset-Link senden</button>
-            <a href="/login" class="btn btn--ghost">Zurück zum Login</a>
+            <a href="<?= cms_base_path() ?>/login" class="btn btn--ghost">Zurück zum Login</a>
           </div>
         </div>
       </li>

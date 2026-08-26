@@ -4,13 +4,21 @@ declare(strict_types=1);
 $GLOBALS['CMS_REQUEST_T0'] = microtime(true);
 ob_start();
 
-require_once __DIR__ . '/../app/bootstrap.php';
+$__appRoot = getenv('CMS_APP_ROOT');
+$__appRoot = ($__appRoot !== false && $__appRoot !== '') ? rtrim($__appRoot, '/') : (__DIR__ . '/..');
+require_once $__appRoot . '/app/bootstrap.php';
 // Setup-Redirect: wenn nicht installiert → zu /setup
 $_uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-if (!str_starts_with($_uri, '/setup') && !str_starts_with($_uri, '/assets')) {
+$_uriNoBase = $_uri;
+$_base = cms_base_path();
+if ($_base !== '' && str_starts_with($_uriNoBase, $_base)) {
+    $_uriNoBase = substr($_uriNoBase, strlen($_base));
+    if ($_uriNoBase === '') $_uriNoBase = '/';
+}
+if (!str_starts_with($_uriNoBase, '/setup') && !str_starts_with($_uriNoBase, '/assets')) {
     try {
         if (\App\Core\Setup::allowSetupRequest(db())) {
-            header('Location: /setup');
+            header('Location: ' . cms_base_path() . '/setup');
             exit;
         }
     } catch (\Throwable) {

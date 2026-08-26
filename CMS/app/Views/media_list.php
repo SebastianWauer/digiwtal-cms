@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 if (!empty($_GET['picker'])) {
     // Picker-Parameter bei View-Wechsel & Filter-Submit erhalten
-    echo '<base href="/media?picker=1">';
+    echo '<base href="<?= cms_base_path() ?>/media?picker=1">';
 }
 
 /**
@@ -138,7 +138,7 @@ function media_render_folder_nodes(
 
                 <a
                     class="media-folder <?= $active ? 'is-active' : '' ?> <?= $depthClass ?>"
-                    href="/media?folder=<?= (int)$fid ?>&view=<?= h($view) ?>"
+                    href="<?= cms_base_path() ?>/media?folder=<?= (int)$fid ?>&view=<?= h($view) ?>"
                     data-folder-id="<?= (int)$fid ?>"
                     <?php if ($canEdit && $fid > 1): ?>data-folder-drag-id="<?= (int)$fid ?>" draggable="true"<?php endif; ?>
                 >
@@ -177,7 +177,7 @@ function media_render_folder_nodes(
       <div class="media-upload-preview" id="mediaUploadPreview" aria-hidden="true"></div>
     </div>
 
-    <form method="post" action="/media/upload" enctype="multipart/form-data" class="media-upload__form" id="mediaUploadForm">
+    <form method="post" action="<?= cms_base_path() ?>/media/upload" enctype="multipart/form-data" class="media-upload__form" id="mediaUploadForm">
       <?= admin_csrf_field() ?>
       <input type="hidden" name="folder_id" value="<?= (int)$folderId ?>">
       <input type="file" name="files[]" id="mediaFileInput" multiple class="media-file-input">
@@ -186,7 +186,7 @@ function media_render_folder_nodes(
   <?php endif; ?>
 
   <!-- Filters -->
-  <form method="get" action="/media" class="media-filters">
+  <form method="get" action="<?= cms_base_path() ?>/media" class="media-filters">
     <input type="hidden" name="folder" value="<?= (int)$folderId ?>">
     <input type="hidden" name="per_page" value="<?= (int)$perPage ?>">
 
@@ -230,7 +230,7 @@ function media_render_folder_nodes(
       <div class="media-folders__head">
         <div class="media-folders__title">Ordner</div>
         <?php if ($canEdit && (int)$folderId > 1 && isset($folderById[(int)$folderId])): ?>
-          <form method="post" action="/media/folder/delete" class="media-folders__delete" onsubmit="return confirm('Ordner wirklich löschen? Nur leere Ordner ohne Unterordner können gelöscht werden.');">
+          <form method="post" action="<?= cms_base_path() ?>/media/folder/delete" class="media-folders__delete" onsubmit="return confirm('Ordner wirklich löschen? Nur leere Ordner ohne Unterordner können gelöscht werden.');">
             <?= admin_csrf_field() ?>
             <input type="hidden" name="folder_id" value="<?= (int)$folderId ?>">
             <button type="submit" class="btn btn--ghost btn--danger btn--sm">Löschen</button>
@@ -239,7 +239,7 @@ function media_render_folder_nodes(
       </div>
 
       <?php if ($canEdit): ?>
-        <form method="post" action="/media/folder/create" class="media-folder-form is-open" id="mediaFolderForm">
+        <form method="post" action="<?= cms_base_path() ?>/media/folder/create" class="media-folder-form is-open" id="mediaFolderForm">
           <?= admin_csrf_field() ?>
           <input type="hidden" name="parent_id" value="<?= ((int)$folderId) === 0 ? 1 : (int)$folderId ?>">
           <div class="media-folder-input">
@@ -258,7 +258,7 @@ function media_render_folder_nodes(
     <section class="media-content">
 
       <div class="media-content__bar">
-        <form method="post" action="/media/delete" id="mediaDeleteForm" class="media-bulk">
+        <form method="post" action="<?= cms_base_path() ?>/media/delete" id="mediaDeleteForm" class="media-bulk">
           <?= admin_csrf_field() ?>
 
           <div class="media-bulk__left">
@@ -266,10 +266,10 @@ function media_render_folder_nodes(
               <button type="submit" class="btn btn--ghost btn--danger btn--sm">Löschen</button>
             <?php endif; ?>
 
-            <a href="/media?folder=0&view=<?= h($view) ?>" class="btn btn--ghost btn--sm">Alle Medien</a>
+            <a href="<?= cms_base_path() ?>/media?folder=0&view=<?= h($view) ?>" class="btn btn--ghost btn--sm">Alle Medien</a>
 
             <?php if ($canDelete): ?>
-              <a href="/media/deleted?view=<?= h($view) ?>" class="btn btn--ghost btn--sm">Papierkorb</a>
+              <a href="<?= cms_base_path() ?>/media/deleted?view=<?= h($view) ?>" class="btn btn--ghost btn--sm">Papierkorb</a>
             <?php endif; ?>
           </div>
 
@@ -335,9 +335,9 @@ function media_render_folder_nodes(
 
                     <td class="media-col-preview">
                       <?php if (strtolower($extR) === 'pdf'): ?>
-                        <iframe class="media-preview-embed media-preview-embed--table" src="/media/file?id=<?= (int)$id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
+                        <iframe class="media-preview-embed media-preview-embed--table" src="<?= cms_base_path() ?>/media/file?id=<?= (int)$id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
                       <?php else: ?>
-                        <img src="/media/thumb?id=<?= (int)$id ?>" alt="">
+                        <img src="<?= cms_base_path() ?>/media/thumb?id=<?= (int)$id ?>" alt="">
                       <?php endif; ?>
                     </td>
 
@@ -373,7 +373,7 @@ function media_render_folder_nodes(
                         data-pick-url="/media/file?id=<?= (int)$id ?>"
                       >Auswählen</button>
                     <?php else: ?>
-                      <a class="btn btn--ghost btn--sm" href="/media/edit?id=<?= (int)$id ?>">Details</a>
+                      <a class="btn btn--ghost btn--sm" href="<?= cms_base_path() ?>/media/edit?id=<?= (int)$id ?>">Details</a>
                     <?php endif; ?>
                     </td>
                   </tr>
@@ -411,9 +411,9 @@ function media_render_folder_nodes(
               >
                 <div class="media-card__thumb">
                   <?php if (strtolower($extR) === 'pdf'): ?>
-                    <iframe class="media-preview-embed" src="/media/file?id=<?= (int)$id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
+                    <iframe class="media-preview-embed" src="<?= cms_base_path() ?>/media/file?id=<?= (int)$id ?>#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="PDF-Vorschau" loading="lazy"></iframe>
                   <?php else: ?>
-                    <img src="/media/thumb?id=<?= (int)$id ?>" alt="">
+                    <img src="<?= cms_base_path() ?>/media/thumb?id=<?= (int)$id ?>" alt="">
                   <?php endif; ?>
                   <?php if ($canDelete): ?>
                   <label class="media-card__check">
@@ -457,7 +457,7 @@ function media_render_folder_nodes(
                         data-pick-url="/media/file?id=<?= (int)$id ?>"
                       >Auswählen</button>
                     <?php else: ?>
-                      <a class="btn btn--ghost btn--sm" href="/media/edit?id=<?= (int)$id ?>">Details</a>
+                      <a class="btn btn--ghost btn--sm" href="<?= cms_base_path() ?>/media/edit?id=<?= (int)$id ?>">Details</a>
                     <?php endif; ?>
                   </div>
                 </div>
@@ -487,9 +487,9 @@ function media_render_folder_nodes(
       ?>
       <div class="media-content__bar">
         <div class="media-bulk__left">
-          <a class="btn btn--ghost btn--sm <?= $page <= 1 ? 'is-disabled' : '' ?>" href="/media?<?= h(http_build_query($prevParams)) ?>" <?= $page <= 1 ? 'aria-disabled="true"' : '' ?>>Zurück</a>
+          <a class="btn btn--ghost btn--sm <?= $page <= 1 ? 'is-disabled' : '' ?>" href="<?= cms_base_path() ?>/media?<?= h(http_build_query($prevParams)) ?>" <?= $page <= 1 ? 'aria-disabled="true"' : '' ?>>Zurück</a>
           <span class="pages-hint">Seite <?= (int)$page ?> / <?= (int)$totalPages ?> · <?= (int)$total ?> Medien</span>
-          <a class="btn btn--ghost btn--sm <?= $page >= $totalPages ? 'is-disabled' : '' ?>" href="/media?<?= h(http_build_query($nextParams)) ?>" <?= $page >= $totalPages ? 'aria-disabled="true"' : '' ?>>Weiter</a>
+          <a class="btn btn--ghost btn--sm <?= $page >= $totalPages ? 'is-disabled' : '' ?>" href="<?= cms_base_path() ?>/media?<?= h(http_build_query($nextParams)) ?>" <?= $page >= $totalPages ? 'aria-disabled="true"' : '' ?>>Weiter</a>
         </div>
       </div>
 
@@ -504,7 +504,7 @@ function media_render_folder_nodes(
     <button type="button" class="btn btn--ghost btn--sm media-lightbox__close" data-media-lightbox-close="1">Schließen</button>
     <img id="mediaLightboxImage" class="media-lightbox__image" alt="">
     <div class="media-lightbox__actions">
-      <a id="mediaLightboxEdit" class="btn btn--primary btn--sm" href="/media">Zur Bearbeitung</a>
+      <a id="mediaLightboxEdit" class="btn btn--primary btn--sm" href="<?= cms_base_path() ?>/media">Zur Bearbeitung</a>
     </div>
   </div>
 </div>
@@ -673,7 +673,7 @@ function media_render_folder_nodes(
     fd.append('folder_id', String(folderId));
     if (token) fd.append('_token', token);
 
-    const res = await fetch('/media/move', {
+    const res = await fetch('<?= cms_base_path() ?>/media/move', {
       method: 'POST',
       body: fd,
       headers: token ? {'X-CSRF-Token': token} : {},
@@ -697,7 +697,7 @@ function media_render_folder_nodes(
     fd.append('target_parent_id', String(targetParentId));
     if (token) fd.append('_token', token);
 
-    const res = await fetch('/media/folder/move', {
+    const res = await fetch('<?= cms_base_path() ?>/media/folder/move', {
       method: 'POST',
       body: fd,
       headers: token ? {'X-CSRF-Token': token} : {},
@@ -770,7 +770,7 @@ function media_render_folder_nodes(
         body.set('pref_key', 'media.view');
         body.set('pref_value', v);
 
-        fetch('/prefs', {
+        fetch('<?= cms_base_path() ?>/prefs', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',

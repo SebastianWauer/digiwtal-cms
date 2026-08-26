@@ -12,12 +12,12 @@ $csrfField  = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 ?>
 
 <div class="pages-actions">
-  <a class="btn btn--ghost" href="/users">Zurück zu Benutzern</a>
+  <a class="btn btn--ghost" href="<?= cms_base_path() ?>/users">Zurück zu Benutzern</a>
 
   <div class="pages-actions-right">
-    <a class="btn btn--ghost" href="/roles">Rollen</a>
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/roles">Rollen</a>
     <?php if ($deletedCount > 0 && $canRestore): ?>
-      <form method="post" action="/users/purge" class="form-reset" onsubmit="return confirm('Papierkorb wirklich leeren?');">
+      <form method="post" action="<?= cms_base_path() ?>/users/purge" class="form-reset" onsubmit="return confirm('Papierkorb wirklich leeren?');">
         <?= $csrfField ?>
         <button type="submit" class="btn btn--ghost btn--sm btn--danger">Papierkorb leeren</button>
       </form>
@@ -48,7 +48,7 @@ $csrfField  = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
         <td class="pages-mono pages-nowrap"><?= h($deletedAt) ?></td>
         <td class="pages-col-actions">
           <?php if ($canRestore): ?>
-            <form method="post" action="/users/restore" class="form-reset">
+            <form method="post" action="<?= cms_base_path() ?>/users/restore" class="form-reset">
               <?= $csrfField ?>
               <input type="hidden" name="id" value="<?= (int)$id ?>">
               <button type="submit" class="btn btn--ghost btn--badge btn--warn">Wiederherstellen</button>

@@ -1,0 +1,59 @@
+# Routing für das Frontend.
+#
+# Aufbau: zuerst die Sperren, dann die Weiterleitungen. Die Reihenfolge ist
+# wichtig - .env ist eine existierende Datei und wuerde von der Datei-Weiche
+# weiter unten direkt ausgeliefert.
+#
+# Das Document Root zeigt direkt auf dieses Verzeichnis. Damit liegen .env,
+# app/, templates/ und themes/ im Web-Pfad. Ohne die Sperren war die .env mit
+# CMS_API_TOKEN unter https://<domain>/.env herunterladbar.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # --- Sperren -----------------------------------------------------------
+  RewriteRule (^|/)\.env(\.|$)                     - [F,L]
+  RewriteRule ^(app|templates|themes|storage)(/|$) - [F,L]
+  RewriteRule (^|/)\.(git|ht)                      - [F,L]
+
+  # --- Routing -----------------------------------------------------------
+  # Nur echte Dateien direkt ausliefern (assets, favicon, etc.)
+  # KEIN -d: Verzeichnis-Requests (inkl. "/") sollen ans Host-Routing
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # API: /api.php/... immer an api.php geben
+  RewriteRule ^api\.php(/.*)?$ api.php [L,QSA]
+
+  # Health-Check: GET /api/health?token=... -> api.php
+  RewriteRule ^api/health$ api.php [L,QSA]
+
+  # Internal Deploy API: POST /api/internal/... -> api.php
+  RewriteRule ^api/internal/ api.php [L,QSA]
+
+  # Public API: /api/v1/... -> api.php
+  RewriteRule ^api/v1/ api.php [L,QSA]
+
+  # Frontend-Host: alles außer cms.* -> index.php
+  RewriteCond %{HTTP_HOST} !^cms\. [NC]
+  RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
+  RewriteRule ^ index.php [L,QSA]
+
+  # CMS-Host: cms.* -> index.php (Admin)
+  RewriteCond %{HTTP_HOST} ^cms\. [NC]
+  RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
+  RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# Zweiter Riegel, falls mod_rewrite einmal fehlt.
+<FilesMatch "^\.env">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

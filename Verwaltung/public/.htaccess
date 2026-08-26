@@ -17,3 +17,19 @@
 # app/, controllers/, services/, repositories/, migrations/ liegen außerhalb
 # dieses Verzeichnisses (Document Root = public/) und sind dadurch bereits
 # nicht direkt aufrufbar.
+
+# Service Worker und Web-App-Manifest.
+# Diese Regeln lagen bisher in CMS/public/.htaccess auf dem Server - dort ohne
+# Wirkung, weil sw.js und manifest.json zur Verwaltung gehoeren, nicht zum CMS.
+# Ohne die mod_headers-Klammer wirft Apache 500, falls das Modul fehlt.
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Service-Worker-Allowed "/"
+  </Files>
+
+  <Files "manifest.json">
+    Header set Content-Type "application/manifest+json"
+    Header set Cache-Control "public, max-age=86400"
+  </Files>
+</IfModule>

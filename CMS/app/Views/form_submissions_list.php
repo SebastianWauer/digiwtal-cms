@@ -17,11 +17,11 @@ $tabs = [
 ?>
 
 <div class="pages-toolbar" style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
-  <form method="get" action="/forms/submissions" class="form-reset" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+  <form method="get" action="<?= cms_base_path() ?>/forms/submissions" class="form-reset" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
     <input class="pages-edit-input" type="text" name="q" value="<?= h($qFilter) ?>" placeholder="Suche: Datum, Name, E-Mail, Telefon, Nachricht" style="min-width:320px;">
     <input type="hidden" name="filter" value="<?= h($activeFilter) ?>">
     <button class="btn btn--ghost" type="submit">Filtern</button>
-    <?php if ($qFilter !== ''): ?><a class="btn btn--ghost" href="/forms/submissions?filter=<?= h($activeFilter) ?>">Reset</a><?php endif; ?>
+    <?php if ($qFilter !== ''): ?><a class="btn btn--ghost" href="<?= cms_base_path() ?>/forms/submissions?filter=<?= h($activeFilter) ?>">Reset</a><?php endif; ?>
   </form>
 </div>
 
@@ -70,7 +70,7 @@ $tabs = [
       <td class="pages-col-actions">
         <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
           <?php if ((string)$row['status'] === 'deleted'): ?>
-          <form method="post" action="/forms/submissions/status" class="form-reset">
+          <form method="post" action="<?= cms_base_path() ?>/forms/submissions/status" class="form-reset">
             <?= $csrf ?>
             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
             <input type="hidden" name="status" value="open">
@@ -80,7 +80,7 @@ $tabs = [
           </form>
           <?php endif; ?>
           <?php if ((string)$row['status'] !== 'open' && (string)$row['status'] !== 'deleted'): ?>
-          <form method="post" action="/forms/submissions/status" class="form-reset">
+          <form method="post" action="<?= cms_base_path() ?>/forms/submissions/status" class="form-reset">
             <?= $csrf ?>
             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
             <input type="hidden" name="status" value="open">
@@ -90,7 +90,7 @@ $tabs = [
           </form>
           <?php endif; ?>
           <?php if ((string)$row['status'] !== 'processed'): ?>
-          <form method="post" action="/forms/submissions/status" class="form-reset">
+          <form method="post" action="<?= cms_base_path() ?>/forms/submissions/status" class="form-reset">
             <?= $csrf ?>
             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
             <input type="hidden" name="status" value="processed">
@@ -100,7 +100,7 @@ $tabs = [
           </form>
           <?php endif; ?>
           <?php if ((string)$row['status'] !== 'deleted'): ?>
-          <form method="post" action="/forms/submissions/status" class="form-reset">
+          <form method="post" action="<?= cms_base_path() ?>/forms/submissions/status" class="form-reset">
             <?= $csrf ?>
             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
             <input type="hidden" name="status" value="deleted">

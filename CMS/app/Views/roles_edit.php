@@ -40,7 +40,7 @@ $impJson = json_encode($implications, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SL
 if (!is_string($impJson) || $impJson === '') $impJson = '{}';
 ?>
 
-<form method="post" action="/roles/save" class="pages-edit-form" id="rolesEditForm">
+<form method="post" action="<?= cms_base_path() ?>/roles/save" class="pages-edit-form" id="rolesEditForm">
   <?= admin_csrf_field() ?>
   <input type="hidden" name="id" value="<?= (int)$id ?>">
 
@@ -150,12 +150,12 @@ if (!is_string($impJson) || $impJson === '') $impJson = '{}';
 
       <div class="pages-edit-actionsbar">
         <button type="submit" class="btn">Speichern</button>
-        <a class="btn btn--ghost" href="/roles">Zurück</a>
+        <a class="btn btn--ghost" href="<?= cms_base_path() ?>/roles">Zurück</a>
 
         <div class="pages-edit-actionsbar-spacer"></div>
 
         <?php if ($id > 0 && !$isAdmin): ?>
-          <form method="post" action="/roles/delete" class="form-reset">
+          <form method="post" action="<?= cms_base_path() ?>/roles/delete" class="form-reset">
             <?= admin_csrf_field() ?>
             <input type="hidden" name="id" value="<?= (int)$id ?>">
             <button type="submit" class="btn btn--ghost btn--danger btn--sm">Löschen</button>

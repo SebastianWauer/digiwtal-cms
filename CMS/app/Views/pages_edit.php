@@ -93,7 +93,7 @@ $newsCategoryOptions = array_values(array_filter(array_map(static function ($row
 $newsCategoryOptionsJson = json_encode($newsCategoryOptions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $newsCategoryOptionsJson = '[]';
 ?>
-<form method="post" action="/pages/save" class="pages-edit-form" id="pageEditForm">
+<form method="post" action="<?= cms_base_path() ?>/pages/save" class="pages-edit-form" id="pageEditForm">
   <?= admin_csrf_field() ?>
   <input type="hidden" name="id" id="pageIdInput" value="<?= (int)$id ?>">
   <input type="hidden" name="content_json" id="contentJsonInput" value="<?= h($content) ?>">
@@ -381,7 +381,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
                   <div class="pages-edit-field-label">#<?= (int)$rid ?> · <?= h($createdAt) ?></div>
                   <div class="pages-edit-field-hint"><?= h((string)($rev['title'] ?? '')) ?></div>
                   <div class="pages-edit-pb-actions">
-                    <a class="btn btn--ghost btn--sm" href="/pages/edit?id=<?= (int)$id ?>&revision=<?= (int)$rid ?>">Vorschau</a>
+                    <a class="btn btn--ghost btn--sm" href="<?= cms_base_path() ?>/pages/edit?id=<?= (int)$id ?>&revision=<?= (int)$rid ?>">Vorschau</a>
                     <?php if ($canSave): ?>
                       <button type="submit" class="btn btn--ghost btn--sm" name="restore_revision_id" value="<?= (int)$rid ?>">Diese Version wiederherstellen</button>
                     <?php endif; ?>
@@ -414,13 +414,13 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       <button type="submit" class="pages-edit-iconbtn pages-edit-iconbtn--save" title="Speichern" aria-label="Speichern">💾</button>
     <?php endif; ?>
 
-    <a class="pages-edit-iconbtn pages-edit-iconbtn--cancel" href="/pages" title="Abbrechen" aria-label="Abbrechen">✕</a>
+    <a class="pages-edit-iconbtn pages-edit-iconbtn--cancel" href="<?= cms_base_path() ?>/pages" title="Abbrechen" aria-label="Abbrechen">✕</a>
 
     <?php if ($id > 0 && !$deleted && $canDelete): ?>
       <button
         type="submit"
         class="pages-edit-iconbtn pages-edit-iconbtn--delete"
-        formaction="/pages/delete"
+        formaction="<?= cms_base_path() ?>/pages/delete"
         formmethod="post"
         name="id"
         value="<?= (int)$id ?>"
@@ -433,7 +433,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       <button
         type="submit"
         class="pages-edit-iconbtn pages-edit-iconbtn--restore"
-        formaction="/pages/restore"
+        formaction="<?= cms_base_path() ?>/pages/restore"
         formmethod="post"
         name="id"
         value="<?= (int)$id ?>"
@@ -853,7 +853,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     };
 
     try {
-      const resp = await fetch('/pages/preview', {
+      const resp = await fetch('<?= cms_base_path() ?>/pages/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
