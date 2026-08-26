@@ -21,4 +21,4 @@ CREATE TABLE IF NOT EXISTS `event_category_links` (
     FOREIGN KEY (`category_id`) REFERENCES `event_categories`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_event_category_links_pdf_media`
     FOREIGN KEY (`pdf_media_id`) REFERENCES `media_items`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

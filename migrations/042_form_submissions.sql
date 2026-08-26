@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `form_submissions` (
   PRIMARY KEY (`id`),
   KEY `idx_form_submissions_form_created` (`form_id`, `created_at`),
   KEY `idx_form_submissions_created` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `permissions` (`key`,`label`,`group_key`) VALUES
 ('forms.view','Formulareingaben sehen','forms')

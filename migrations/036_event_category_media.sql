@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `event_category_media` (
     FOREIGN KEY (`category_id`) REFERENCES `event_categories`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_event_category_media_media`
     FOREIGN KEY (`media_id`) REFERENCES `media_items`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Optional backfill: if event already has a base image, assign it to all mapped categories.
 INSERT IGNORE INTO `event_category_media` (`event_id`, `category_id`, `media_id`)
