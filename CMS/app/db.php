@@ -126,17 +126,64 @@ function db_apply_migration(PDO $pdo, string $id, string $sql): void
         foreach ($parts as $part) {
             $part = trim((string)$part);
             if ($part === '') continue;
-            $pdo->exec($part);
+            db_run_migration_statement($pdo, $part);
         }
 
         $stmt = $pdo->prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (:id, NOW())");
         $stmt->execute([':id' => $id]);
 
-        $pdo->commit();
+        // DDL loest in MySQL/MariaDB einen impliziten Commit aus. Die Transaktion
+        // kann hier also bereits beendet sein - dann waere commit() ein Fehler.
+        if ($pdo->inTransaction()) {
+            $pdo->commit();
+        }
     } catch (Throwable $e) {
-        $pdo->rollBack();
-        throw $e;
+        // Aus demselben Grund darf rollBack() nur laufen, wenn wirklich eine
+        // Transaktion offen ist. Sonst wirft PDO "There is no active transaction"
+        // und ueberschreibt damit die eigentliche Fehlerursache.
+        if ($pdo->inTransaction()) {
+            try {
+                $pdo->rollBack();
+            } catch (Throwable) {
+                // bewusst ignorieren - die Originalmeldung ist wichtiger
+            }
+        }
+
+        throw new RuntimeException(
+            'Migration ' . $id . ' fehlgeschlagen: ' . $e->getMessage(),
+            0,
+            $e
+        );
     }
+}
+
+/**
+ * Fuehrt eine einzelne Migrations-Anweisung aus.
+ *
+ * Bewusst query() statt exec(): Manche Migrationen enden mit einer Report-
+ * Abfrage (z.B. 007, das nicht zuordenbare Navigationseintraege auflistet).
+ * exec() laesst deren Result-Set an der Verbindung haengen, die naechste
+ * Anweisung scheitert dann mit
+ *   SQLSTATE[HY000] 2014 Cannot execute queries while other unbuffered
+ *   queries are active
+ * Hier wird jedes Result-Set vollstaendig geleert und der Cursor geschlossen.
+ */
+function db_run_migration_statement(PDO $pdo, string $sql): void
+{
+    $stmt = $pdo->query($sql);
+    if (!($stmt instanceof PDOStatement)) {
+        return;
+    }
+
+    try {
+        do {
+            $stmt->fetchAll();
+        } while ($stmt->nextRowset());
+    } catch (Throwable) {
+        // nextRowset() wirft bei manchen Anweisungen statt false zu liefern
+    }
+
+    $stmt->closeCursor();
 }
 
 function db_migrate_if_needed(): void
