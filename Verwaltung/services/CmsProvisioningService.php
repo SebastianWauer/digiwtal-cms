@@ -3,8 +3,23 @@ declare(strict_types=1);
 
 class CmsProvisioningService
 {
-    public function buildEnvContent(array $access, string $dbPassword, ?string $setupToken = null): string
-    {
+    /**
+     * Erzeugt die .env der CMS-Instanz.
+     *
+     * Frueher standen hier nur APP_ENV, die DB-Werte und optional SETUP_TOKEN.
+     * Damit blieben HEALTH_TOKEN, MIGRATION_TOKEN und DEPLOY_TOKEN leer - und
+     * eine leere Erwartung heisst im CMS "Zugriff verboten". Der Health-Endpunkt
+     * antwortete auf jede Anfrage mit 403, die Verwaltung konnte die von ihr
+     * selbst aufgesetzten Instanzen also nicht ueberwachen.
+     *
+     * @param array<string,string> $tokens Schluessel: setup, migration, health, deploy
+     */
+    public function buildEnvContent(
+        array $access,
+        string $dbPassword,
+        array $tokens = [],
+        ?string $cmsBaseUrl = null
+    ): string {
         $lines = [
             $this->envLine('APP_ENV', 'production'),
             $this->envLine('DB_HOST', (string)($access['db_host'] ?? '')),
@@ -13,11 +28,125 @@ class CmsProvisioningService
             $this->envLine('DB_USER', (string)($access['db_user'] ?? '')),
             $this->envLine('DB_PASS', $dbPassword),
         ];
-        if ($setupToken !== null && trim($setupToken) !== '') {
-            $lines[] = $this->envLine('SETUP_TOKEN', $setupToken);
+
+        foreach (['SETUP_TOKEN' => 'setup', 'MIGRATION_TOKEN' => 'migration',
+                  'HEALTH_TOKEN' => 'health', 'DEPLOY_TOKEN' => 'deploy'] as $envKey => $tokenKey) {
+            $value = trim((string)($tokens[$tokenKey] ?? ''));
+            if ($value !== '') {
+                $lines[] = $this->envLine($envKey, $value);
+            }
         }
 
+        // Basis-Pfad: kein eigenes Feld noetig, er steckt bereits im Pfadteil der
+        // CMS-URL. Liegt das CMS unter https://kunde.de/verwaltung, ist der
+        // Basis-Pfad /verwaltung; bei eigener Subdomain bleibt er leer.
+        $lines[] = $this->envLine('CMS_BASE_PATH', self::basePathFromUrl($cmsBaseUrl));
+
         return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * Erzeugt die .env des Frontends.
+     *
+     * Wurde vorher gar nicht geschrieben: der Ordner wurde hochgeladen, blieb
+     * aber ohne CMS_API_URL - das CMS stand danach, die Website nicht.
+     */
+    public function buildFrontendEnvContent(?string $cmsBaseUrl, ?string $frontendBaseUrl): string
+    {
+        $cms = $cmsBaseUrl !== null ? rtrim($cmsBaseUrl, '/') : '';
+
+        $lines = [
+            $this->envLine('CMS_API_URL', $cms !== '' ? $cms . '/api.php/api/v1' : ''),
+            $this->envLine('CMS_API_TOKEN', ''),
+            $this->envLine('CMS_TIMEOUT', '5'),
+            $this->envLine('CMS_CACHE_TTL', '300'),
+            $this->envLine('FRONTEND_BASE_URL', $frontendBaseUrl !== null ? rtrim($frontendBaseUrl, '/') : ''),
+            $this->envLine('CMS_SITEMAP_URL', $cms !== '' ? $cms . '/sitemap.xml' : ''),
+        ];
+
+        return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * Sammelt die vier Betriebs-Tokens aus dem Vault.
+     *
+     * Fuer Setup und Migration gibt es keine eigenen Vault-Felder; beide fallen
+     * auf das Deploy-Token zurueck. Das entspricht dem, was resolveSetupToken()
+     * ohnehin schon tat. Die Tokens sind damit pro Kunde verschieden, aber nicht
+     * pro Zweck - eine getrennte Ablage waere der naechste Schritt.
+     *
+     * @return array<string,string>
+     */
+    public function resolveTokens(int $customerId, array $access, array $encrypted): array
+    {
+        $deploy = $this->decryptOptional($customerId, $encrypted, 'deploy_token');
+        $health = $this->decryptOptional($customerId, $encrypted, 'health_token');
+        $setup  = $this->resolveSetupToken($customerId, $access, $encrypted) ?? $deploy;
+
+        return [
+            'setup'     => $setup,
+            'migration' => $deploy,
+            'health'    => $health,
+            'deploy'    => $deploy,
+        ];
+    }
+
+    /** Oeffentlicher Zugang zur Basis-URL des CMS (fuer Deploy und .env). */
+    public function resolveCmsBaseUrl(array $customer, array $access): ?string
+    {
+        return $this->baseUrl($customer, $access);
+    }
+
+    /** Basis-URL der oeffentlichen Website. */
+    public function resolveFrontendBaseUrl(array $customer, array $access): ?string
+    {
+        foreach (['health_frontend_url', 'canonical_base'] as $key) {
+            $value = trim((string)($access[$key] ?? ''));
+            if ($value !== '') {
+                return rtrim($value, '/');
+            }
+        }
+
+        $domain = trim((string)($customer['domain'] ?? ''));
+        if ($domain === '') {
+            return null;
+        }
+        if (!preg_match('#^https?://#i', $domain)) {
+            $domain = 'https://' . $domain;
+        }
+
+        return rtrim($domain, '/');
+    }
+
+    /** Pfadteil einer URL als Basis-Pfad, '' fuer Domain-Root. */
+    public static function basePathFromUrl(?string $url): string
+    {
+        if ($url === null || trim($url) === '') {
+            return '';
+        }
+        $path = parse_url(trim($url), PHP_URL_PATH);
+        if (!is_string($path)) {
+            return '';
+        }
+        $path = rtrim($path, '/');
+
+        return ($path === '' || $path === '/') ? '' : $path;
+    }
+
+    private function decryptOptional(int $customerId, array $encrypted, string $prefix): string
+    {
+        $enc = (string)($encrypted[$prefix . '_enc'] ?? '');
+        $nonce = (string)($encrypted[$prefix . '_nonce'] ?? '');
+        $tag = (string)($encrypted[$prefix . '_tag'] ?? '');
+        if ($enc === '' || $nonce === '' || $tag === '') {
+            return '';
+        }
+
+        try {
+            return trim(VaultCrypto::decrypt($enc, $nonce, $tag, 'cust:' . $customerId));
+        } catch (Throwable) {
+            return '';
+        }
     }
 
     public function provisionCustomer(array $customer, array $access, array $encrypted, callable $logger): void
