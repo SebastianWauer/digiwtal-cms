@@ -124,7 +124,7 @@ final class PagesController
         require_once $frontendView;
         if (!function_exists('render')) {
             http_response_code(500);
-            echo 'Frontend-Renderer nicht verfÃ¼gbar.';
+            echo 'Frontend-Renderer nicht verfügbar.';
             return;
         }
 
@@ -846,14 +846,14 @@ final class PagesController
         unset($_SESSION['flash']);
 
         \admin_layout_begin([
-            'title'    => 'GelÃ¶schte Seiten',
+            'title'    => 'Gelöschte Seiten',
             'theme'    => $theme,
             'active'   => 'pages',
             'user'     => $user,
             'next'     => '/pages',
             'pageCss'  => 'pages-list',
-            'headline' => 'GelÃ¶schte Seiten',
-            'subtitle' => 'Hier kannst du gelÃ¶schte Seiten wiederherstellen.',
+            'headline' => 'Gelöschte Seiten',
+            'subtitle' => 'Hier kannst du gelöschte Seiten wiederherstellen.',
         ]);
 
         require __DIR__ . '/../Views/pages_deleted.php';
@@ -867,11 +867,11 @@ final class PagesController
 
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-        // Neue Seite? => zusÃ¤tzlich pages.create benÃ¶tigen
+        // Neue Seite? => zusätzlich pages.create benötigen
         if ($id <= 0) {
             \admin_require_perm('pages.create');
         } else {
-            // Bearbeiten-Seite Ã¶ffnen ist "edit"
+            // Bearbeiten-Seite öffnen ist "edit"
             \admin_require_perm('pages.edit');
         }
 
@@ -926,7 +926,7 @@ final class PagesController
             $newsCategoryOptions = [];
         }
 
-        // SEO-Override (nur seitenspezifische Werte) fÃ¼r das Formular laden
+        // SEO-Override (nur seitenspezifische Werte) für das Formular laden
         $seoSvc      = new SeoService(new SeoRepositoryDb($_pdo), new SiteSettingsRepositoryDb($_pdo));
         $seoOverride = $id > 0 ? ($seoSvc->getForPage($id, $page)['_override'] ?? []) : [];
 
@@ -955,7 +955,7 @@ final class PagesController
 
     public function save(): void
     {
-        $user = \admin_require_perm('pages.view'); // Basis: darf Ã¼berhaupt Pages nutzen
+        $user = \admin_require_perm('pages.view'); // Basis: darf überhaupt Pages nutzen
         [$user, $theme, $_pdo, $repo, $svc] = $this->deps($user);
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -964,7 +964,7 @@ final class PagesController
             return;
         }
 
-        // âœ… CSRF prÃ¼fen (POST + Sideeffect)
+        // âœ… CSRF prüfen (POST + Sideeffect)
         \admin_verify_csrf();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -976,7 +976,7 @@ final class PagesController
             \admin_require_perm('pages.create');
         }
 
-        // Status-Ã„nderung ist separat
+        // Status-Änderung ist separat
         $postedStatus = (string)($_POST['status'] ?? 'live');
         if (!in_array($postedStatus, ['live', 'draft'], true)) $postedStatus = 'live';
 
@@ -1104,7 +1104,7 @@ final class PagesController
             ];
         }
 
-        // SEO-Override fÃ¼r die Formular-Wiederanzeige
+        // SEO-Override für die Formular-Wiederanzeige
         $seoOverride = $id2 > 0 ? ($seoSvc->getForPage($id2, is_array($page) ? $page : [])['_override'] ?? []) : [];
 
         \admin_layout_begin([
@@ -1183,7 +1183,7 @@ final class PagesController
             return;
         }
 
-        // âœ… CSRF prÃ¼fen
+        // âœ… CSRF prüfen
         \admin_verify_csrf();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -1195,7 +1195,7 @@ final class PagesController
 
     public function restore(): void
     {
-        // Restore hÃ¤ngt an delete
+        // Restore hängt an delete
         $user = \admin_require_perm('pages.delete');
         [$user, $_theme, $_pdo, $repo] = $this->deps($user);
 
@@ -1205,7 +1205,7 @@ final class PagesController
             return;
         }
 
-        // âœ… CSRF prÃ¼fen
+        // âœ… CSRF prüfen
         \admin_verify_csrf();
 
         $id = (int)($_POST['id'] ?? 0);
