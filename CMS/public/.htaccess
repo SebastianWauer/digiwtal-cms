@@ -2,6 +2,9 @@
 # Echte Dateien/Verzeichnisse (assets/, api.php, index.php, web.php, ...) werden
 # direkt ausgeliefert; alles andere geht an index.php (eigener Router in App\Http\Router).
 
+# Kein Verzeichnis-Listing, falls irgendwo ein DirectoryIndex fehlt.
+Options -Indexes
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
