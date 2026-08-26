@@ -51,6 +51,7 @@ final class SetupController
 
     private function redirect(string $url): void
     {
+        if (function_exists('cms_base_path')) $url = cms_base_path() . $url;
         header('Location: ' . $url);
         exit;
     }

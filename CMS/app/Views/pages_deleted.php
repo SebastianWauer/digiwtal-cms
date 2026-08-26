@@ -8,11 +8,11 @@ $canRestore = function_exists('admin_can') && admin_can('pages.delete'); // Rest
 ?>
 
 <div class="pages-actions">
-  <a class="btn btn--ghost" href="/pages">Zurück zu Seiten</a>
+  <a class="btn btn--ghost" href="<?= cms_base_path() ?>/pages">Zurück zu Seiten</a>
 
   <div class="pages-actions-right">
     <?php if ($deletedCount > 0 && $canRestore): ?>
-      <form method="post" action="/pages/purge" class="form-reset" onsubmit="return confirm('Papierkorb wirklich leeren?');">
+      <form method="post" action="<?= cms_base_path() ?>/pages/purge" class="form-reset" onsubmit="return confirm('Papierkorb wirklich leeren?');">
         <?= admin_csrf_field() ?>
         <button type="submit" class="btn btn--ghost btn--sm btn--danger">Papierkorb leeren</button>
       </form>
@@ -56,7 +56,7 @@ $canRestore = function_exists('admin_can') && admin_can('pages.delete'); // Rest
           <td class="pages-col-actions">
             <div class="pages-actions-inline">
               <?php if ($canRestore): ?>
-                <form method="post" action="/pages/restore" class="form-reset">
+                <form method="post" action="<?= cms_base_path() ?>/pages/restore" class="form-reset">
                   <?= admin_csrf_field() ?>
                   <input type="hidden" name="id" value="<?= (int)$id ?>">
                   <button type="submit" class="btn btn--ghost btn--badge btn--warn">Wiederherstellen</button>

@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CMS – Neues Passwort</title>
-  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin.css">
 </head>
 <body>
 <main class="container">
@@ -22,7 +22,7 @@
     </div>
   <?php endif; ?>
 
-  <form method="post" action="/password-reset/<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
+  <form method="post" action="<?= cms_base_path() ?>/password-reset/<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
     <?= admin_csrf_field() ?>
     <ul class="list">
       <li class="row">
@@ -37,7 +37,7 @@
           </label>
           <div class="actions">
             <button type="submit" class="btn">Passwort speichern</button>
-            <a href="/login" class="btn btn--ghost">Login</a>
+            <a href="<?= cms_base_path() ?>/login" class="btn btn--ghost">Login</a>
           </div>
         </div>
       </li>

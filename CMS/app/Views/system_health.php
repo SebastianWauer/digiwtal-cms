@@ -96,10 +96,10 @@ $topRoutes = $timingPer ? array_slice($timingPer, 0, 5) : [];
     <h3>Performance</h3>
 
     <div>
-      <form method="post" action="/system/health/reset">
+      <form method="post" action="<?= cms_base_path() ?>/system/health/reset">
         <?= admin_csrf_field() ?>
         <button type="submit" class="btn btn--ghost btn--danger">Messwerte zurücksetzen</button>
-        <a class="btn btn--ghost" href="/system/health/api" target="_blank" rel="noopener">Health-API (JSON)</a>
+        <a class="btn btn--ghost" href="<?= cms_base_path() ?>/system/health/api" target="_blank" rel="noopener">Health-API (JSON)</a>
       </form>
     </div>
 

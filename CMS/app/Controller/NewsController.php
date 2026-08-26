@@ -108,7 +108,7 @@ final class NewsController
         $name = trim((string)($_POST['name'] ?? ''));
         if ($id <= 0 || $name === '') {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Kategorie-ID und Name sind erforderlich.'];
-            header('Location: /news/categories');
+            header('Location: ' . cms_base_path() . '/news/categories');
             exit;
         }
 
@@ -116,7 +116,7 @@ final class NewsController
             $existing = $categories->findById($id);
             if (!is_array($existing)) {
                 $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Kategorie nicht gefunden.'];
-                header('Location: /news/categories');
+                header('Location: ' . cms_base_path() . '/news/categories');
                 exit;
             }
             $categories->update($id, $name);
@@ -125,7 +125,7 @@ final class NewsController
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Kategorie konnte nicht gespeichert werden: ' . $e->getMessage()];
         }
 
-        header('Location: /news/categories');
+        header('Location: ' . cms_base_path() . '/news/categories');
         exit;
     }
 
@@ -152,7 +152,7 @@ final class NewsController
                 'image_media_id' => null, 'is_published' => 1, 'published_at' => '', 'is_deleted' => 0,
             ];
         }
-        if (!empty($row['is_deleted'])) { header('Location: /news/deleted'); exit; }
+        if (!empty($row['is_deleted'])) { header('Location: ' . cms_base_path() . '/news/deleted'); exit; }
 
         \admin_layout_begin([
             'title' => 'News bearbeiten', 'theme' => $theme, 'active' => 'news', 'user' => $user,
@@ -185,7 +185,7 @@ final class NewsController
 
         if ($title === '') {
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Titel ist erforderlich.'];
-            header('Location: /news/edit' . ($id > 0 ? ('?id=' . $id) : ''));
+            header('Location: ' . cms_base_path() . '/news/edit' . ($id > 0 ? ('?id=' . $id) : ''));
             exit;
         }
         if ($slug === '') {
@@ -253,7 +253,7 @@ final class NewsController
         );
 
         $_SESSION['flash'] = ['type' => 'success', 'msg' => 'News gespeichert.'];
-        header('Location: /news');
+        header('Location: ' . cms_base_path() . '/news');
         exit;
     }
 
@@ -267,7 +267,7 @@ final class NewsController
             $news = new NewsRepositoryDb(\admin_pdo());
             $news->softDelete($id);
         }
-        header('Location: /news');
+        header('Location: ' . cms_base_path() . '/news');
         exit;
     }
 
@@ -281,7 +281,7 @@ final class NewsController
             $news = new NewsRepositoryDb(\admin_pdo());
             $news->restore($id);
         }
-        header('Location: /news/deleted');
+        header('Location: ' . cms_base_path() . '/news/deleted');
         exit;
     }
 
@@ -293,7 +293,7 @@ final class NewsController
         $news = new NewsRepositoryDb(\admin_pdo());
         $n = $news->purgeDeleted();
         $_SESSION['flash'] = ['type' => 'success', 'msg' => $n > 0 ? ('Papierkorb geleert (' . $n . ').') : 'Papierkorb ist bereits leer.'];
-        header('Location: /news/deleted');
+        header('Location: ' . cms_base_path() . '/news/deleted');
         exit;
     }
 }

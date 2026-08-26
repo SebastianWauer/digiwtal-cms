@@ -13,8 +13,8 @@ $h = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CMS Setup – Schritt 2</title>
-  <link rel="stylesheet" href="/assets/css/admin-layout.css">
-  <link rel="stylesheet" href="/assets/css/admin-components.css">
+  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin-layout.css">
+  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin-components.css">
   <style>
     body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg-page,#111); }
     .setup-card { background:var(--bg-card,#1e1e1e); border:1px solid var(--border,#333); border-radius:10px; padding:2.5rem; width:100%; max-width:520px; }
@@ -69,10 +69,10 @@ $h = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
   <hr class="setup-separator">
 
-  <form method="post" action="/setup/step2">
+  <form method="post" action="<?= cms_base_path() ?>/setup/step2">
     <?= admin_csrf_field() ?>
     <div class="setup-actions">
-      <a href="/setup" class="btn btn--ghost btn--sm">← Zurück</a>
+      <a href="<?= cms_base_path() ?>/setup" class="btn btn--ghost btn--sm">← Zurück</a>
       <button type="submit" class="btn btn--primary">Migrationen ausführen →</button>
     </div>
   </form>

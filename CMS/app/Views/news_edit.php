@@ -14,7 +14,7 @@ $isPublished = !empty($row['is_published']);
 $publishedAt = trim((string)($row['published_at'] ?? ''));
 $publishedAtInput = $publishedAt !== '' ? date('Y-m-d\TH:i', (int)strtotime($publishedAt)) : '';
 ?>
-<form method="post" action="/news/save" class="pages-edit-form">
+<form method="post" action="<?= cms_base_path() ?>/news/save" class="pages-edit-form">
   <?= $csrfField ?>
   <input type="hidden" name="id" value="<?= $id ?>">
   <div class="pages-edit-grid2">
@@ -43,6 +43,6 @@ $publishedAtInput = $publishedAt !== '' ? date('Y-m-d\TH:i', (int)strtotime($pub
   </div>
   <div class="pages-actions-inline" style="margin-top:1rem;">
     <button class="btn" type="submit">Speichern</button>
-    <a class="btn btn--ghost" href="/news">Zurueck</a>
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/news">Zurueck</a>
   </div>
 </form>

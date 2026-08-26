@@ -8,7 +8,7 @@ $pageCss = $pageCss ?? null;
 $css = function(string $rel) {
   $abs = \Paths::root('public/' . ltrim($rel, '/'));
   $v = is_file($abs) ? filemtime($abs) : time();
-  return '/' . ltrim($rel, '/') . '?v=' . $v;
+  return (function_exists('cms_base_path') ? cms_base_path() : '') . '/' . ltrim($rel, '/') . '?v=' . $v;
 };
 ?><!doctype html>
 <html lang="de">

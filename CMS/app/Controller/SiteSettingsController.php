@@ -97,7 +97,7 @@ final class SiteSettingsController
         $mus->syncSiteSettingsUsages($repo->getAll());
 
         $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Einstellungen gespeichert.'];
-        header('Location: /settings');
+        header('Location: ' . cms_base_path() . '/settings');
         exit;
     }
 }

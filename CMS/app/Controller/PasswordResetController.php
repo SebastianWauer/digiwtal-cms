@@ -12,6 +12,11 @@ final class PasswordResetController
     {
         $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
         if (!is_string($path)) return '';
+        $base = function_exists('cms_base_path') ? cms_base_path() : '';
+        if ($base !== '' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+            if ($path === '') $path = '/';
+        }
         if (preg_match('#^/password-reset/([A-Fa-f0-9]{64})$#', rtrim($path, '/'), $m)) {
             return (string)$m[1];
         }

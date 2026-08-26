@@ -72,6 +72,14 @@ final class Router
         if (!is_string($path) || $path === '') $path = '/';
         $path = $this->norm($path);
 
+        if (function_exists('cms_base_path')) {
+            $base = cms_base_path();
+            if ($base !== '' && str_starts_with($path, $base)) {
+                $path = substr($path, strlen($base));
+                $path = $this->norm($path === '' ? '/' : $path);
+            }
+        }
+
         // 1) Statische Routen haben Vorrang
         $target = $this->staticRoutes[$method][$path] ?? null;
 

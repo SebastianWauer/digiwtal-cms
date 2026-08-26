@@ -13,12 +13,12 @@ $yearOptions = is_array($availableYears ?? null) ? $availableYears : [];
 ?>
 <div class="pages-actions">
   <?php if ($canCreate): ?>
-    <a class="btn" href="/events/edit">Neues Event</a>
+    <a class="btn" href="<?= cms_base_path() ?>/events/edit">Neues Event</a>
   <?php endif; ?>
   <div class="pages-actions-right">
-    <a class="btn btn--ghost" href="/events/categories">Kategorien</a>
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/events/categories">Kategorien</a>
 
-    <form method="get" action="/events" class="form-reset" style="display:flex;gap:.5rem;align-items:center;">
+    <form method="get" action="<?= cms_base_path() ?>/events" class="form-reset" style="display:flex;gap:.5rem;align-items:center;">
       <select class="pages-edit-input" name="category_id" style="min-width:220px;">
         <option value="0">Alle Kategorien</option>
         <?php foreach ($allCategories as $cat): ?>
@@ -38,7 +38,7 @@ $yearOptions = is_array($availableYears ?? null) ? $availableYears : [];
     </form>
 
     <?php if (($deletedCount ?? 0) > 0): ?>
-      <a class="btn btn--ghost" href="/events/deleted">Gelöschte Events (<?= (int)$deletedCount ?>)</a>
+      <a class="btn btn--ghost" href="<?= cms_base_path() ?>/events/deleted">Gelöschte Events (<?= (int)$deletedCount ?>)</a>
     <?php endif; ?>
   </div>
 </div>
@@ -97,9 +97,9 @@ $yearOptions = is_array($availableYears ?? null) ? $availableYears : [];
         </td>
         <td class="pages-col-actions">
           <div class="pages-actions-inline">
-            <?php if ($canEdit): ?><a class="btn btn--ghost btn--badge btn--warn" href="/events/edit?id=<?= $id ?>">Bearbeiten</a><?php endif; ?>
+            <?php if ($canEdit): ?><a class="btn btn--ghost btn--badge btn--warn" href="<?= cms_base_path() ?>/events/edit?id=<?= $id ?>">Bearbeiten</a><?php endif; ?>
             <?php if ($canDelete): ?>
-              <form method="post" action="/events/delete" class="form-reset">
+              <form method="post" action="<?= cms_base_path() ?>/events/delete" class="form-reset">
                 <?= $csrfField ?>
                 <input type="hidden" name="id" value="<?= $id ?>">
                 <button type="submit" class="btn btn--ghost btn--badge btn--danger">Löschen</button>

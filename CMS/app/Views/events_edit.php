@@ -21,7 +21,7 @@ $isPublished = !empty($row['is_published']);
 $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 ?>
 
-<form method="post" action="/events/save" class="pages-edit-form events-edit-form" id="eventEditForm">
+<form method="post" action="<?= cms_base_path() ?>/events/save" class="pages-edit-form events-edit-form" id="eventEditForm">
   <?= $csrfField ?>
   <input type="hidden" name="id" value="<?= (int)$id ?>">
 
@@ -151,7 +151,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 
       <div class="pages-edit-actionsbar">
         <button type="submit" class="btn">Speichern</button>
-        <a class="btn btn--ghost" href="/events">Zurück</a>
+        <a class="btn btn--ghost" href="<?= cms_base_path() ?>/events">Zurück</a>
       </div>
     </section>
 
@@ -244,7 +244,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 
           <div class="events-edit-links-actions">
             <button class="btn btn--ghost events-edit-link-add" type="button" data-link-add="<?= $cid ?>">+ Eintrag hinzufügen</button>
-            <a class="btn btn--ghost" href="/media" target="_blank" rel="noopener">Medien öffnen</a>
+            <a class="btn btn--ghost" href="<?= cms_base_path() ?>/media" target="_blank" rel="noopener">Medien öffnen</a>
           </div>
         </div>
       </div>

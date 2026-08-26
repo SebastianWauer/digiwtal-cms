@@ -47,7 +47,9 @@ declare(strict_types=1);
     exit;
 })();
 
-require __DIR__ . '/../app/bootstrap.php';
+$__appRoot = getenv('CMS_APP_ROOT');
+$__appRoot = ($__appRoot !== false && $__appRoot !== '') ? rtrim($__appRoot, '/') : (__DIR__ . '/..');
+require $__appRoot . '/app/bootstrap.php';
 
 // Nur GET erlaubt
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {

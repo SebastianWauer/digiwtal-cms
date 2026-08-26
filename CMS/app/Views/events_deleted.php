@@ -5,9 +5,9 @@ echo flash_render($flash ?? null);
 $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
 ?>
 <div class="pages-actions">
-  <a class="btn btn--ghost" href="/events">Zurück zu Events</a>
+  <a class="btn btn--ghost" href="<?= cms_base_path() ?>/events">Zurück zu Events</a>
   <div class="pages-actions-right">
-    <form method="post" action="/events/purge" class="form-reset" onsubmit="return confirm('Papierkorb wirklich leeren?');">
+    <form method="post" action="<?= cms_base_path() ?>/events/purge" class="form-reset" onsubmit="return confirm('Papierkorb wirklich leeren?');">
       <?= $csrfField ?>
       <button type="submit" class="btn btn--ghost btn--danger">Papierkorb leeren</button>
     </form>
@@ -52,7 +52,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
         <td><?= $dateLabel ?></td>
         <td><?= $cat !== '' ? h($cat) : '<span class="pages-hint">ohne Kategorie</span>' ?></td>
         <td class="pages-col-actions">
-          <form method="post" action="/events/restore" class="form-reset">
+          <form method="post" action="<?= cms_base_path() ?>/events/restore" class="form-reset">
             <?= $csrfField ?>
             <input type="hidden" name="id" value="<?= $id ?>">
             <button type="submit" class="btn btn--ghost btn--warn btn--badge">Wiederherstellen</button>

@@ -201,7 +201,7 @@ final class FormSubmissionsController
         $id = (int)($_POST['id'] ?? 0);
         $nextStatus = self::normalizeStatus((string)($_POST['status'] ?? 'open'));
         if ($id <= 0) {
-            header('Location: /forms/submissions');
+            header('Location: ' . cms_base_path() . '/forms/submissions');
             exit;
         }
 
