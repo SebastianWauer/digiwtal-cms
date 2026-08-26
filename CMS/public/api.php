@@ -1453,6 +1453,23 @@ if (preg_match('/^\/media\/(.+)$/', $sub, $m)) {
     );
     $stmt->execute([':id' => $mediaId]);
     $row = $stmt->fetch();
+
+    // Fallback: Frontend fragt fuer die Startseite immer "home" ab; die Startseite
+    // selbst kann aber mit Slug "/" gepflegt sein (is_home=1). Dann darueber matchen.
+    if (!is_array($row) && strtolower($slugRaw) === 'home') {
+        $stmtHome = $pdo->prepare("
+            SELECT
+                p.id, p.slug, p.title, p.frontend_title, p.subtitle,
+                sm.meta_title, sm.meta_description, p.content_json, p.updated_at
+            FROM pages p
+            LEFT JOIN seo_meta sm
+                ON sm.entity_type = 'page' AND sm.entity_id = p.id
+            WHERE p.is_home = 1 AND p.is_deleted = 0 AND p.status = 'live'
+            LIMIT 1
+        ");
+        $stmtHome->execute();
+        $row = $stmtHome->fetch();
+    }
     if (!is_array($row)) {
         json_response(['ok' => false, 'error' => 'not_found'], 404);
     }
