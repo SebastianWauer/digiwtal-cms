@@ -7,7 +7,7 @@ CREATE TABLE `roles` (
   `name` VARCHAR(190) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_roles_key` (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -18,7 +18,7 @@ CREATE TABLE `users` (
   `updated_at` DATETIME NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_users_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_roles` (
   `user_id` BIGINT UNSIGNED NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE `user_roles` (
   PRIMARY KEY (`user_id`, `role_id`),
   CONSTRAINT `fk_user_roles_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_user_roles_role` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `login_attempts` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -38,7 +38,7 @@ CREATE TABLE `login_attempts` (
   PRIMARY KEY (`id`),
   KEY `idx_login_attempts_username` (`username`),
   KEY `idx_login_attempts_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `login_audit` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -52,7 +52,7 @@ CREATE TABLE `login_audit` (
   KEY `idx_login_audit_user_id` (`user_id`),
   KEY `idx_login_audit_created_at` (`created_at`),
   CONSTRAINT `fk_login_audit_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `login_tokens` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -65,7 +65,7 @@ CREATE TABLE `login_tokens` (
   KEY `idx_login_tokens_user_id` (`user_id`),
   KEY `idx_login_tokens_expires_at` (`expires_at`),
   CONSTRAINT `fk_login_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Seed: Rollen
 INSERT INTO `roles` (`key`, `name`) VALUES

@@ -16,4 +16,4 @@ CREATE TABLE `navigation_items` (
   PRIMARY KEY (`id`),
   KEY `idx_nav_enabled` (`enabled`),
   KEY `idx_nav_sort` (`sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

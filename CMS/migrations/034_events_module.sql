@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `event_categories` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_event_categories_slug` (`slug`),
   KEY `idx_event_categories_active` (`is_deleted`, `sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `events` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   KEY `idx_events_category` (`category_id`),
   CONSTRAINT `fk_events_category` FOREIGN KEY (`category_id`) REFERENCES `event_categories`(`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_events_image_media` FOREIGN KEY (`image_media_id`) REFERENCES `media_items`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `permissions` (`key`,`label`,`group_key`) VALUES
 ('events.view','Events sehen','events'),
