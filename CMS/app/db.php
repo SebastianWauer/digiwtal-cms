@@ -116,6 +116,42 @@ function db_migration_files(): array
     return $files;
 }
 
+/**
+ * Legt die Statustabelle an, falls sie fehlt.
+ *
+ * Einziger Ort, an dem das Schema von schema_migrations definiert wird -
+ * frueher existierte in scripts/migrate.php eine zweite, unvertraegliche
+ * Definition mit der Spalte `version` statt `id`.
+ */
+function db_ensure_migrations_table(PDO $pdo): void
+{
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            id VARCHAR(190) NOT NULL,
+            applied_at DATETIME NOT NULL,
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+}
+
+/**
+ * Liefert die bereits angewendeten Migrations-IDs.
+ *
+ * @return array<string, true>
+ */
+function db_applied_migrations(PDO $pdo): array
+{
+    $applied = [];
+    $rows = $pdo->query("SELECT id FROM schema_migrations")->fetchAll();
+    if (is_array($rows)) {
+        foreach ($rows as $r) {
+            if (!is_array($r)) continue;
+            $applied[(string)($r['id'] ?? '')] = true;
+        }
+    }
+    return $applied;
+}
+
 function db_apply_migration(PDO $pdo, string $id, string $sql): void
 {
     $parts = preg_split('/;\s*(\r\n|\r|\n)/', $sql);
@@ -209,14 +245,7 @@ function db_migrate_if_needed(): void
 
     $pdo = db();
 
-    // Ensure schema_migrations exists (stable collation)
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS schema_migrations (
-            id VARCHAR(190) NOT NULL,
-            applied_at DATETIME NOT NULL,
-            PRIMARY KEY (id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    db_ensure_migrations_table($pdo);
 
     $applied = [];
     $rows = $pdo->query("SELECT id FROM schema_migrations")->fetchAll();

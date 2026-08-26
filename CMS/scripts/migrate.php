@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 /**
  * scripts/migrate.php
- * CLI-only Migrations Runner:
- * - runs /migrations/*.sql in natural order
- * - tracks applied migrations in schema_migrations
- * - applies each migration exactly once
+ * CLI-Migrations-Runner.
  *
- * Run:
- *   php scripts/migrate.php
+ * Duenne Huelle um die Funktionen aus app/db.php - bewusst ohne eigene
+ * DB-Verbindung und ohne eigene Definition von schema_migrations. Frueher
+ * brachte dieses Skript beides selbst mit: eine Konfigurationslogik, die
+ * andere Schluessel las als config/db.php liefert (deshalb war es gar nicht
+ * lauffaehig), und eine Statustabelle mit der Spalte `version` statt `id`.
+ * Wer beide Runner benutzte, bekam "Unknown column".
+ *
+ * Aufruf:
+ *   php scripts/migrate.php            zeigt offene Migrationen und wendet sie an
+ *   php scripts/migrate.php --dry-run  zeigt nur, was anstehen wuerde
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -18,109 +23,67 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $root = realpath(__DIR__ . '/..');
-if ($root === false) {
-    fwrite(STDERR, "Cannot resolve project root.\n");
+if ($root === false || !is_file($root . '/app/bootstrap.php')) {
+    fwrite(STDERR, "Projektwurzel nicht auffindbar (app/bootstrap.php fehlt).\n");
     exit(1);
 }
 
-$cfgPath = $root . '/config/db.php';
-if (!is_file($cfgPath)) {
-    fwrite(STDERR, "Missing config/db.php\n");
-    exit(1);
-}
+require_once $root . '/app/bootstrap.php';
 
-$cfg = require $cfgPath;
-if (!is_array($cfg)) {
-    fwrite(STDERR, "config/db.php must return an array.\n");
-    exit(1);
-}
-
-$host    = (string)($cfg['host'] ?? '127.0.0.1');
-$port    = (int)($cfg['port'] ?? 3306);
-$db      = (string)($cfg['database'] ?? '');
-$user    = (string)($cfg['username'] ?? '');
-$pass    = (string)($cfg['password'] ?? '');
-$charset = (string)($cfg['charset'] ?? 'utf8mb4');
-
-if ($db === '' || $user === '') {
-    fwrite(STDERR, "config/db.php missing database/username.\n");
-    exit(1);
-}
-
-$dsn = "mysql:host={$host};port={$port};dbname={$db};charset={$charset}";
+$dryRun = in_array('--dry-run', $argv, true);
 
 try {
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-} catch (PDOException $e) {
-    fwrite(STDERR, "DB connect failed: " . $e->getMessage() . "\n");
-    fwrite(STDERR, "Hint: Run this on the SERVER where the DB host is reachable.\n");
+    $pdo = db();
+} catch (Throwable $e) {
+    fwrite(STDERR, "DB-Verbindung fehlgeschlagen: " . $e->getMessage() . "\n");
+    fwrite(STDERR, "Hinweis: .env pruefen (DB_HOST, DB_NAME, DB_USER, DB_PASS).\n");
     exit(1);
 }
 
-// 1) schema_migrations (stable collation)
-$pdo->exec("
-  CREATE TABLE IF NOT EXISTS schema_migrations (
-    version VARCHAR(190) NOT NULL,
-    applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (version)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-");
+db_ensure_migrations_table($pdo);
+$applied = db_applied_migrations($pdo);
 
-// 2) read applied
-$applied = [];
-$stmt = $pdo->query("SELECT version FROM schema_migrations");
-foreach ($stmt->fetchAll() as $row) {
-    $applied[(string)$row['version']] = true;
+$pending = [];
+foreach (db_migration_files() as $file) {
+    if (!isset($applied[basename($file)])) {
+        $pending[] = $file;
+    }
 }
 
-// 3) collect migration files
-$migrationsDir = $root . '/migrations';
-if (!is_dir($migrationsDir)) {
-    fwrite(STDERR, "Missing migrations/ directory.\n");
-    exit(1);
-}
-
-$files = glob($migrationsDir . '/*.sql');
-if ($files === false) $files = [];
-sort($files, SORT_NATURAL);
-
-if (!$files) {
-    echo "No migrations found.\n";
+if ($pending === []) {
+    echo "Keine offenen Migrationen (" . count($applied) . " bereits angewendet).\n";
     exit(0);
 }
 
+echo count($pending) . " offene Migration(en):\n";
+foreach ($pending as $file) {
+    echo "  - " . basename($file) . "\n";
+}
+
+if ($dryRun) {
+    echo "\n--dry-run: nichts angewendet.\n";
+    exit(0);
+}
+
+echo "\n";
 $ran = 0;
-
-foreach ($files as $file) {
-    $version = basename($file);
-
-    if (isset($applied[$version])) {
-        continue;
-    }
-
+foreach ($pending as $file) {
+    $id  = basename($file);
     $sql = file_get_contents($file);
-    if ($sql === false) {
-        fwrite(STDERR, "Cannot read migration: {$version}\n");
+    if (!is_string($sql) || trim($sql) === '') {
+        fwrite(STDERR, "Migration leer oder nicht lesbar: {$id}\n");
         exit(1);
     }
 
-    $sql = trim($sql);
-
-    echo "Applying: {$version}\n";
-
-    if ($sql !== '') {
-        // ALTER TABLE etc. should be executed directly (no transaction)
-        $pdo->exec($sql);
+    echo "Anwenden: {$id}\n";
+    try {
+        db_apply_migration($pdo, $id, $sql);
+    } catch (Throwable $e) {
+        fwrite(STDERR, "\n" . $e->getMessage() . "\n");
+        fwrite(STDERR, "Abgebrochen nach {$ran} erfolgreichen Migration(en).\n");
+        exit(1);
     }
-
-    $ins = $pdo->prepare("INSERT INTO schema_migrations (version) VALUES (:v)");
-    $ins->execute([':v' => $version]);
-
-    echo "Applied:  {$version}\n\n";
     $ran++;
 }
 
-echo "Done. Ran {$ran} migration(s).\n";
+echo "\n{$ran} Migration(en) angewendet.\n";
