@@ -1,0 +1,37 @@
+# Front-Controller-Routing für das Frontend.
+#
+# Das Document Root zeigt direkt auf dieses Verzeichnis. Damit liegen .env,
+# app/, templates/ und themes/ im Web-Pfad und muessen ausdruecklich gesperrt
+# werden - sonst ist die .env mit CMS_API_TOKEN oeffentlich abrufbar.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1) Nicht ausliefern: Konfiguration, Anwendungscode, Templates, Themes,
+  #    Laufzeitdaten. Muss VOR der Datei-Weiche stehen, weil .env eine
+  #    existierende Datei ist und sonst direkt ausgeliefert wuerde.
+  RewriteRule (^|/)\.env(\.|$) - [F,L]
+  RewriteRule ^(app|templates|themes|storage)/ - [F,L]
+  RewriteRule (^|/)\.(git|ht) - [F,L]
+
+  # 2) Echte Dateien und Verzeichnisse direkt ausliefern (assets/ usw.)
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 3) Alles andere an den Front-Controller
+  RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Zweiter Riegel, falls mod_rewrite einmal fehlt.
+<FilesMatch "^\.env">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

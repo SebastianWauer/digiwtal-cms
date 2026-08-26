@@ -33,7 +33,9 @@ composer
 upload.sh
 
 # Webserver overrides
-.htaccess
+# .htaccess ist bewusst NICHT ignoriert: die Rewrite-Regeln sind Produktcode
+# und muessen mit dem Code mitreisen. Installationsspezifische Werte gehoeren
+# in die .env bzw. in eine .htaccess oberhalb des deployten Verzeichnisses.
 *.user.ini
 
 # Local certs / debug helpers
