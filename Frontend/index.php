@@ -100,7 +100,7 @@ function renderErrorPage(int $statusCode, string $siteName, string $title, strin
     header('Pragma: no-cache');
 
     $pageTitle = $title;
-    $fullTitle = $title . ' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ' . $siteName;
+    $fullTitle = $title . ' – ' . $siteName;
     $slug = 'error';
     $navItems = [];
     $blocks = [
@@ -132,7 +132,7 @@ function render404(string $siteName = 'Website'): never {
     renderErrorPage(
         404,
         $siteName,
-        '404 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Seite nicht gefunden',
+        '404 – Seite nicht gefunden',
         'Die angeforderte Seite existiert nicht oder wurde verschoben.'
     );
 }
@@ -141,8 +141,8 @@ function render500(string $siteName = 'Website'): never {
     renderErrorPage(
         500,
         $siteName,
-        '500 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Interner Serverfehler',
-        'Der Server ist momentan nicht erreichbar. Bitte versuche es spÃƒÆ’Ã‚Â¤ter erneut.'
+        '500 – Interner Serverfehler',
+        'Der Server ist momentan nicht erreichbar. Bitte versuche es später erneut.'
     );
 }
 
@@ -790,7 +790,7 @@ function enrichBlockFocusWithMedia(array $blocks, CmsApiClient $client, string $
                 if (!isset($value[$targetField]) || (string)$value[$targetField] === '') {
                     $value[$targetField] = $mediaUrl;
                 }
-                // Bei Image-Blocks mit media_id zusÃƒÆ’Ã‚Â¤tzlich "url" setzen.
+                // Bei Image-Blocks mit media_id zusätzlich "url" setzen.
                 if ($key === 'media_id' && (!isset($value['url']) || (string)$value['url'] === '')) {
                     $value['url'] = $mediaUrl;
                 }
