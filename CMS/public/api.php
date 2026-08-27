@@ -1502,7 +1502,8 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
             FROM pages p
             LEFT JOIN seo_meta sm
                 ON sm.entity_type = 'page' AND sm.entity_id = p.id
-            WHERE p.is_home = 1 AND p.is_deleted = 0 AND p.status = 'live'
+            WHERE (p.is_home = 1 OR p.slug = '/') AND p.is_deleted = 0 AND p.status = 'live'
+            ORDER BY p.is_home DESC
             LIMIT 1
         ");
         $stmtHome->execute();

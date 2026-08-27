@@ -219,9 +219,13 @@ class CmsProvisioningService
                 return false;
             }
 
+            // Die API haengt hinter api.php - genau wie CMS_API_URL im Frontend
+            // (".../api.php/api/v1"). Ein Aufruf von /api/setup/init landet beim
+            // Admin-Front-Controller index.php und damit auf 404; die
+            // Provisionierung fiel deshalb immer in den direkten DB-Weg.
             $init = $this->httpRequest(
                 'POST',
-                $baseUrl . '/api/setup/init',
+                $baseUrl . '/api.php/api/setup/init',
                 [],
                 $cookieFile,
                 ['X-Setup-Token: ' . $setupToken, 'Accept: application/json']
@@ -272,7 +276,26 @@ class CmsProvisioningService
                 return false;
             }
 
-            $logger('[PROVISION] Remote-Setup erfolgreich abgeschlossen.');
+            // Nachweis statt Vermutung: Die Setup-Schritte antworten auch im
+            // Fehlerfall mit 302 - step2 leitet bei fehlgeschlagenen Migrationen
+            // auf sich selbst zurueck. Wer nur den Status prueft, meldet Erfolg
+            // und hinterlaesst eine leere Installation. /api/setup/init liefert
+            // 409, sobald das CMS wirklich installiert ist; alles andere heisst,
+            // dass der Assistent nicht durchgelaufen ist.
+            $verify = $this->httpRequest(
+                'POST',
+                $baseUrl . '/api.php/api/setup/init',
+                [],
+                $cookieFile,
+                ['X-Setup-Token: ' . $setupToken, 'Accept: application/json']
+            );
+            if ($verify['status'] !== 409) {
+                $logger('[PROVISION] Setup meldete keinen Fehler, die Installation ist aber nicht abgeschlossen '
+                    . '(Pruefung lieferte HTTP ' . $verify['status'] . ' statt 409).');
+                return false;
+            }
+
+            $logger('[PROVISION] Remote-Setup erfolgreich abgeschlossen und geprueft.');
             return true;
         } catch (Throwable $e) {
             $logger('[PROVISION] Remote-Setup Exception: ' . $e->getMessage());

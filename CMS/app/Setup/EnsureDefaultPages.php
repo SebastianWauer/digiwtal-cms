@@ -24,8 +24,8 @@ final class EnsureDefaultPages
         if (!is_array($seed) || count($seed) === 0) return;
 
         $stmt = $pdo->prepare("
-            INSERT INTO pages (slug, title, content_json, is_deleted, deleted_at)
-            VALUES (:slug, :title, :content, 0, NULL)
+            INSERT INTO pages (slug, title, content_json, is_home, is_deleted, deleted_at)
+            VALUES (:slug, :title, :content, :is_home, 0, NULL)
         ");
 
         $pdo->beginTransaction();
@@ -46,6 +46,7 @@ final class EnsureDefaultPages
                     ':slug' => $slug,
                     ':title' => $title,
                     ':content' => $json,
+                    ':is_home' => ($p['slug'] ?? '') === '/' ? 1 : 0, // die Seite mit Slug "/" ist die Startseite
                 ]);
             }
             $pdo->commit();

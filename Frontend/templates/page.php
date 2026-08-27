@@ -5,6 +5,8 @@ $blocksList = is_array($blocks ?? null) ? $blocks : [];
 $contactFormStates = is_array($contactFormStates ?? null) ? $contactFormStates : [];
 $contactTurnstileSiteKey = (isset($contactTurnstileSiteKey) && is_string($contactTurnstileSiteKey)) ? trim($contactTurnstileSiteKey) : '';
 $publicSettings = is_array($publicSettings ?? null) ? $publicSettings : [];
+$client = $client ?? null; // nicht jeder Render-Pfad reicht ihn durch (z.B. Fehlerseiten)
+
 $currentSlug = trim((string)($slug ?? ''), '/');
 $headingRendered = false;
 
