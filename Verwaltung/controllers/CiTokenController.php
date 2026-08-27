@@ -14,7 +14,8 @@ class CiTokenController
     public function __construct(
         private CiTokenRepository $ciTokens,
         private CustomerRepository $customerRepo,
-        private AuditLogger $audit
+        private AuditLogger $audit,
+        private HealthMonitor $monitor
     ) {}
 
     public function index(): void
@@ -30,12 +31,70 @@ class CiTokenController
             'branch'   => (string)(getenv('GITHUB_BRANCH') ?: 'main'),
             'token_da' => trim((string)(getenv('GITHUB_TOKEN') ?: '')) !== '',
         ];
+        $cronScript = realpath(dirname(__DIR__) . '/scripts/health_check.php');
+        $cronInfo = [
+            'path'       => is_string($cronScript) ? $cronScript : dirname(__DIR__) . '/scripts/health_check.php',
+            'exists'     => is_string($cronScript) && is_file($cronScript),
+            'executable' => is_string($cronScript) && is_executable($cronScript),
+            'php_binary' => PHP_BINARY,
+            'php_sapi'   => PHP_SAPI,
+        ];
         $success  = $_SESSION['flash_success'] ?? null;
         $errors   = $_SESSION['flash_errors'] ?? [];
         $newToken = $_SESSION['flash_new_token'] ?? null;
         unset($_SESSION['flash_success'], $_SESSION['flash_errors'], $_SESSION['flash_new_token']);
 
         require __DIR__ . '/../views/ci/index.php';
+    }
+
+    /** Fuehrt einen Health-Lauf direkt aus der angemeldeten Verwaltung aus. */
+    public function runHealth(): void
+    {
+        AdminAuth::requireAuth();
+        if (!Csrf::verify($_POST['csrf_token'] ?? '')) {
+            $_SESSION['flash_errors'] = ['CSRF token invalid'];
+            $this->back();
+        }
+
+        $recorded = 0;
+        $skipped  = [];
+        $targets  = $this->monitor->targets();
+
+        foreach ($targets as $target) {
+            try {
+                $cms = HealthMonitor::probeCms((string)$target['cms_url'], (string)$target['token']);
+                $frontend = HealthMonitor::probeFrontend((string)$target['frontend_url']);
+                $result = $this->monitor->evaluate($cms, $frontend, 'manual');
+                $this->monitor->record((int)$target['id'], (string)$target['name'], $result, 'manual');
+                $recorded++;
+            } catch (Throwable $e) {
+                $customerId = (int)($target['id'] ?? 0);
+                FileLogger::channel('verwaltung')->error(
+                    '[HC] manual_run_failed customer_id=' . $customerId . ' err=' . $e->getMessage()
+                );
+                $skipped[] = $customerId;
+            }
+        }
+
+        try {
+            $this->monitor->noteRun('manual', $recorded, 'admin: ' . (string)($_SESSION['admin_email'] ?? ''));
+        } catch (Throwable $e) {
+            $_SESSION['flash_errors'] = ['Prüflauf beendet, aber das Lebenszeichen konnte nicht gespeichert werden.'];
+            $this->back();
+        }
+
+        $this->audit->log(
+            'health.manual_run',
+            'health',
+            null,
+            'gespeichert: ' . $recorded . ', uebersprungen: ' . count($skipped)
+        );
+
+        $_SESSION['flash_success'] = 'Prüflauf abgeschlossen: ' . $recorded . ' Instanz(en) gespeichert.';
+        if ($skipped !== []) {
+            $_SESSION['flash_errors'] = ['Nicht prüfbare Kunden-IDs: ' . implode(', ', $skipped)];
+        }
+        $this->back();
     }
 
     public function store(): void

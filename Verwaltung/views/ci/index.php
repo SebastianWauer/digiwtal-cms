@@ -32,6 +32,33 @@ ob_start();
     <?php endif; ?>
 
     <section class="surface">
+        <h2 class="section-title">Monitoring-Diagnose</h2>
+        <p class="section-copy">Diesen vom Server ermittelten Pfad ohne weitere Argumente in den IONOS-Cronjob eintragen:</p>
+        <code class="code-block"><?php echo htmlspecialchars((string)$cronInfo['path'], ENT_QUOTES); ?></code>
+        <dl class="detail-grid">
+            <div class="detail-item">
+                <dt class="detail-item__label">Datei</dt>
+                <dd class="detail-item__value"><?php echo $cronInfo['exists'] ? 'vorhanden' : 'fehlt'; ?></dd>
+            </div>
+            <div class="detail-item">
+                <dt class="detail-item__label">Ausführbar</dt>
+                <dd class="detail-item__value"><?php echo $cronInfo['executable'] ? 'ja' : 'nein'; ?></dd>
+            </div>
+            <div class="detail-item">
+                <dt class="detail-item__label">Web-PHP</dt>
+                <dd class="detail-item__value mono"><?php echo htmlspecialchars(
+                    (string)$cronInfo['php_binary'] . ' · ' . (string)$cronInfo['php_sapi'],
+                    ENT_QUOTES
+                ); ?></dd>
+            </div>
+        </dl>
+        <form method="post" action="/admin/ci/health-run">
+            <?php echo Csrf::field(); ?>
+            <button class="btn btn--primary btn--sm" type="submit">Prüflauf jetzt</button>
+        </form>
+    </section>
+
+    <section class="surface">
         <h2 class="section-title">Rollout starten</h2>
         <?php if (!$github['token_da'] || $github['repo'] === ''): ?>
             <p class="section-copy">Damit dieser Knopf funktioniert, brauchen die Verwaltung folgende Werte in ihrer
