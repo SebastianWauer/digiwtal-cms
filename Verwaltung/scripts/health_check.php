@@ -1,3 +1,4 @@
+#!/usr/bin/php8.4
 <?php
 declare(strict_types=1);
 
@@ -17,6 +18,9 @@ require_once dirname(__DIR__) . '/app/VaultCrypto.php';
 require_once dirname(__DIR__) . '/repositories/PushSubscriptionRepository.php';
 require_once dirname(__DIR__) . '/services/PushService.php';
 require_once dirname(__DIR__) . '/services/HealthMonitor.php';
+
+$cronLog = FileLogger::channel('health-cron');
+$cronLog->info('[HC] start sapi=' . PHP_SAPI . ' php=' . PHP_VERSION);
 
 $debug = (getenv('HC_DEBUG') === '1');
 $log = static function (string $line) use ($debug): void {
@@ -38,6 +42,7 @@ try {
     // Ohne Datenbank ist kein Lauf moeglich - und ohne diese Zeile im Log
     // sieht ein toter Cron aus wie ein gesunder Kunde.
     FileLogger::channel('verwaltung')->error('[HC] db_connect_failed: ' . $e->getMessage());
+    $cronLog->error('[HC] db_connect_failed: ' . $e->getMessage());
     exit(1);
 }
 
@@ -73,4 +78,5 @@ try {
 }
 
 $log('complete geprueft=' . $geprueft);
+$cronLog->info('[HC] complete geprueft=' . $geprueft);
 exit(0);

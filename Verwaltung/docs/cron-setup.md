@@ -14,17 +14,18 @@ laeuft die andere weiter - und das Dashboard sagt es, wenn beide schweigen.
 ### Empfohlen: ausfuehrbarer Pfad in der IONOS-Cronverwaltung
 
 Die IONOS-Eingabevalidierung akzeptiert je nach Vertrag nur einen Pfad aus
-Buchstaben, Zahlen, Bindestrich, Unterstrich, Punkt und Schraegstrich. Deshalb
-steht ein ausfuehrbarer Wrapper ohne Argumente bereit:
+Buchstaben, Zahlen, Bindestrich, Unterstrich, Punkt und Schraegstrich. Das
+PHP-Skript ist deshalb selbst ausfuehrbar und enthaelt den PHP-8.4-Interpreter:
 
 ```cron
-*/5 * * * * /home/www/Verwaltung/scripts/health-cron.sh
+*/5 * * * * /home/www/Verwaltung/scripts/health_check.php
 ```
 
-Der Wrapper startet PHP 8.4 und schreibt dessen Ausgabe nach
+Bei jedem Start schreibt das Skript ein Lebenszeichen nach
 `/home/www/storage/logs/health-cron.log`. Im IONOS-Formular wird nur der Pfad
 ohne vorangestellten Cron-Ausdruck eingetragen; das Intervall hat ein eigenes
-Feld.
+Feld. `health-cron.sh` bleibt als Alternative fuer Cron-Umgebungen bestehen,
+die Shellskripte direkt starten.
 
 ### Alternative: geschuetzter HTTP-Aufruf
 
