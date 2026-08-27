@@ -147,6 +147,11 @@ $router->post('/settings/instagram/disconnect', \App\Controller\InstagramControl
 
 $router->get('/changelog', \App\Controller\ChangelogController::class, 'show');
 
+// Hilfe: Meldungen an die Verwaltung, Antworten zurueck. Kein eigenes
+// Recht - wer sich anmelden kann, darf um Hilfe bitten.
+$router->get('/hilfe', \App\Controller\HelpController::class, 'show');
+$router->post('/hilfe', \App\Controller\HelpController::class, 'submit');
+
 /**
  * Setup-Wizard (nur wenn nicht installiert)
  */

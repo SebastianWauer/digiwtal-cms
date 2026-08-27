@@ -191,6 +191,16 @@ function sidebar_render(array $params): void
           </a>
         <?php endif; ?>
 
+        <a class="nav__item <?= $isActive('help') ?>" href="<?= cms_base_path() ?>/hilfe">
+          <span class="nav__icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M12 16.8h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </span><span>Hilfe</span>
+        </a>
+
         <a class="nav__item <?= $isActive('changelog') ?>" href="<?= cms_base_path() ?>/changelog">
           <span class="nav__icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
