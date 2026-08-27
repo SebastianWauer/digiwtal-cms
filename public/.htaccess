@@ -14,6 +14,9 @@ Options -Indexes
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+  # Die Sitemap wird vom separaten Frontend-Einstiegspunkt erzeugt.
+  RewriteRule ^sitemap\.xml$ web.php [QSA,L]
+
   RewriteRule ^ index.php [QSA,L]
 </IfModule>
 

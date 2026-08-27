@@ -120,6 +120,13 @@ function validate_hex_color(string $color, string $default): string
     return $default;
 }
 
+/** Erzeugt einen oeffentlichen CMS-Pfad inklusive optionalem Basis-Pfad. */
+function api_cms_path(string $path): string
+{
+    $base = function_exists('cms_base_path') ? cms_base_path() : '';
+    return $base . '/' . ltrim($path, '/');
+}
+
 /**
  * Liest die öffentlichen Brand-Settings aus site_settings.
  * Liefert Defaults, wenn ein Key fehlt oder eine Farbe ungültig ist.
@@ -161,11 +168,11 @@ function get_public_settings(PDO $pdo): array
     }
 
     $faviconId = (int)($raw['favicon_media_id'] ?? 0);
-    $faviconUrl = $faviconId > 0 ? ('/media/file?id=' . $faviconId) : null;
+    $faviconUrl = $faviconId > 0 ? api_cms_path('/media/file?id=' . $faviconId) : null;
     $cmsLogoLightId = (int)($raw['cms_logo_light_media_id'] ?? 0);
-    $cmsLogoLightUrl = $cmsLogoLightId > 0 ? ('/media/file?id=' . $cmsLogoLightId) : null;
+    $cmsLogoLightUrl = $cmsLogoLightId > 0 ? api_cms_path('/media/file?id=' . $cmsLogoLightId) : null;
     $cmsLogoDarkId = (int)($raw['cms_logo_dark_media_id'] ?? 0);
-    $cmsLogoDarkUrl = $cmsLogoDarkId > 0 ? ('/media/file?id=' . $cmsLogoDarkId) : null;
+    $cmsLogoDarkUrl = $cmsLogoDarkId > 0 ? api_cms_path('/media/file?id=' . $cmsLogoDarkId) : null;
 
     return [
         'site_name'             => (string)($raw['site_title'] ?? ''),
@@ -1171,7 +1178,7 @@ if ($method === 'GET' && $sub === '/events') {
             'date' => (string)($r['event_date'] ?? ''), // legacy compatibility
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
-            'image_url' => $mid > 0 ? ('/media/file?id=' . $mid) : '',
+            'image_url' => $mid > 0 ? api_cms_path('/media/file?id=' . $mid) : '',
             'image_focus_x' => ($r['image_focus_x'] !== null && $r['image_focus_x'] !== '') ? (float)$r['image_focus_x'] : null,
             'image_focus_y' => ($r['image_focus_y'] !== null && $r['image_focus_y'] !== '') ? (float)$r['image_focus_y'] : null,
             'youtube_url' => (string)($r['youtube_url'] ?? ''),
@@ -1228,7 +1235,7 @@ if ($method === 'GET' && $sub === '/events') {
                 $slugKey = strtolower(trim((string)($row['slug'] ?? '')));
                 $logoMediaId = (int)($row['logo_media_id'] ?? 0);
                 if ($slugKey === '' || $logoMediaId <= 0) continue;
-                $logoMapBySlug[$slugKey] = '/media/file?id=' . $logoMediaId;
+                $logoMapBySlug[$slugKey] = api_cms_path('/media/file?id=' . $logoMediaId);
             }
             if ($logoMapBySlug !== []) {
                 foreach ($items as $idx => $it) {
@@ -1281,7 +1288,7 @@ if ($method === 'GET' && $sub === '/events') {
                 'category_slug' => trim((string)($vr['category_slug'] ?? '')),
                 'category_name' => trim((string)($vr['category_name'] ?? '')),
                 'category_color' => strtoupper(trim((string)($vr['category_color'] ?? ''))),
-                'image_url' => '/media/file?id=' . $mid,
+                'image_url' => api_cms_path('/media/file?id=' . $mid),
                 'image_focus_x' => ($vr['focus_x'] !== null && $vr['focus_x'] !== '') ? (float)$vr['focus_x'] : null,
                 'image_focus_y' => ($vr['focus_y'] !== null && $vr['focus_y'] !== '') ? (float)$vr['focus_y'] : null,
             ];
@@ -1335,7 +1342,7 @@ if ($method === 'GET' && $sub === '/events') {
             $url = trim((string)($lr['url'] ?? ''));
             $pdfMediaId = (int)($lr['pdf_media_id'] ?? 0);
             if ($url === '' && $type === 'pdf' && $pdfMediaId > 0) {
-                $url = '/media/file?id=' . $pdfMediaId;
+                $url = api_cms_path('/media/file?id=' . $pdfMediaId);
             }
             if ($eid <= 0 || $label === '' || $url === '') continue;
             $linksByEvent[$eid][] = [
@@ -1416,7 +1423,7 @@ if ($method === 'GET' && $sub === '/news') {
             'slug' => (string)($r['slug'] ?? ''),
             'teaser' => (string)($r['teaser'] ?? ''),
             'content_json' => (string)($r['content_json'] ?? ''),
-            'image_url' => $mid > 0 ? ('/media/file?id=' . $mid) : '',
+            'image_url' => $mid > 0 ? api_cms_path('/media/file?id=' . $mid) : '',
             'category_name' => (string)($r['category_name'] ?? ''),
             'category_slug' => (string)($r['category_slug'] ?? ''),
             'published_at' => (string)($r['published_at'] ?? ''),
@@ -1451,7 +1458,7 @@ if ($method === 'GET' && preg_match('/^\/news\/([a-z0-9-]+)$/', $sub, $m) === 1)
         'slug' => (string)($r['slug'] ?? ''),
         'teaser' => (string)($r['teaser'] ?? ''),
         'content_json' => (string)($r['content_json'] ?? ''),
-        'image_url' => $mid > 0 ? ('/media/file?id=' . $mid) : '',
+        'image_url' => $mid > 0 ? api_cms_path('/media/file?id=' . $mid) : '',
         'category_name' => (string)($r['category_name'] ?? ''),
         'category_slug' => (string)($r['category_slug'] ?? ''),
         'published_at' => (string)($r['published_at'] ?? ''),
@@ -1567,7 +1574,7 @@ if (preg_match('/^\/media\/(.+)$/', $sub, $m)) {
 
     json_response([
         'id'         => (int)$row['id'],
-        'url'        => $baseUrl . '/media/file?id=' . $mediaId,
+        'url'        => $baseUrl . api_cms_path('/media/file?id=' . $mediaId),
         'mime'       => (string)($row['mime'] ?? ''),
         'size_bytes' => (int)($row['size_bytes'] ?? 0),
         'width'      => ($row['width'] !== null && $row['width'] !== '') ? (int)$row['width'] : null,

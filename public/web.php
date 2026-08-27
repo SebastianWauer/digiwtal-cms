@@ -64,11 +64,19 @@ $path = (string)(parse_url($uri, PHP_URL_PATH) ?: '/');
 if ($path === '') $path = '/';
 if ($path[0] !== '/') $path = '/' . $path;
 
+// Bei einem Pfad-Deployment (z.B. /cms) arbeitet der Frontend-Router intern
+// weiterhin mit seinen pfadlosen Routen wie /sitemap.xml.
+$basePath = cms_base_path();
+if ($basePath !== '' && ($path === $basePath || str_starts_with($path, $basePath . '/'))) {
+    $path = substr($path, strlen($basePath));
+    if ($path === '') $path = '/';
+}
+
 // Trailing-Slash 301 (außer Root "/")
 if ($path !== '/' && str_ends_with($path, '/')) {
     $clean  = rtrim($path, '/');
     $qs     = (string)($_SERVER['QUERY_STRING'] ?? '');
-    $target = $clean . ($qs !== '' ? '?' . $qs : '');
+    $target = $basePath . $clean . ($qs !== '' ? '?' . $qs : '');
     http_response_code(301);
     header('Location: ' . $target);
     exit;

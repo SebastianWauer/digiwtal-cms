@@ -81,6 +81,16 @@ function admin_layout_begin(array $p): void
 
       <meta name="csrf-token" content="<?= h(admin_csrf_token()) ?>">
       <meta name="prefs-endpoint" content="<?= h(cms_base_path() . \App\Core\Paths::PREFS) ?>">
+      <meta name="cms-base-path" content="<?= h(cms_base_path()) ?>">
+
+      <script>
+        window.cmsAdminUrl = function(path) {
+          const meta = document.querySelector('meta[name="cms-base-path"]');
+          const base = meta ? String(meta.getAttribute('content') || '').replace(/\/+$/, '') : '';
+          const suffix = '/' + String(path || '').replace(/^\/+/, '');
+          return base + suffix;
+        };
+      </script>
 
       <link rel="stylesheet" href="<?= h(admin_asset_css('admin-layout.css')) ?>">
       <link rel="stylesheet" href="<?= h(admin_asset_css('admin-sidebar.css')) ?>">
@@ -149,7 +159,7 @@ function admin_layout_end(): void
 
   function prefsEndpoint() {
     var m = document.querySelector('meta[name="prefs-endpoint"]');
-    return m ? (m.getAttribute('content') || '/prefs') : '/prefs';
+    return m ? (m.getAttribute('content') || window.cmsAdminUrl('/prefs')) : window.cmsAdminUrl('/prefs');
   }
 
   function saveCollapsed(isCollapsed) {
@@ -252,9 +262,9 @@ function admin_layout_end(): void
     var form = ev.target;
     if (!form || !(form instanceof HTMLFormElement)) return;
 
-    // Theme-Form erkennen (bestehendes Muster: action "/theme")
+    // Theme-Form auch bei Pfad-Deployments wie /cms/theme erkennen.
     var action = form.getAttribute('action') || '';
-    if (action !== '/theme') return;
+    if (action !== window.cmsAdminUrl('/theme')) return;
 
     ev.preventDefault();
 
@@ -301,7 +311,7 @@ function admin_layout_end(): void
   function openPicker(inputName, label){
     currentInputName = inputName;
     title.textContent = label ? ('Medien wählen: ' + label) : 'Medien wählen';
-    frame.src = '/media?picker=1';
+    frame.src = window.cmsAdminUrl('/media?picker=1');
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
   }
@@ -346,13 +356,13 @@ function admin_layout_end(): void
     const root = input.closest('.ss-asset') || input.closest('.mp');
     if (root){
       const img = root.querySelector('img');
-      if (img) img.src = '/media/thumb?id=' + id;
+      if (img) img.src = window.cmsAdminUrl('/media/thumb?id=' + id);
       else {
         const prev = root.querySelector('.mp__preview');
         if (prev){
           const ni = document.createElement('img');
           ni.alt = '';
-          ni.src = '/media/thumb?id=' + id;
+          ni.src = window.cmsAdminUrl('/media/thumb?id=' + id);
           prev.innerHTML = '';
           prev.appendChild(ni);
         }

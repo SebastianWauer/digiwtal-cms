@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 if (!empty($_GET['picker'])) {
     // Picker-Parameter bei View-Wechsel & Filter-Submit erhalten
-    echo '<base href="<?= cms_base_path() ?>/media?picker=1">';
+    echo '<base href="' . h(cms_base_path() . '/media?picker=1') . '">';
 }
 
 /**
@@ -805,8 +805,8 @@ function media_render_folder_nodes(
   function openLightbox(mediaId) {
     const id = parseInt(String(mediaId || '0'), 10);
     if (!id) return;
-    imageEl.src = '/media/file?id=' + id;
-    editEl.href = '/media/edit?id=' + id;
+    imageEl.src = window.cmsAdminUrl('/media/file?id=' + id);
+    editEl.href = window.cmsAdminUrl('/media/edit?id=' + id);
     lightbox.hidden = false;
     document.body.style.overflow = 'hidden';
   }
