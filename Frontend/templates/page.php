@@ -46,6 +46,7 @@ if (!function_exists('render_page_blocks')) {
                 'events' => 'themes/default/blocks/events.php',
                 'news' => 'themes/default/blocks/news.php',
                 'three_columns_layout' => 'themes/default/blocks/three_columns_layout.php',
+                'social_account' => 'themes/default/blocks/social_account.php',
                 default   => 'templates/blocks/unknown.php',
             };
 
@@ -82,7 +83,7 @@ foreach ($blocksList as $blockIndex => $block):
         continue;
     }
     $type = (string)($block['type'] ?? '');
-    render_page_blocks([$block], compact('contactFormStates', 'currentSlug', 'contactTurnstileSiteKey', 'publicSettings'));
+    render_page_blocks([$block], compact('contactFormStates', 'currentSlug', 'contactTurnstileSiteKey', 'publicSettings', 'client'));
 
     if (!$headingRendered && $type === 'hero') {
         $headingRendered = true;

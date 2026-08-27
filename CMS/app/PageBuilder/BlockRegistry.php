@@ -17,6 +17,7 @@ use App\PageBuilder\Blocks\ImprintBlock;
 use App\PageBuilder\Blocks\EventsBlock;
 use App\PageBuilder\Blocks\ThreeColumnsLayoutBlock;
 use App\PageBuilder\Blocks\NewsBlock;
+use App\PageBuilder\Blocks\SocialAccountBlock;
 
 final class BlockRegistry
 {
@@ -50,6 +51,7 @@ final class BlockRegistry
             new EventsBlock(),
             new ThreeColumnsLayoutBlock(),
             new NewsBlock(),
+            new SocialAccountBlock(),
         ];
 
         return self::$typesCache;

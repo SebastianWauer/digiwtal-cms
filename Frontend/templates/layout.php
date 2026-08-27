@@ -73,7 +73,7 @@
     ?>
     
     <main>
-        <?php render('templates/page.php', compact('pageTitle', 'pageSubtitle', 'blocks', 'contactFormStates', 'slug', 'contactTurnstileSiteKey', 'publicSettings')); ?>
+        <?php render('templates/page.php', compact('pageTitle', 'pageSubtitle', 'blocks', 'contactFormStates', 'slug', 'contactTurnstileSiteKey', 'publicSettings', 'client')); ?>
     </main>
     
     <?php if (!$previewMainOnly) { render('templates/partials/footer.php', compact('siteName', 'footerNavItems')); } ?>
