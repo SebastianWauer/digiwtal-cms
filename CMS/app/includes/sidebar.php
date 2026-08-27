@@ -191,6 +191,11 @@ function sidebar_render(array $params): void
           </a>
         <?php endif; ?>
 
+      </nav>
+
+      <div class="sidebar__spacer"></div>
+
+      <nav class="nav nav--meta">
         <a class="nav__item <?= $isActive('help') ?>" href="<?= cms_base_path() ?>/hilfe">
           <span class="nav__icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -210,8 +215,6 @@ function sidebar_render(array $params): void
           </span><span>Changelog</span>
         </a>
       </nav>
-
-      <div class="sidebar__spacer"></div>
 
       <?php if ($showSystemBlock): ?>
         <nav class="nav nav--system">
