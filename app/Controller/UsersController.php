@@ -214,7 +214,9 @@ final class UsersController
         $emailRaw = (string)($_POST['email'] ?? '');
         $email    = trim($emailRaw) !== '' ? trim($emailRaw) : null;
 
-        $enabled  = !empty($_POST['enabled']);
+        // Der eigene Account muss aktiv bleiben. Das schützt auch vor
+        // manipulierten Requests, die die UI-Sperre umgehen.
+        $enabled  = $isSelf ? true : !empty($_POST['enabled']);
         $newPassword = $hasPw ? $pw : null;
 
         $res = $users->save($id > 0 ? $id : null, $username, $name, $email, $enabled, $newPassword);
