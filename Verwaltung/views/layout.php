@@ -18,6 +18,7 @@ function verwaltung_active_nav(string $uri): string
         str_starts_with($uri, '/admin/admin-users') => 'admins',
         str_starts_with($uri, '/admin/audit') => 'audit',
         str_starts_with($uri, '/admin/migrations') => 'migrations',
+        str_starts_with($uri, '/admin/support') => 'support',
         default => '',
     };
 }
@@ -94,6 +95,13 @@ $adminRole = $isSuperadmin ? 'Superadmin' : 'Operator';
                 <a class="nav__item <?php echo $activeNav === 'audit' ? 'is-active' : ''; ?>" href="/admin/audit">
                     <span class="nav__icon">≣</span>
                     <span>Audit-Log</span>
+                </a>
+                <a class="nav__item <?php echo $activeNav === 'support' ? 'is-active' : ''; ?>" href="/admin/support">
+                    <span class="nav__icon">?</span>
+                    <span>Hilfe</span>
+                    <?php if (($GLOBALS['verwaltung_support_offen'] ?? 0) > 0): ?>
+                        <span class="status-pill status-pill--degraded"><?php echo (int)$GLOBALS['verwaltung_support_offen']; ?></span>
+                    <?php endif; ?>
                 </a>
                 <a class="nav__item <?php echo $activeNav === 'rollout' ? 'is-active' : ''; ?>" href="/admin/ci-tokens">
                     <span class="nav__icon">↑</span>

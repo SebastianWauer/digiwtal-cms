@@ -22,6 +22,7 @@ class CiController
         private CiTokenRepository $ciTokens,
         private CustomerRepository $customerRepo,
         private ServerAccessRepository $accessRepo,
+        private SupportTokenRepository $supportTokens,
         private AuditLogger $audit
     ) {}
 
@@ -130,7 +131,29 @@ class CiController
                 'canonical_base' => (string)($access['canonical_base'] ?? ''),
                 'admin_email'    => (string)($access['cms_admin_email'] ?? ''),
             ],
+            // Zugang fuer die Hilfe-Funktion: Damit meldet die Instanz Probleme
+            // an die Verwaltung zurueck. Das Token entsteht beim ersten Abruf
+            // von selbst - ein Feld, das jemand ausfuellen muesste, waere ein
+            // weiteres Feld, das leer bleiben kann.
+            'support' => [
+                'url'   => self::verwaltungBaseUrl(),
+                'token' => (string)($this->supportTokens->ensureFor($customerId) ?? ''),
+            ],
         ], 200);
+    }
+
+    /** Eigene oeffentliche Adresse - die Instanz muss wissen, wohin sie melden soll. */
+    private static function verwaltungBaseUrl(): string
+    {
+        $host = trim((string)(getenv('ADMIN_HOST') ?: ''));
+        if ($host === '') {
+            $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+        }
+        if ($host === '') {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $host) === 1 ? rtrim($host, '/') : 'https://' . rtrim($host, '/');
     }
 
     /** SSH-Port aus dem Serverzugang, unabhaengig vom dort gesetzten Protokoll. */

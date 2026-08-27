@@ -61,7 +61,7 @@ jobs:
           fi
 
           # Geheimnisse maskieren, bevor irgendetwas davon im Log landen kann
-          for pfad in .ssh.password .db.password .tokens.health .tokens.deploy; do
+          for pfad in .ssh.password .db.password .tokens.health .tokens.deploy .support.token; do
             wert=$(jq -r "$pfad // empty" /tmp/ziel.json)
             [ -n "$wert" ] && echo "::add-mask::$wert"
           done
@@ -88,6 +88,48 @@ jobs:
           mkdir -p "$HOME/.ssh"
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> "$HOME/.ssh/known_hosts" 2>/dev/null
           echo "SSH_CMD=sshpass -e ssh -p $SSH_PORT" >> "$GITHUB_ENV"
+
+      - name: Vorpruefung
+        run: |
+          set -euo pipefail
+
+          # Fuenf der sechs Fehlversuche beim ersten Rollout gingen auf leere
+          # oder falsche Felder im Serverzugang zurueck - und meldeten sich als
+          # "rsync protocol data stream (code 12)". Hier heissen sie beim Namen,
+          # bevor irgendetwas uebertragen wird.
+          for feld in SSH_HOST SSH_USER SSHPASS CMS_PATH FRONTEND_PATH; do
+            if [ -z "${!feld:-}" ]; then
+              echo "::error::$feld ist leer. Im Serverzugang der Verwaltung nachtragen."
+              exit 1
+            fi
+          done
+
+          case "$CMS_PATH" in
+            /CMS|/Frontend|/|"")
+              echo "::error::Zielpfad ist '$CMS_PATH' - das ist das Wurzelverzeichnis des Servers."
+              echo "::error::Im Serverzugang den Basis-Pfad setzen, z.B. /home/www."
+              exit 1
+              ;;
+          esac
+
+          if ! $SSH_CMD "$SSH_USER@$SSH_HOST" "true" 2>/tmp/ssh-fehler.txt; then
+            echo "::error::SSH-Anmeldung fehlgeschlagen. Server-Passwort im Serverzugang pruefen."
+            cat /tmp/ssh-fehler.txt || true
+            exit 1
+          fi
+
+          # rsync legt nur die letzte Ebene an. Fehlt der Ordner darueber,
+          # bricht die Uebertragung mit "No such file or directory" ab.
+          $SSH_CMD "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$CMS_PATH' '$FRONTEND_PATH' '$(dirname "$CMS_PATH")/shared'"
+
+          echo "Anmeldung ok. Zielverzeichnisse vorhanden:"
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "pwd; ls -ld '$CMS_PATH' '$FRONTEND_PATH'"
+
+          if ! $SSH_CMD "$SSH_USER@$SSH_HOST" "command -v rsync >/dev/null"; then
+            echo "::error::Auf dem Zielserver fehlt rsync. Die Uebertragung braucht es auf beiden Seiten."
+            exit 1
+          fi
 
       - name: Dateien uebertragen
         run: |
@@ -133,7 +175,9 @@ jobs:
             "HEALTH_TOKEN=" + .tokens.health,
             "DEPLOY_TOKEN=" + .tokens.deploy,
             "SETUP_TOKEN=" + .tokens.setup,
-            "CMS_BASE_PATH=" + .urls.base_path
+            "CMS_BASE_PATH=" + .urls.base_path,
+            "SUPPORT_URL=" + (.support.url // ""),
+            "SUPPORT_TOKEN=" + (.support.token // "")
           ' /tmp/ziel.json > /tmp/cms.env
 
           jq -r '
@@ -162,6 +206,36 @@ jobs:
           anlegen /tmp/frontend.env "$FRONTEND_PATH/.env"
 
           $SSH_CMD "$ziel" "mkdir -p '$CMS_PATH/storage' && chmod 755 '$CMS_PATH/storage'"
+
+      - name: Hilfe-Zugang nachtragen
+        run: |
+          set -euo pipefail
+
+          # Fuer Instanzen, die es schon vor der Hilfe-Funktion gab: Die .env
+          # wird nie ueberschrieben, sonst waeren von Hand gepflegte Werte weg.
+          # Fehlende Schluessel duerfen aber dazukommen.
+          SUPPORT_URL=$(jq -r '.support.url // ""' /tmp/ziel.json)
+          SUPPORT_TOKEN=$(jq -r '.support.token // ""' /tmp/ziel.json)
+          ziel="$SSH_USER@$SSH_HOST"
+
+          if [ -z "$SUPPORT_URL" ] || [ -z "$SUPPORT_TOKEN" ]; then
+            echo "Kein Hilfe-Zugang geliefert - uebersprungen."
+            exit 0
+          fi
+
+          if ! $SSH_CMD "$ziel" "test -f '$CMS_PATH/.env'"; then
+            echo "Keine .env vorhanden - uebersprungen."
+            exit 0
+          fi
+
+          if $SSH_CMD "$ziel" "grep -q '^SUPPORT_TOKEN=' '$CMS_PATH/.env'"; then
+            echo "Hilfe-Zugang steht bereits in der .env - unveraendert gelassen."
+            exit 0
+          fi
+
+          printf 'SUPPORT_URL=%s\nSUPPORT_TOKEN=%s\n' "$SUPPORT_URL" "$SUPPORT_TOKEN" \
+            | $SSH_CMD "$ziel" "cat >> '$CMS_PATH/.env'"
+          echo "Hilfe-Zugang in die .env eingetragen."
 
       - name: Migrationen ausfuehren
         if: ${{ inputs.migrationen }}
