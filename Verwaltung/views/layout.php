@@ -17,6 +17,7 @@ function verwaltung_active_nav(string $uri): string
         str_starts_with($uri, '/admin/modules') => 'modules',
         str_starts_with($uri, '/admin/admin-users') => 'admins',
         str_starts_with($uri, '/admin/audit') => 'audit',
+        str_starts_with($uri, '/admin/migrations') => 'migrations',
         default => '',
     };
 }
@@ -95,8 +96,15 @@ $adminRole = $isSuperadmin ? 'Superadmin' : 'Operator';
                     <span>Audit-Log</span>
                 </a>
                 <a class="nav__item <?php echo $activeNav === 'rollout' ? 'is-active' : ''; ?>" href="/admin/ci-tokens">
+                    <span class="nav__icon">↑</span>
                     <span>Rollout</span>
                 </a>
+                <?php if ($isSuperadmin): ?>
+                    <a class="nav__item <?php echo $activeNav === 'migrations' ? 'is-active' : ''; ?>" href="/admin/migrations">
+                        <span class="nav__icon">⛁</span>
+                        <span>Datenbank</span>
+                    </a>
+                <?php endif; ?>
             </nav>
 
             <div class="sidebar__spacer"></div>
