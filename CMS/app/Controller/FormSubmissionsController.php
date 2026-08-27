@@ -214,7 +214,7 @@ final class FormSubmissionsController
         }
         $q = trim((string)($_POST['return_q'] ?? ''));
 
-        $target = '/forms/submissions?filter=' . rawurlencode($filter);
+        $target = cms_base_path() . '/forms/submissions?filter=' . rawurlencode($filter);
         if ($q !== '') {
             $target .= '&q=' . rawurlencode($q);
         }

@@ -54,7 +54,8 @@ class DeployService
             $cmsSourceDir = $this->resolveSourceDir($sourceOverrides, 'cms', dirname(__DIR__, 2) . '/CMS');
             $frontendSourceDir = $this->resolveSourceDir($sourceOverrides, 'frontend', dirname(__DIR__, 2) . '/Frontend');
 
-            $operations = $this->buildDeployOperations($type, $cmsSourceDir, $frontendSourceDir, $access);
+            $pathDeployment = $this->pathDeploymentConfig($access);
+            $operations = $this->buildDeployOperations($type, $cmsSourceDir, $frontendSourceDir, $access, $pathDeployment);
             foreach ($operations as $operation) {
                 if (!is_dir($operation['source_dir'])) {
                     $this->log($deploymentId, '[ERROR] Deploy-Quellverzeichnis nicht gefunden: ' . $operation['source_dir']);
@@ -144,6 +145,15 @@ class DeployService
                 $this->log($deploymentId, "[INFO] {$uploaded}/{$totalFiles} Dateien übertragen.");
             }
 
+            if (!$this->configurePathDeployment($access, $password, $method, $cmsSourceDir, $frontendSourceDir, $pathDeployment)) {
+                $this->log($deploymentId, '[ERROR] Die CMS-Pfadanbindung konnte nicht konfiguriert werden.');
+                $this->deployRepo->markFinished($deploymentId, 'failed');
+                return false;
+            }
+            if ($pathDeployment !== null) {
+                $this->log($deploymentId, '[INFO] CMS-Pfadanbindung automatisch eingerichtet: ' . $pathDeployment['base_path']);
+            }
+
             // 7. Version aus config/version.php lesen und im Deployment speichern
             $versionFile = $cmsSourceDir . '/config/version.php';
             $version = null;
@@ -213,7 +223,8 @@ class DeployService
             $frontendSourceDir = $this->resolveSourceDir($sourceOverrides, 'frontend', dirname(__DIR__, 2) . '/Frontend');
 
             $remotePath = rtrim((string)($access['server_path'] ?? '/CMS'), '/');
-            $operations = $this->buildDeployOperations($type, $cmsSourceDir, $frontendSourceDir, $access);
+            $pathDeployment = $this->pathDeploymentConfig($access);
+            $operations = $this->buildDeployOperations($type, $cmsSourceDir, $frontendSourceDir, $access, $pathDeployment);
             foreach ($operations as $operation) {
                 if (!is_dir($operation['source_dir'])) {
                     $this->log($deploymentId, '[ERROR] Deploy-Quellverzeichnis nicht gefunden: ' . $operation['source_dir']);
@@ -281,6 +292,15 @@ class DeployService
                     }
                 }
                 $this->log($deploymentId, "[INFO] {$uploaded}/{$totalFiles} Dateien übertragen.");
+            }
+
+            if (!$this->configurePathDeployment($access, $password, $method, $cmsSourceDir, $frontendSourceDir, $pathDeployment)) {
+                $this->log($deploymentId, '[ERROR] Die CMS-Pfadanbindung konnte nicht konfiguriert werden.');
+                $this->deployRepo->markFinished($deploymentId, 'failed');
+                return false;
+            }
+            if ($pathDeployment !== null) {
+                $this->log($deploymentId, '[INFO] CMS-Pfadanbindung automatisch eingerichtet: ' . $pathDeployment['base_path']);
             }
 
             $cmsBaseUrl      = $this->cmsProvisioner->resolveCmsBaseUrl($customer, $access);
@@ -502,12 +522,28 @@ class DeployService
         return in_array($type, ['frontend', 'combined', 'full'], true);
     }
 
-    private function buildDeployOperations(string $type, string $cmsSourceDir, string $frontendSourceDir, array $access): array
+    /** Wird bei diesem Deploy-Typ auch der CMS-Code ausgerollt? */
+    private function deploysCms(string $type): bool
+    {
+        return $type !== 'frontend';
+    }
+
+    /**
+     * @param array{base_path:string,public_path:string,app_root:string}|null $pathDeployment
+     * @return array<int,array{label:string,source_dir:string,remote_path:string,ignore:array<int,string>}>
+     */
+    private function buildDeployOperations(
+        string $type,
+        string $cmsSourceDir,
+        string $frontendSourceDir,
+        array $access,
+        ?array $pathDeployment = null
+    ): array
     {
         $serverPath = rtrim((string)($access['server_path'] ?? '/CMS'), '/');
         $htmlPath = rtrim((string)($access['html_path'] ?? '/Frontend'), '/');
 
-        return match ($type) {
+        $operations = match ($type) {
             'frontend' => [[
                 'label' => 'frontend',
                 'source_dir' => $frontendSourceDir,
@@ -535,6 +571,145 @@ class DeployService
                 'ignore' => [],
             ]],
         };
+
+        if ($pathDeployment !== null && $this->deploysCms($type)) {
+            $operations[] = [
+                'label' => 'cms-public (' . $pathDeployment['base_path'] . ')',
+                'source_dir' => rtrim($cmsSourceDir, '/\\') . '/public',
+                'remote_path' => $pathDeployment['public_path'],
+                'ignore' => [],
+            ];
+        }
+
+        return $operations;
+    }
+
+    /**
+     * Erkennt ein CMS, das unter derselben Domain wie das Frontend in einem
+     * Unterpfad (z. B. /cms) ausgeliefert wird.
+     *
+     * @return array{base_path:string,public_path:string,app_root:string}|null
+     */
+    private function pathDeploymentConfig(array $access): ?array
+    {
+        $cmsUrl = rtrim(trim((string)($access['health_cms_url'] ?? '')), '/');
+        $frontendUrl = rtrim(trim((string)($access['health_frontend_url'] ?? '')), '/');
+        if ($frontendUrl === '') {
+            $frontendUrl = rtrim(trim((string)($access['canonical_base'] ?? '')), '/');
+        }
+        if ($cmsUrl === '' || $frontendUrl === '') {
+            return null;
+        }
+
+        $cmsHost = strtolower((string)(parse_url($cmsUrl, PHP_URL_HOST) ?? ''));
+        $frontendHost = strtolower((string)(parse_url($frontendUrl, PHP_URL_HOST) ?? ''));
+        $basePath = CmsProvisioningService::basePathFromUrl($cmsUrl);
+        if ($cmsHost === '' || $frontendHost === '' || $cmsHost !== $frontendHost || $basePath === '') {
+            return null;
+        }
+
+        if (preg_match('#^/(?:[A-Za-z0-9._~-]+)(?:/[A-Za-z0-9._~-]+)*$#', $basePath) !== 1) {
+            throw new RuntimeException('Ungueltiger CMS-Basis-Pfad fuer die automatische Pfadanbindung: ' . $basePath);
+        }
+        foreach (explode('/', trim($basePath, '/')) as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                throw new RuntimeException('Unsicherer CMS-Basis-Pfad: ' . $basePath);
+            }
+        }
+
+        $appRoot = rtrim((string)($access['server_path'] ?? '/CMS'), '/');
+        $htmlRoot = rtrim((string)($access['html_path'] ?? '/Frontend'), '/');
+        foreach (['CMS-Zielpfad' => $appRoot, 'Frontend-Zielpfad' => $htmlRoot] as $label => $path) {
+            $normalized = str_replace('\\', '/', $path);
+            if (
+                $path === ''
+                || $path === '/'
+                || preg_match('#^[A-Za-z0-9._~/\\:-]+$#', $path) !== 1
+                || str_contains('/' . trim($normalized, '/') . '/', '/../')
+            ) {
+                throw new RuntimeException($label . ' ist fuer die automatische Pfadanbindung ungueltig.');
+            }
+        }
+
+        return [
+            'base_path' => $basePath,
+            'public_path' => $htmlRoot . $basePath,
+            'app_root' => $appRoot,
+        ];
+    }
+
+    /**
+     * Schreibt nach dem Datei-Upload die beiden installationsspezifischen
+     * Apache-Dateien. Der Quellcode im Repository bleibt dadurch neutral.
+     *
+     * @param array{base_path:string,public_path:string,app_root:string}|null $config
+     */
+    private function configurePathDeployment(
+        array $access,
+        string $password,
+        string $method,
+        string $cmsSourceDir,
+        string $frontendSourceDir,
+        ?array $config
+    ): bool {
+        if ($config === null) {
+            return true;
+        }
+
+        $cmsHtaccess = @file_get_contents(rtrim($cmsSourceDir, '/\\') . '/public/.htaccess');
+        $frontendHtaccess = @file_get_contents(rtrim($frontendSourceDir, '/\\') . '/.htaccess');
+        if (!is_string($cmsHtaccess) || !is_string($frontendHtaccess)) {
+            return false;
+        }
+
+        $cmsBlock = "\n# BEGIN DIGIWTAL CMS PATH DEPLOYMENT\n"
+            . "<IfModule mod_env.c>\n"
+            . '  SetEnv CMS_APP_ROOT ' . $config['app_root'] . "\n"
+            . '  SetEnv CMS_BASE_PATH ' . $config['base_path'] . "\n"
+            . "</IfModule>\n"
+            . "# END DIGIWTAL CMS PATH DEPLOYMENT\n";
+        $cmsHtaccess = $this->replaceManagedHtaccessBlock($cmsHtaccess, $cmsBlock);
+
+        $escapedPath = preg_quote(ltrim($config['base_path'], '/'), '#');
+        $frontendBlock = "  # BEGIN DIGIWTAL CMS PATH DEPLOYMENT\n"
+            . '  RewriteRule ^' . $escapedPath . "(?:/|$) - [L]\n"
+            . "  # END DIGIWTAL CMS PATH DEPLOYMENT\n";
+        $frontendHtaccess = $this->replaceManagedHtaccessBlock($frontendHtaccess, '');
+        $frontendHtaccess = preg_replace(
+            '/(^\s*RewriteEngine\s+On\s*$)/mi',
+            '$1' . "\n\n" . $frontendBlock,
+            $frontendHtaccess,
+            1,
+            $replacementCount
+        );
+        if (!is_string($frontendHtaccess) || $replacementCount !== 1) {
+            return false;
+        }
+
+        return $this->uploadRemoteTextFile(
+            $access,
+            $password,
+            $config['public_path'] . '/.htaccess',
+            $cmsHtaccess,
+            $method
+        ) && $this->uploadRemoteTextFile(
+            $access,
+            $password,
+            rtrim((string)($access['html_path'] ?? '/Frontend'), '/') . '/.htaccess',
+            $frontendHtaccess,
+            $method
+        );
+    }
+
+    private function replaceManagedHtaccessBlock(string $contents, string $replacement): string
+    {
+        $clean = preg_replace(
+            '/\n?\s*# BEGIN DIGIWTAL CMS PATH DEPLOYMENT\R.*?# END DIGIWTAL CMS PATH DEPLOYMENT\R?/s',
+            "\n",
+            $contents
+        );
+
+        return rtrim(is_string($clean) ? $clean : $contents) . "\n" . $replacement;
     }
 
     private function log(int $deploymentId, string $message): void

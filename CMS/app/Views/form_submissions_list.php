@@ -27,7 +27,7 @@ $tabs = [
 
 <div class="pages-toolbar" style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap;">
   <?php foreach ($tabs as $key => $label):
-    $url = '/forms/submissions?filter=' . rawurlencode($key) . ($qFilter !== '' ? ('&q=' . rawurlencode($qFilter)) : '');
+    $url = cms_base_path() . '/forms/submissions?filter=' . rawurlencode($key) . ($qFilter !== '' ? ('&q=' . rawurlencode($qFilter)) : '');
     $count = $key === 'all' ? array_sum($counts) : (int)($counts[$key] ?? 0);
   ?>
     <a class="btn <?= $activeFilter === $key ? '' : 'btn--ghost' ?>" href="<?= h($url) ?>"><?= h($label) ?> (<?= (int)$count ?>)</a>

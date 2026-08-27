@@ -199,7 +199,7 @@ function extractMediaIdFromUrl(string $url): ?int
     }
 
     $path = (string)($parts['path'] ?? '');
-    if (!in_array($path, ['/media/file', '/media/thumb'], true)) {
+    if (!str_ends_with($path, '/media/file') && !str_ends_with($path, '/media/thumb')) {
         return null;
     }
 
@@ -253,12 +253,14 @@ function absolutizeCmsMediaUrl(string $url, string $cmsBaseUrl): string
     }
 
     $path = (string)($parts['path'] ?? '');
-    if (!in_array($path, ['/media/file', '/media/thumb'], true)) {
+    if (!str_ends_with($path, '/media/file') && !str_ends_with($path, '/media/thumb')) {
         return $url;
     }
 
     $query = (string)($parts['query'] ?? '');
-    return rtrim($cmsBaseUrl, '/') . $path . ($query !== '' ? ('?' . $query) : '');
+    $mediaPos = strrpos($path, '/media/');
+    $mediaPath = $mediaPos === false ? $path : substr($path, $mediaPos);
+    return rtrim($cmsBaseUrl, '/') . $mediaPath . ($query !== '' ? ('?' . $query) : '');
 }
 
 function frontendFormSecret(): string
@@ -1152,7 +1154,6 @@ try {
 } catch (Throwable) {
     render500($siteName);
 }
-
 
 
 

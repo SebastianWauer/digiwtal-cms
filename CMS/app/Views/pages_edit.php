@@ -705,7 +705,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   function openMediaPicker(input) {
     if (!CAN_EDIT) return;
     activeMediaPickerInput = input;
-    const picker = window.open('/media?picker=1', 'mediapicker', 'width=900,height=600');
+    const picker = window.open(window.cmsAdminUrl('/media?picker=1'), 'mediapicker', 'width=900,height=600');
     if (picker && typeof picker.focus === 'function') {
       picker.focus();
     }
@@ -734,16 +734,16 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const explicitId = Number.parseInt(String(rawMediaId || '0'), 10);
     if (Number.isFinite(explicitId) && explicitId > 0) {
       return {
-        primary: `/media/thumb?id=${explicitId}`,
-        fallback: `/media/file?id=${explicitId}`,
+        primary: window.cmsAdminUrl(`/media/thumb?id=${explicitId}`),
+        fallback: window.cmsAdminUrl(`/media/file?id=${explicitId}`),
       };
     }
 
     const idFromUrl = mediaIdFromUrl(rawUrl);
     if (idFromUrl > 0) {
       return {
-        primary: `/media/thumb?id=${idFromUrl}`,
-        fallback: `/media/file?id=${idFromUrl}`,
+        primary: window.cmsAdminUrl(`/media/thumb?id=${idFromUrl}`),
+        fallback: window.cmsAdminUrl(`/media/file?id=${idFromUrl}`),
       };
     }
 

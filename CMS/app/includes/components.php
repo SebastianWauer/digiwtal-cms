@@ -135,7 +135,7 @@ function site_favicon_url(): ?string
         $id = (int)$stmt->fetchColumn();
 
         if ($id > 0) {
-            $cached = '/media/file?id=' . $id;
+            $cached = cms_base_path() . '/media/file?id=' . $id;
             return $cached;
         }
     } catch (\Throwable $e) {
@@ -169,7 +169,7 @@ function site_cms_logo_url(string $theme): ?string
         $id = (int)$stmt->fetchColumn();
 
         if ($id > 0) {
-            return $cache[$theme] = '/media/file?id=' . $id;
+            return $cache[$theme] = cms_base_path() . '/media/file?id=' . $id;
         }
     } catch (\Throwable $e) {
         // bewusst still

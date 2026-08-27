@@ -24,7 +24,7 @@ final class ThemeEngine
             // Home-Slug-Redirect: /<slug> -> / (Duplicate Content vermeiden)
             if (is_array($page) && !empty($page['is_home'])) {
                 $qs     = (string)($_SERVER['QUERY_STRING'] ?? '');
-                $target = '/' . ($qs !== '' ? '?' . $qs : '');
+                $target = cms_base_path() . '/' . ($qs !== '' ? '?' . $qs : '');
                 http_response_code(301);
                 header('Location: ' . $target);
                 exit;
@@ -59,7 +59,7 @@ final class ThemeEngine
         $nav = ['header' => $navHeader, 'footer' => $navFooter];
         $settings = (new SiteSettingsRepositoryDb($pdo))->getAll();
         $faviconMediaId = (int)($settings['favicon_media_id'] ?? 0);
-        $faviconUrl = $faviconMediaId > 0 ? ('/media/file?id=' . $faviconMediaId) : '';
+        $faviconUrl = $faviconMediaId > 0 ? (cms_base_path() . '/media/file?id=' . $faviconMediaId) : '';
         $brandPrimary = $this->normalizeHex((string)($settings['brand_color_primary'] ?? ''), '#2563eb');
         $brandSecondary = $this->normalizeHex((string)($settings['brand_color_secondary'] ?? ''), $brandPrimary);
         $brandTertiary = $this->normalizeHex((string)($settings['brand_color_tertiary'] ?? ''), '#f59e0b');

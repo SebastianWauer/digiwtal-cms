@@ -114,6 +114,7 @@ class CiController
                 'cms'       => $cmsUrl,
                 'frontend'  => $frontendUrl,
                 'base_path' => self::basePathFromUrl($cmsUrl),
+                'embedded'  => self::isPathDeployment($cmsUrl, $frontendUrl),
             ],
             'tokens' => [
                 // Setup und Migration teilen sich das Deploy-Token - so macht es
@@ -355,6 +356,22 @@ class CiController
         $path = rtrim($path, '/');
 
         return ($path === '' || $path === '/') ? '' : $path;
+    }
+
+    /** CMS und Frontend teilen sich eine Domain, das CMS liegt in einem Unterpfad. */
+    private static function isPathDeployment(string $cmsUrl, string $frontendUrl): bool
+    {
+        $cmsHost = strtolower((string)(parse_url($cmsUrl, PHP_URL_HOST) ?? ''));
+        $frontendHost = strtolower((string)(parse_url($frontendUrl, PHP_URL_HOST) ?? ''));
+        $basePath = self::basePathFromUrl($cmsUrl);
+
+        return $cmsHost !== ''
+            && $frontendHost !== ''
+            && $cmsHost === $frontendHost
+            && $basePath !== ''
+            && preg_match('#^/(?:[A-Za-z0-9._~-]+)(?:/[A-Za-z0-9._~-]+)*$#', $basePath) === 1
+            && !in_array('.', explode('/', trim($basePath, '/')), true)
+            && !in_array('..', explode('/', trim($basePath, '/')), true);
     }
 
     private function headerToken(): string

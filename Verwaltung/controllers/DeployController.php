@@ -341,6 +341,7 @@ class DeployController
             'frontend' => [
                 'canonical_base' => (string)($access['canonical_base'] ?? ''),
                 'health_cms_url' => (string)($access['health_cms_url'] ?? ''),
+                'health_frontend_url' => (string)($access['health_frontend_url'] ?? ''),
                 'site_name' => (string)($access['site_name'] ?? ''),
             ],
         ];

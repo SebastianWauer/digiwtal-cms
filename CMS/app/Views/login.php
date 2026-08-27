@@ -11,7 +11,7 @@ if ($logoUrl === null) {
         $stmt->execute();
         $fallbackLogoId = (int)$stmt->fetchColumn();
         if ($fallbackLogoId > 0) {
-            $logoUrl = '/media/file?id=' . $fallbackLogoId;
+            $logoUrl = cms_base_path() . '/media/file?id=' . $fallbackLogoId;
         }
     } catch (Throwable $e) {
         $logoUrl = null;

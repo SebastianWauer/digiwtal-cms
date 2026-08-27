@@ -174,6 +174,125 @@ if (!function_exists('write_frontend_env')) {
     }
 }
 
+if (!function_exists('path_deployment_config')) {
+    /** @return array{base_path:string,public_path:string,app_root:string}|null */
+    function path_deployment_config(array $payload): ?array
+    {
+        $cmsUrl = rtrim(trim((string)($payload['frontend']['health_cms_url'] ?? '')), '/');
+        $frontendUrl = rtrim(trim((string)($payload['frontend']['health_frontend_url'] ?? '')), '/');
+        if ($frontendUrl === '') {
+            $frontendUrl = rtrim(trim((string)($payload['frontend']['canonical_base'] ?? '')), '/');
+        }
+        if ($cmsUrl === '' || $frontendUrl === '') {
+            return null;
+        }
+
+        $cmsHost = strtolower((string)(parse_url($cmsUrl, PHP_URL_HOST) ?? ''));
+        $frontendHost = strtolower((string)(parse_url($frontendUrl, PHP_URL_HOST) ?? ''));
+        $basePath = (string)(parse_url($cmsUrl, PHP_URL_PATH) ?? '');
+        $basePath = ($basePath === '' || $basePath === '/') ? '' : '/' . trim($basePath, '/');
+        if ($cmsHost === '' || $frontendHost === '' || $cmsHost !== $frontendHost || $basePath === '') {
+            return null;
+        }
+
+        if (preg_match('#^/(?:[A-Za-z0-9._~-]+)(?:/[A-Za-z0-9._~-]+)*$#', $basePath) !== 1) {
+            throw new RuntimeException('Ungueltiger CMS-Basis-Pfad fuer die automatische Pfadanbindung: ' . $basePath);
+        }
+        foreach (explode('/', trim($basePath, '/')) as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                throw new RuntimeException('Unsicherer CMS-Basis-Pfad: ' . $basePath);
+            }
+        }
+
+        $appRoot = rtrim((string)($payload['server']['server_path'] ?? '/CMS'), '/');
+        $htmlRoot = rtrim((string)($payload['server']['html_path'] ?? '/Frontend'), '/');
+        foreach (['CMS-Zielpfad' => $appRoot, 'Frontend-Zielpfad' => $htmlRoot] as $label => $path) {
+            $normalized = str_replace('\\', '/', $path);
+            if (
+                $path === ''
+                || $path === '/'
+                || preg_match('#^[A-Za-z0-9._~/\\:-]+$#', $path) !== 1
+                || str_contains('/' . trim($normalized, '/') . '/', '/../')
+            ) {
+                throw new RuntimeException($label . ' ist fuer die automatische Pfadanbindung ungueltig.');
+            }
+        }
+
+        return [
+            'base_path' => $basePath,
+            'public_path' => $htmlRoot . $basePath,
+            'app_root' => $appRoot,
+        ];
+    }
+}
+
+if (!function_exists('replace_managed_htaccess_block')) {
+    function replace_managed_htaccess_block(string $contents, string $replacement): string
+    {
+        $clean = preg_replace(
+            '/\n?\s*# BEGIN DIGIWTAL CMS PATH DEPLOYMENT\R.*?# END DIGIWTAL CMS PATH DEPLOYMENT\R?/s',
+            "\n",
+            $contents
+        );
+
+        return rtrim(is_string($clean) ? $clean : $contents) . "\n" . $replacement;
+    }
+}
+
+if (!function_exists('cms_public_htaccess')) {
+    /** @param array{base_path:string,public_path:string,app_root:string} $config */
+    function cms_public_htaccess(string $source, array $config): string
+    {
+        $block = "\n# BEGIN DIGIWTAL CMS PATH DEPLOYMENT\n"
+            . "<IfModule mod_env.c>\n"
+            . '  SetEnv CMS_APP_ROOT ' . $config['app_root'] . "\n"
+            . '  SetEnv CMS_BASE_PATH ' . $config['base_path'] . "\n"
+            . "</IfModule>\n"
+            . "# END DIGIWTAL CMS PATH DEPLOYMENT\n";
+
+        return replace_managed_htaccess_block($source, $block);
+    }
+}
+
+if (!function_exists('frontend_path_htaccess')) {
+    /** @param array{base_path:string,public_path:string,app_root:string} $config */
+    function frontend_path_htaccess(string $source, array $config): string
+    {
+        $source = replace_managed_htaccess_block($source, '');
+        $escapedPath = preg_quote(ltrim($config['base_path'], '/'), '#');
+        $block = "  # BEGIN DIGIWTAL CMS PATH DEPLOYMENT\n"
+            . '  RewriteRule ^' . $escapedPath . "(?:/|$) - [L]\n"
+            . "  # END DIGIWTAL CMS PATH DEPLOYMENT\n";
+        $result = preg_replace(
+            '/(^\s*RewriteEngine\s+On\s*$)/mi',
+            '$1' . "\n\n" . $block,
+            $source,
+            1,
+            $replacementCount
+        );
+        if (!is_string($result) || $replacementCount !== 1) {
+            throw new RuntimeException('Frontend-.htaccess enthaelt keine RewriteEngine-Direktive.');
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('replace_upload_file')) {
+    function replace_upload_file(array $files, string $relativePath, string $replacementFile): array
+    {
+        $normalizedTarget = str_replace('\\', '/', ltrim($relativePath, '/'));
+        foreach ($files as $local => $relative) {
+            if (str_replace('\\', '/', ltrim((string)$relative, '/')) === $normalizedTarget) {
+                unset($files[$local]);
+            }
+        }
+        $files[$replacementFile] = $relativePath;
+
+        return $files;
+    }
+}
+
 if (!function_exists('quote_sftp')) {
     function quote_sftp(string $value): string
     {
@@ -425,9 +544,10 @@ $cleanup = [];
 
 try {
     $debugInfo = [];
+    $pathDeployment = path_deployment_config($payload);
+    $cmsDir = dirname(__DIR__, 2) . '/CMS';
 
     if (in_array($type, ['cms', 'combined'], true)) {
-        $cmsDir = dirname(__DIR__, 2) . '/CMS';
         if (!is_dir($cmsDir)) {
             throw new RuntimeException('Lokaler CMS-Ordner nicht gefunden: ' . $cmsDir);
         }
@@ -436,6 +556,46 @@ try {
             'files' => collect_files($cmsDir),
             'remote_path' => (string)($server['server_path'] ?? '/CMS'),
         ];
+
+        if ($pathDeployment !== null) {
+            $stageRoot = sys_get_temp_dir() . '/agent_cms_path_' . bin2hex(random_bytes(8));
+            if (!@mkdir($stageRoot, 0700, true) && !is_dir($stageRoot)) {
+                throw new RuntimeException('Temporäres Verzeichnis fuer die CMS-Pfadanbindung konnte nicht erstellt werden.');
+            }
+            $cleanup[] = $stageRoot;
+
+            $cmsHtaccessSource = @file_get_contents($cmsDir . '/public/.htaccess');
+            if (!is_string($cmsHtaccessSource)) {
+                throw new RuntimeException('CMS-public-.htaccess konnte nicht gelesen werden.');
+            }
+            $cmsHtaccessPath = $stageRoot . '/cms-public.htaccess';
+            if (@file_put_contents($cmsHtaccessPath, cms_public_htaccess($cmsHtaccessSource, $pathDeployment)) === false) {
+                throw new RuntimeException('CMS-public-.htaccess konnte nicht vorbereitet werden.');
+            }
+            $publicFiles = replace_upload_file(collect_files($cmsDir . '/public'), '.htaccess', $cmsHtaccessPath);
+            $operations[] = [
+                'label' => 'cms-public (' . $pathDeployment['base_path'] . ')',
+                'files' => $publicFiles,
+                'remote_path' => $pathDeployment['public_path'],
+            ];
+
+            if ($type === 'cms') {
+                $frontendHtaccessSource = @file_get_contents(dirname(__DIR__, 2) . '/Frontend/.htaccess');
+                if (!is_string($frontendHtaccessSource)) {
+                    throw new RuntimeException('Frontend-.htaccess konnte nicht gelesen werden.');
+                }
+                $frontendHtaccessPath = $stageRoot . '/frontend.htaccess';
+                if (@file_put_contents($frontendHtaccessPath, frontend_path_htaccess($frontendHtaccessSource, $pathDeployment)) === false) {
+                    throw new RuntimeException('Frontend-.htaccess konnte nicht vorbereitet werden.');
+                }
+                $operations[] = [
+                    'label' => 'frontend-routing (' . $pathDeployment['base_path'] . ')',
+                    'files' => [$frontendHtaccessPath => '.htaccess'],
+                    'remote_path' => (string)($server['html_path'] ?? '/Frontend'),
+                ];
+            }
+            $debugInfo[] = 'CMS-Pfadanbindung vorbereitet: ' . $pathDeployment['base_path'];
+        }
     }
 
     if (in_array($type, ['frontend', 'combined'], true)) {
@@ -446,6 +606,16 @@ try {
         $extractDir = extract_archive((string)$_FILES['frontend_archive']['tmp_name']);
         $cleanup[] = dirname($extractDir);
         $envPath = write_frontend_env($extractDir, $payload);
+        if ($pathDeployment !== null) {
+            $frontendHtaccessPath = rtrim($extractDir, '/\\') . '/.htaccess';
+            $frontendHtaccessSource = @file_get_contents($frontendHtaccessPath);
+            if (!is_string($frontendHtaccessSource)) {
+                throw new RuntimeException('Frontend-.htaccess fehlt im Frontend-Archiv.');
+            }
+            if (@file_put_contents($frontendHtaccessPath, frontend_path_htaccess($frontendHtaccessSource, $pathDeployment)) === false) {
+                throw new RuntimeException('Frontend-.htaccess konnte nicht fuer die CMS-Pfadanbindung vorbereitet werden.');
+            }
+        }
         $envContent = build_frontend_env($payload);
         $debugInfo[] = 'Frontend .env lokal erzeugt: ' . $envPath;
         $debugInfo[] = 'Frontend .env Inhalt: ' . str_replace("\n", ' | ', trim($envContent));

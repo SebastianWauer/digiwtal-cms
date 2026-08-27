@@ -42,7 +42,7 @@ $w = (int)($row['width'] ?? 0);
 $h = (int)($row['height'] ?? 0);
 $isPdf = strtolower($ext) === 'pdf';
 $supportsFocus = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'webp', 'svg'], true);
-$previewUrl = '/media/file?id=' . (int)$id;
+$previewUrl = cms_base_path() . '/media/file?id=' . (int)$id;
 $pdfPreviewUrl = $previewUrl . '#toolbar=0&navpanes=0&scrollbar=0&view=FitH';
 $canRotate = $canEdit && in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'webp'], true);
 

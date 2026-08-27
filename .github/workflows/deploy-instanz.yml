@@ -76,6 +76,8 @@ jobs:
             echo "FRONTEND_PATH=$(jq -r '.ssh.frontend_path' /tmp/ziel.json)"
             echo "CMS_URL=$(jq -r '.urls.cms' /tmp/ziel.json)"
             echo "FRONTEND_URL=$(jq -r '.urls.frontend' /tmp/ziel.json)"
+            echo "CMS_BASE_PATH=$(jq -r '.urls.base_path // ""' /tmp/ziel.json)"
+            echo "CMS_EMBEDDED=$(jq -r '.urls.embedded // false' /tmp/ziel.json)"
             echo "HEALTH_TOKEN=$(jq -r '.tokens.health' /tmp/ziel.json)"
             echo "UPDATES_AVAILABLE_UNTIL=$(jq -r '.customer.updates_available_until // "unlimited"' /tmp/ziel.json)"
           } >> "$GITHUB_ENV"
@@ -123,6 +125,24 @@ jobs:
               ;;
           esac
 
+          if [ "$CMS_EMBEDDED" = "true" ]; then
+            if [[ ! "$CMS_BASE_PATH" =~ ^/([A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+$ ]] \
+              || [[ "$CMS_BASE_PATH" == *"/../"* ]] \
+              || [[ "$CMS_BASE_PATH" == "/.." ]] \
+              || [[ "$CMS_BASE_PATH" == *"/." ]]; then
+              echo "::error::Ungueltiger CMS-Basis-Pfad: '$CMS_BASE_PATH'."
+              exit 1
+            fi
+            if [[ ! "$CMS_PATH" =~ ^[A-Za-z0-9._~/:+-]+$ ]] \
+              || [[ ! "$FRONTEND_PATH" =~ ^[A-Za-z0-9._~/:+-]+$ ]]; then
+              echo "::error::CMS- oder Frontend-Zielpfad enthaelt Zeichen, die nicht sicher in eine Apache-Konfiguration uebernommen werden koennen."
+              exit 1
+            fi
+            CMS_PUBLIC_PATH="${FRONTEND_PATH%/}${CMS_BASE_PATH}"
+            echo "CMS_PUBLIC_PATH=$CMS_PUBLIC_PATH" >> "$GITHUB_ENV"
+            echo "CMS wird zusaetzlich unter $CMS_PUBLIC_PATH an die Hauptdomain angebunden."
+          fi
+
           if ! $SSH_CMD "$SSH_USER@$SSH_HOST" "true" 2>/tmp/ssh-fehler.txt; then
             echo "::error::SSH-Anmeldung fehlgeschlagen. Server-Passwort im Serverzugang pruefen."
             cat /tmp/ssh-fehler.txt || true
@@ -131,8 +151,13 @@ jobs:
 
           # rsync legt nur die letzte Ebene an. Fehlt der Ordner darueber,
           # bricht die Uebertragung mit "No such file or directory" ab.
-          $SSH_CMD "$SSH_USER@$SSH_HOST" \
-            "mkdir -p '$CMS_PATH' '$FRONTEND_PATH' '$(dirname "$CMS_PATH")/shared'"
+          if [ "$CMS_EMBEDDED" = "true" ]; then
+            $SSH_CMD "$SSH_USER@$SSH_HOST" \
+              "mkdir -p '$CMS_PATH' '$FRONTEND_PATH' '$CMS_PUBLIC_PATH' '$(dirname "$CMS_PATH")/shared'"
+          else
+            $SSH_CMD "$SSH_USER@$SSH_HOST" \
+              "mkdir -p '$CMS_PATH' '$FRONTEND_PATH' '$(dirname "$CMS_PATH")/shared'"
+          fi
 
           echo "Anmeldung ok. Zielverzeichnisse vorhanden:"
           $SSH_CMD "$SSH_USER@$SSH_HOST" "pwd; ls -ld '$CMS_PATH' '$FRONTEND_PATH'"
@@ -158,8 +183,45 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::Frontend"
-          rsync $COMMON -e "$SSH_CMD" ./Frontend/ "$SSH_USER@$SSH_HOST:$FRONTEND_PATH/"
+          FRONTEND_COMMON="$COMMON"
+          if [ "$CMS_EMBEDDED" = "true" ]; then
+            # Der gespiegelt CMS-Ordner ist kein Bestandteil des Frontend-Repos.
+            # Ohne diesen Ausschluss wuerde --delete ihn bei jedem Rollout loeschen.
+            FRONTEND_COMMON="$FRONTEND_COMMON --exclude=${CMS_BASE_PATH#/}/"
+          fi
+          rsync $FRONTEND_COMMON -e "$SSH_CMD" ./Frontend/ "$SSH_USER@$SSH_HOST:$FRONTEND_PATH/"
           echo "::endgroup::"
+
+          if [ "$CMS_EMBEDDED" = "true" ]; then
+            echo "::group::CMS-Pfadanbindung"
+            CMS_PUBLIC_STAGE=$(mktemp -d)
+            cp -a ./CMS/public/. "$CMS_PUBLIC_STAGE/"
+            cat >> "$CMS_PUBLIC_STAGE/.htaccess" <<EOF
+
+          # BEGIN DIGIWTAL CMS PATH DEPLOYMENT
+          <IfModule mod_env.c>
+            SetEnv CMS_APP_ROOT $CMS_PATH
+            SetEnv CMS_BASE_PATH $CMS_BASE_PATH
+          </IfModule>
+          # END DIGIWTAL CMS PATH DEPLOYMENT
+          EOF
+
+            CMS_REWRITE_PATH=${CMS_BASE_PATH#/}
+            CMS_REWRITE_PATH=${CMS_REWRITE_PATH//./\\.}
+            FRONTEND_HTACCESS=$(mktemp)
+            sed "/^[[:space:]]*RewriteEngine[[:space:]]\+On[[:space:]]*$/a\\
+          \\
+            # BEGIN DIGIWTAL CMS PATH DEPLOYMENT\\
+            RewriteRule ^${CMS_REWRITE_PATH}(?:/|$) - [L]\\
+            # END DIGIWTAL CMS PATH DEPLOYMENT" Frontend/.htaccess > "$FRONTEND_HTACCESS"
+
+            rsync $COMMON -e "$SSH_CMD" "$CMS_PUBLIC_STAGE/" "$SSH_USER@$SSH_HOST:$CMS_PUBLIC_PATH/"
+            rsync --archive -e "$SSH_CMD" "$FRONTEND_HTACCESS" "$SSH_USER@$SSH_HOST:$FRONTEND_PATH/.htaccess"
+            rm -rf -- "$CMS_PUBLIC_STAGE"
+            rm -f -- "$FRONTEND_HTACCESS"
+            echo "CMS/public nach $CMS_PUBLIC_PATH gespiegelt und Apache-Routing konfiguriert."
+            echo "::endgroup::"
+          fi
 
           echo "::group::shared"
           ELTERN=$(dirname "$CMS_PATH")
