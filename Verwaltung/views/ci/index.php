@@ -25,14 +25,8 @@ ob_start();
                 <h2 class="section-title">Token einmalig anzeigen</h2>
                 <p class="section-copy">Dieser Token wird nur jetzt angezeigt und ist danach nicht mehr lesbar.
                    Trag ihn in GitHub unter <em>Settings → Secrets and variables → Actions</em> als
-                   <code>VERWALTUNG_CI_TOKEN</code> ein. Für einen IONOS-Cronjob kann er alternativ
-                   mit dem darunterstehenden curl-Befehl verwendet werden.</p>
+                   <code>VERWALTUNG_CI_TOKEN</code> ein.</p>
                 <code class="code-block"><?php echo htmlspecialchars($newToken, ENT_QUOTES); ?></code>
-                <code class="code-block"><?php echo htmlspecialchars(
-                    '/usr/bin/curl -fsS -X POST -H "X-Ci-Token: ' . (string)$newToken . '" '
-                    . (string)$healthRunUrl,
-                    ENT_QUOTES
-                ); ?></code>
             </div>
         </section>
     <?php endif; ?>

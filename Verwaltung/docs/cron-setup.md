@@ -11,18 +11,29 @@ laeuft die andere weiter - und das Dashboard sagt es, wenn beide schweigen.
 
 ## Cron-Job
 
-### Empfohlen: HTTP-Aufruf aus der IONOS-Cronverwaltung
+### Empfohlen: ausfuehrbarer Pfad in der IONOS-Cronverwaltung
 
-Unter **CI-Tokens** ein eigenes Token mit dem Label `ionos-cron` erzeugen. Der
-einmalig angezeigte fertige Befehl ruft den geschuetzten Endpunkt ohne
-Abhaengigkeit vom PHP-CLI-Pfad des Hostingvertrags auf:
+Die IONOS-Eingabevalidierung akzeptiert je nach Vertrag nur einen Pfad aus
+Buchstaben, Zahlen, Bindestrich, Unterstrich, Punkt und Schraegstrich. Deshalb
+steht ein ausfuehrbarer Wrapper ohne Argumente bereit:
+
+```cron
+*/5 * * * * /home/www/Verwaltung/scripts/health-cron.sh
+```
+
+Der Wrapper startet PHP 8.4 und schreibt dessen Ausgabe nach
+`/home/www/storage/logs/health-cron.log`. Im IONOS-Formular wird nur der Pfad
+ohne vorangestellten Cron-Ausdruck eingetragen; das Intervall hat ein eigenes
+Feld.
+
+### Alternative: geschuetzter HTTP-Aufruf
+
+Cron-Umgebungen, die Argumente und HTTP-Header erlauben, koennen mit einem
+eigenen CI-Token direkt den Verwaltungs-Endpunkt aufrufen:
 
 ```cron
 */5 * * * * /usr/bin/curl -fsS -X POST -H "X-Ci-Token: <TOKEN>" https://verwaltung.digiwtal.de/api/ci/health-run
 ```
-
-Der Token steht im Header und damit nicht in URL- oder Access-Logs. Der
-Endpunkt akzeptiert nur HTTPS und aktive, widerrufbare CI-Tokens.
 
 ### Alternative: PHP direkt ausfuehren
 
