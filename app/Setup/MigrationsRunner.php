@@ -81,8 +81,8 @@ final class MigrationsRunner
                     if ($stmtSql === '') continue;
 
                     // Debug light: nur die ersten Zeichen ins Log (kein Overload)
-                    $preview = mb_substr(preg_replace('/\s+/', ' ', $stmtSql) ?? $stmtSql, 0, 90);
-                    $log[] = "  - SQL[" . ($i + 1) . "]: " . $preview . (mb_strlen($preview) >= 90 ? '…' : '');
+                    $preview = self::previewOf($stmtSql);
+                    $log[] = "  - SQL[" . ($i + 1) . "]: " . $preview;
 
                     self::execAndDrain($pdo, $stmtSql);
                 }
@@ -181,6 +181,28 @@ final class MigrationsRunner
 
         // Fallback
         $pdo->exec($sql);
+    }
+
+
+    /**
+     * Kuerzt eine Anweisung fuer das Protokoll.
+     *
+     * Bewusst ohne mbstring: Fehlt die Erweiterung, warf mb_substr() hier einen
+     * fatalen Fehler und die komplette Migration brach ab - wegen einer Zeile,
+     * die nur das Log lesbar macht. Der Setup-Assistent zeigte dann
+     * "Call to undefined function App\Setup\mb_substr()".
+     */
+    private static function previewOf(string $sql): string
+    {
+        $flat = preg_replace('/\s+/', ' ', $sql) ?? $sql;
+
+        if (function_exists('mb_substr') && function_exists('mb_strlen')) {
+            $cut = mb_substr($flat, 0, 90);
+            return $cut . (mb_strlen($flat) > 90 ? '…' : '');
+        }
+
+        $cut = substr($flat, 0, 90);
+        return $cut . (strlen($flat) > 90 ? '...' : '');
     }
 
     private static function ensureSchemaMigrationsTable(PDO $pdo): void

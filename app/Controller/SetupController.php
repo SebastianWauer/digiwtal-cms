@@ -58,12 +58,38 @@ final class SetupController
 
     // ── Step 1: DB-Check ─────────────────────────────────────────────────────
 
+    /** Erweiterungen, ohne die das CMS nicht laeuft. */
+    private const REQUIRED_EXTENSIONS = ['pdo_mysql', 'mbstring', 'openssl', 'curl', 'fileinfo', 'json'];
+
+    /** @return string[] Namen der fehlenden Erweiterungen */
+    public static function missingExtensions(): array
+    {
+        $missing = [];
+        foreach (self::REQUIRED_EXTENSIONS as $ext) {
+            if (!extension_loaded($ext)) {
+                $missing[] = $ext;
+            }
+        }
+        return $missing;
+    }
+
     public function step1(): void
     {
         $this->guardNotInstalled();
 
         $cfg   = db_config();
         $error = (string)($this->state()['db_error'] ?? '');
+
+        // Fehlende Erweiterungen hier benennen statt mitten im Setup mit einem
+        // fatalen Fehler abzubrechen. Ohne mbstring starb frueher erst der
+        // Migrationslauf und danach die Passwortpruefung - beide Male ohne
+        // brauchbaren Hinweis darauf, was eigentlich fehlt.
+        $missingExtensions = self::missingExtensions();
+        if ($missingExtensions !== [] && $error === '') {
+            $error = 'Diesem PHP fehlen Erweiterungen, die das CMS braucht: '
+                . implode(', ', $missingExtensions)
+                . '. Bitte beim Hoster aktivieren, bevor das Setup fortgesetzt wird.';
+        }
 
         // Session-Error nach dem Lesen löschen, damit Reload ihn nicht nochmal zeigt
         if ($error !== '') {
@@ -79,6 +105,12 @@ final class SetupController
     {
         $this->guardNotInstalled();
         admin_verify_csrf();
+
+        $missingExtensions = self::missingExtensions();
+        if ($missingExtensions !== []) {
+            $this->setState(['db_ok' => false, 'db_error' => 'Fehlende PHP-Erweiterungen: ' . implode(', ', $missingExtensions)]);
+            $this->redirect('/setup');
+        }
 
         try {
             $pdo = $this->pdo();
@@ -209,7 +241,7 @@ final class SetupController
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Bitte eine gültige E-Mail-Adresse eingeben.';
         }
-        if (mb_strlen($password) < 10) {
+        if (cms_str_len($password) < 10) {
             $errors[] = 'Passwort muss mindestens 10 Zeichen lang sein.';
         }
         if ($password !== $confirm) {
@@ -239,7 +271,7 @@ final class SetupController
 
             // Username aus E-Mail generieren (Teil vor @, bereinigt)
             $username = preg_replace('/[^a-z0-9_]/i', '', explode('@', $email)[0]) ?: 'admin';
-            if (mb_strtolower($username) === 'admin') {
+            if (cms_str_lower($username) === 'admin') {
                 $username = 'cms_admin';
             }
 
@@ -288,7 +320,11 @@ final class SetupController
             $settingsRepo = new SiteSettingsRepositoryDb($pdo);
 
             if ($siteName !== '') {
+                // Beide Schluessel schreiben: Der Setup-Assistent legte bisher nur
+                // 'site_name' an, die oeffentliche API liest aber 'site_title'.
+                // Der im Setup eingegebene Name kam deshalb nie auf der Website an.
                 $settingsRepo->set('site_name', $siteName);
+                $settingsRepo->set('site_title', $siteName);
             }
             if ($canonical !== '') {
                 $settingsRepo->set('seo_canonical_base', $canonical);
@@ -296,6 +332,17 @@ final class SetupController
             $settingsRepo->set('seo_robots_default', 'index,follow');
 
             // ── Abschluss ──────────────────────────────────────────────────────
+            // Standardseiten anlegen, damit eine frisch provisionierte Installation
+            // sofort eine Startseite hat. Bisher entstanden sie erst, wenn ein
+            // Administrator die Seitenliste im Backend oeffnete - bis dahin
+            // antwortete die oeffentliche Website mit 404.
+            try {
+                \App\Setup\EnsureDefaultPages::run($pdo);
+            } catch (\Throwable $e) {
+                // Nicht kritisch: Die Seiten entstehen spaetestens beim ersten
+                // Aufruf der Seitenliste im Backend.
+            }
+
             Setup::markInstalled($pdo);
 
             unset($_SESSION['setup_state']);
