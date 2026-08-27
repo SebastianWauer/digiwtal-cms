@@ -196,6 +196,12 @@ jobs:
             echo "::group::CMS-Pfadanbindung"
             CMS_PUBLIC_STAGE=$(mktemp -d)
             cp -a ./CMS/public/. "$CMS_PUBLIC_STAGE/"
+            # mktemp erzeugt Verzeichnisse mit 700. Da rsync --archive die
+            # Rechte uebernimmt, muss der Staging-Baum vor dem Upload fuer den
+            # Webserver lesbar sein; sonst antwortet Apache auf /cms mit 403.
+            chmod 755 "$CMS_PUBLIC_STAGE"
+            find "$CMS_PUBLIC_STAGE" -type d -exec chmod 755 {} +
+            find "$CMS_PUBLIC_STAGE" -type f -exec chmod 644 {} +
             cat >> "$CMS_PUBLIC_STAGE/.htaccess" <<EOF
 
           # BEGIN DIGIWTAL CMS PATH DEPLOYMENT
@@ -214,9 +220,17 @@ jobs:
             # BEGIN DIGIWTAL CMS PATH DEPLOYMENT\\
             RewriteRule ^${CMS_REWRITE_PATH}(?:/|$) - [L]\\
             # END DIGIWTAL CMS PATH DEPLOYMENT" Frontend/.htaccess > "$FRONTEND_HTACCESS"
+            # Auch die von mktemp angelegte Datei startet mit 600. Mit
+            # rsync --archive wuerde Frontend/.htaccess sonst fuer Apache
+            # unlesbar und dadurch die gesamte Hauptdomain gesperrt.
+            chmod 644 "$FRONTEND_HTACCESS"
 
             rsync $COMMON -e "$SSH_CMD" "$CMS_PUBLIC_STAGE/" "$SSH_USER@$SSH_HOST:$CMS_PUBLIC_PATH/"
             rsync --archive -e "$SSH_CMD" "$FRONTEND_HTACCESS" "$SSH_USER@$SSH_HOST:$FRONTEND_PATH/.htaccess"
+            # Bestehende fehlerhafte Rollouts sofort reparieren und nicht nur
+            # auf die lokale Modus-Uebernahme von rsync vertrauen.
+            $SSH_CMD "$SSH_USER@$SSH_HOST" \
+              "chmod 755 '$CMS_PUBLIC_PATH' && find '$CMS_PUBLIC_PATH' -type d -exec chmod 755 {} + && find '$CMS_PUBLIC_PATH' -type f -exec chmod 644 {} + && chmod 644 '$FRONTEND_PATH/.htaccess'"
             rm -rf -- "$CMS_PUBLIC_STAGE"
             rm -f -- "$FRONTEND_HTACCESS"
             echo "CMS/public nach $CMS_PUBLIC_PATH gespiegelt und Apache-Routing konfiguriert."
