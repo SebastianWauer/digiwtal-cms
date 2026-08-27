@@ -94,6 +94,9 @@ $adminRole = $isSuperadmin ? 'Superadmin' : 'Operator';
                     <span class="nav__icon">≣</span>
                     <span>Audit-Log</span>
                 </a>
+                <a class="nav__item <?php echo $activeNav === 'rollout' ? 'is-active' : ''; ?>" href="/admin/ci-tokens">
+                    <span>Rollout</span>
+                </a>
             </nav>
 
             <div class="sidebar__spacer"></div>
