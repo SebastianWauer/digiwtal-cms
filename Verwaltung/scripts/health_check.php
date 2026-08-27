@@ -1,4 +1,4 @@
-#!/usr/bin/php8.4
+#!/usr/bin/php-cgi8.5 -q
 <?php
 declare(strict_types=1);
 

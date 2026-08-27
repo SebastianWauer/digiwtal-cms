@@ -14,4 +14,4 @@ log_dir="$project_dir/storage/logs"
 
 mkdir -p "$log_dir"
 
-exec /usr/bin/php8.4 -f "$script_dir/health_check.php" >> "$log_dir/health-cron.log" 2>&1
+exec /usr/bin/php-cgi8.5 -q -f "$script_dir/health_check.php" >> "$log_dir/health-cron.log" 2>&1

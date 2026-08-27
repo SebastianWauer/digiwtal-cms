@@ -15,7 +15,8 @@ laeuft die andere weiter - und das Dashboard sagt es, wenn beide schweigen.
 
 Die IONOS-Eingabevalidierung akzeptiert je nach Vertrag nur einen Pfad aus
 Buchstaben, Zahlen, Bindestrich, Unterstrich, Punkt und Schraegstrich. Das
-PHP-Skript ist deshalb selbst ausfuehrbar und enthaelt den PHP-8.4-Interpreter:
+PHP-Skript ist deshalb selbst ausfuehrbar und enthaelt den auf dem
+IONOS-Webhosting verwendeten PHP-8.5-CGI-Interpreter:
 
 ```cron
 */5 * * * * /home/www/Verwaltung/scripts/health_check.php
@@ -39,7 +40,7 @@ eigenen CI-Token direkt den Verwaltungs-Endpunkt aufrufen:
 ### Alternative: PHP direkt ausfuehren
 
 ```cron
-*/5 * * * * /usr/bin/php8.4 -f /pfad/zum/projekt/Verwaltung/scripts/health_check.php
+*/5 * * * * /usr/bin/php-cgi8.5 -q -f /pfad/zum/projekt/Verwaltung/scripts/health_check.php
 ```
 
 Das Skript ist ein duenner Aufruf um `services/HealthMonitor.php`. Benoetigte
