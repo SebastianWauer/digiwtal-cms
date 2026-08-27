@@ -268,6 +268,7 @@ $router->add('POST', '/admin/migrations/apply', [$migrationController, 'apply'])
 $router->add('GET',  '/api/ci/deploy-target', [$ciController, 'deployTarget']);
 $router->add('GET',  '/api/ci/instances', [$ciController, 'instances']);
 $router->add('POST', '/api/ci/health-report', [$ciController, 'healthReport']);
+$router->add('POST', '/api/ci/health-run', [$ciController, 'healthRun']);
 $router->add('POST', '/api/support/tickets', [$supportApiController, 'store']);
 $router->add('GET',  '/api/support/tickets', [$supportApiController, 'index']);
 $router->add('GET',  '/admin/support', [$supportController, 'index']);

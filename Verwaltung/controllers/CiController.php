@@ -235,6 +235,65 @@ class CiController
     }
 
     /**
+     * POST /api/ci/health-run
+     *
+     * Fuehrt den Prueflauf direkt in der Verwaltung aus. Der Endpunkt ist fuer
+     * Hosting-Cronjobs gedacht, die zwar curl aufrufen koennen, deren
+     * PHP-CLI-Pfad aber nicht verlaesslich ist. Authentifiziert wird wie bei
+     * allen CI-Endpunkten ueber X-Ci-Token; Geheimnisse stehen damit nicht in
+     * der URL oder in Access-Logs.
+     */
+    public function healthRun(): void
+    {
+        $matched = $this->authorize();
+
+        $recorded = [];
+        $skipped  = [];
+        $targets  = $this->monitor->targets();
+
+        foreach ($targets as $target) {
+            $customerId = (int)$target['id'];
+
+            try {
+                $cms      = HealthMonitor::probeCms((string)$target['cms_url'], (string)$target['token']);
+                $frontend = HealthMonitor::probeFrontend((string)$target['frontend_url']);
+                $result   = $this->monitor->evaluate($cms, $frontend, 'cron');
+                $this->monitor->record($customerId, (string)$target['name'], $result, 'cron');
+
+                $recorded[] = [
+                    'customer' => $customerId,
+                    'status'   => (string)$result['status'],
+                ];
+            } catch (Throwable $e) {
+                FileLogger::channel('verwaltung')->error(
+                    '[HC] http_run_failed customer_id=' . $customerId . ' err=' . $e->getMessage()
+                );
+                $skipped[] = ['customer' => $customerId, 'reason' => 'check_failed'];
+            }
+        }
+
+        $this->monitor->noteRun(
+            'cron',
+            count($recorded),
+            'http, token: ' . (string)($matched['label'] ?? '')
+        );
+
+        $this->audit->log(
+            'ci.health_run',
+            'ci_token',
+            (int)$matched['id'],
+            'ziele: ' . count($targets) . ', gespeichert: ' . count($recorded)
+                . ', uebersprungen: ' . count($skipped)
+        );
+
+        $this->json([
+            'ok'       => true,
+            'recorded' => $recorded,
+            'skipped'  => $skipped,
+        ], 200);
+    }
+
+    /**
      * Gemeinsame Eingangskontrolle: gueltiges CI-Token, HTTPS, Spur im Log.
      *
      * @return array<string,mixed> Der Token-Datensatz

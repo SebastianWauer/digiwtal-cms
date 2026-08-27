@@ -6,13 +6,28 @@ laeuft die andere weiter - und das Dashboard sagt es, wenn beide schweigen.
 | Quelle | Wo | Takt | Traegt sich ein als |
 |---|---|---|---|
 | Cron der Verwaltung | IONOS-Webspace | alle 5 Minuten | `cron` |
-| Geplanter CI-Lauf | GitHub Actions (`health.yml`) | alle 15 Minuten | `ci` |
+| Geplanter CI-Lauf | GitHub Actions (`health.yml`) | alle 5 Minuten, versetzt | `ci` |
 | Rollout einer Instanz | GitHub Actions (`deploy-instanz.yml`) | bei jedem Rollout | `rollout` |
 
 ## Cron-Job
 
+### Empfohlen: HTTP-Aufruf aus der IONOS-Cronverwaltung
+
+Unter **CI-Tokens** ein eigenes Token mit dem Label `ionos-cron` erzeugen. Der
+einmalig angezeigte fertige Befehl ruft den geschuetzten Endpunkt ohne
+Abhaengigkeit vom PHP-CLI-Pfad des Hostingvertrags auf:
+
 ```cron
-*/5 * * * * php /pfad/zum/projekt/Verwaltung/scripts/health_check.php
+*/5 * * * * /usr/bin/curl -fsS -X POST -H "X-Ci-Token: <TOKEN>" https://verwaltung.digiwtal.de/api/ci/health-run
+```
+
+Der Token steht im Header und damit nicht in URL- oder Access-Logs. Der
+Endpunkt akzeptiert nur HTTPS und aktive, widerrufbare CI-Tokens.
+
+### Alternative: PHP direkt ausfuehren
+
+```cron
+*/5 * * * * /usr/bin/php8.4 -f /pfad/zum/projekt/Verwaltung/scripts/health_check.php
 ```
 
 Das Skript ist ein duenner Aufruf um `services/HealthMonitor.php`. Benoetigte

@@ -18,7 +18,9 @@ name: Instanzen ueberwachen
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # Versetzt statt auf Minute 00/15/30/45: Dort sind geplante GitHub-Laeufe
+    # besonders haeufig verzoegert. Fuenf Minuten entsprechen dem IONOS-Takt.
+    - cron: '3-59/5 * * * *'
   workflow_dispatch: {}
 
 concurrency:

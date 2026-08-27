@@ -30,6 +30,7 @@ class CiTokenController
             'branch'   => (string)(getenv('GITHUB_BRANCH') ?: 'main'),
             'token_da' => trim((string)(getenv('GITHUB_TOKEN') ?: '')) !== '',
         ];
+        $healthRunUrl = VerwaltungUrl::base() . '/api/ci/health-run';
 
         $success  = $_SESSION['flash_success'] ?? null;
         $errors   = $_SESSION['flash_errors'] ?? [];
