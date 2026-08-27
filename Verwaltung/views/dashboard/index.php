@@ -18,6 +18,40 @@ ob_start();
             </div>
         </header>
 
+        <?php
+        // Der Waechter wird bewacht: Meldet sich kein Pruflauf mehr, ist jede
+        // Zahl auf dieser Seite ein alter Stand - das muss oben stehen, nicht
+        // als Fussnote in einer Karte.
+        $monitorRuns = is_array($monitorState['runs'] ?? null) ? $monitorState['runs'] : [];
+        $monitorAge = $monitorState['age_seconds'] ?? null;
+        $monitorAgeLabel = $monitorAge === null
+            ? 'noch nie'
+            : ($monitorAge < 3600 ? 'vor ' . (int)ceil($monitorAge / 60) . ' Min' : date('d.m.Y H:i', time() - (int)$monitorAge));
+        $quellenLabel = [];
+        foreach ($monitorRuns as $run) {
+            $ts = strtotime((string)($run['last_run_at'] ?? ''));
+            $quellenLabel[] = (string)($run['source'] ?? '?') . ': '
+                . ($ts === false ? '—' : date('d.m. H:i', $ts))
+                . ' (' . (int)($run['customers_checked'] ?? 0) . ')';
+        }
+        ?>
+        <?php if (($monitorState['stale'] ?? true) === true): ?>
+            <div class="alert alert--error">
+                <strong>Die Überwachung meldet sich nicht.</strong>
+                Letzter Prüflauf: <?php echo htmlspecialchars($monitorAgeLabel, ENT_QUOTES); ?>.
+                Alle Status unten sind der zuletzt gespeicherte Stand und sagen nichts über die Lage jetzt.
+                <?php if ($quellenLabel !== []): ?>
+                    <br><small>Quellen — <?php echo htmlspecialchars(implode(' · ', $quellenLabel), ENT_QUOTES); ?></small>
+                <?php else: ?>
+                    <br><small>Bisher hat sich keine Quelle eingetragen: Cron einrichten oder den geplanten CI-Lauf aktivieren.</small>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <p class="page-subtitle">
+                Überwachung aktiv — letzter Prüflauf <?php echo htmlspecialchars($monitorAgeLabel, ENT_QUOTES); ?><?php echo $quellenLabel !== [] ? ' · ' . htmlspecialchars(implode(' · ', $quellenLabel), ENT_QUOTES) : ''; ?>.
+            </p>
+        <?php endif; ?>
+
         <?php if (empty($customers)): ?>
             <p class="empty-state">Keine Kunden vorhanden.</p>
         <?php else: ?>
@@ -39,6 +73,8 @@ ob_start();
                     };
                     $cmsHealth = (string)($c['health_cms_status'] ?? $c['health_status'] ?? 'unknown');
                     $frontendHealth = (string)($c['health_frontend_status'] ?? 'n/a');
+                    $checkStale = (bool)($c['check_stale'] ?? false);
+                    $neverChecked = (bool)($c['never_checked'] ?? false);
                     $cmsClass = match ($cmsHealth) {
                         'healthy' => 'healthy',
                         'degraded' => 'degraded',
@@ -54,6 +90,10 @@ ob_start();
                         'n/a' => 'na',
                         default => 'unknown',
                     };
+                    if ($checkStale) {
+                        $cmsClass = 'unknown';
+                        $frontendClass = $frontendHealth === 'n/a' ? 'na' : 'unknown';
+                    }
                     $lastCheck = trim((string)($c['last_check_at'] ?? ''));
                     $lastSuccessful = trim((string)($c['last_successful_health_at'] ?? ''));
                     $lastDeployAt = trim((string)($c['last_deploy_at'] ?? ''));
@@ -101,10 +141,10 @@ ob_start();
 
                         <div class="dashboard-card__status-row">
                             <button type="button" class="badge-button badge-button--<?php echo $cmsClass; ?>" data-health-detail="<?php echo htmlspecialchars((string)($c['health_cms_detail'] ?? ''), ENT_QUOTES); ?>">
-                                CMS: <?php echo htmlspecialchars($cmsHealth, ENT_QUOTES); ?>
+                                CMS: <?php echo htmlspecialchars($neverChecked ? 'nie geprüft' : ($checkStale ? $cmsHealth . ' (alter Stand)' : $cmsHealth), ENT_QUOTES); ?>
                             </button>
                             <button type="button" class="badge-button badge-button--<?php echo $frontendClass; ?>" data-health-detail="<?php echo htmlspecialchars((string)($c['health_frontend_detail'] ?? ''), ENT_QUOTES); ?>">
-                                Frontend: <?php echo htmlspecialchars($frontendHealth, ENT_QUOTES); ?>
+                                Frontend: <?php echo htmlspecialchars($neverChecked ? 'nie geprüft' : ($checkStale && $frontendHealth !== 'n/a' ? $frontendHealth . ' (alter Stand)' : $frontendHealth), ENT_QUOTES); ?>
                             </button>
                         </div>
 
