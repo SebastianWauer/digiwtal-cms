@@ -40,7 +40,7 @@ eigenen CI-Token direkt den Verwaltungs-Endpunkt aufrufen:
 ### Alternative: PHP direkt ausfuehren
 
 ```cron
-*/5 * * * * /usr/bin/php-cgi8.5 -q -f /pfad/zum/projekt/Verwaltung/scripts/health_check.php
+*/5 * * * * /usr/bin/php8.5 -f /pfad/zum/projekt/Verwaltung/scripts/health_check.php
 ```
 
 Das Skript ist ein duenner Aufruf um `services/HealthMonitor.php`. Benoetigte
