@@ -132,11 +132,20 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
         <div class="pages-edit-card-sub">Steuert, ob sich der Benutzer anmelden darf.</div>
 
         <div class="pages-edit-fields">
-          <label class="pages-edit-check">
-            <input type="checkbox" name="enabled" value="1" <?= $enabled ? 'checked' : '' ?>>
-            <span>Benutzer ist aktiv</span>
-          </label>
-          <div class="pages-edit-field-hint">Gesperrt = keine Anmeldung möglich.</div>
+          <?php if ($isSelf): ?>
+            <input type="hidden" name="enabled" value="1">
+            <label class="pages-edit-check">
+              <input type="checkbox" value="1" checked disabled>
+              <span>Benutzer ist aktiv</span>
+            </label>
+            <div class="pages-edit-field-hint">Der eigene Account kann nicht gesperrt werden.</div>
+          <?php else: ?>
+            <label class="pages-edit-check">
+              <input type="checkbox" name="enabled" value="1" <?= $enabled ? 'checked' : '' ?>>
+              <span>Benutzer ist aktiv</span>
+            </label>
+            <div class="pages-edit-field-hint">Gesperrt = keine Anmeldung möglich.</div>
+          <?php endif; ?>
         </div>
       </div>
 

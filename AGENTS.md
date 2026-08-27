@@ -11,7 +11,7 @@ Diese Regeln gelten für alle Arbeiten in diesem Repository.
 
 ## Versionierung und Changelog für CMS-Änderungen
 
-- Ausgangsversion ist aktuell **2.2.0**. Maßgebliche Versionsdatei ist `CMS/config/version.php`.
+- Die aktuelle Version steht in `CMS/config/version.php` (bei Einführung dieses Prozesses: **2.2.0**).
 - Jede Änderung an von Git verwalteten Dateien, die Verhalten, Oberfläche, API, Datenmodell, Auslieferung oder sonstige Funktionalität des CMS betrifft, muss vor der Übernahme nach GitHub versioniert werden.
 - Die Version wird gemäß Semantic Versioning erhöht: Patch für Fehlerbehebungen und kleine Änderungen, Minor für neue abwärtskompatible Funktionen, Major für inkompatible Änderungen. Bei mehreren zusammengehörigen Dateien einer Änderung genügt ein gemeinsamer Versionssprung.
 - Zu jedem Versionssprung muss eine neue, fortlaufend nummerierte SQL-Migration unter `CMS/migrations/` angelegt werden. Sie trägt einen verständlichen Eintrag mit derselben Version in die Tabelle `changelogs` ein, damit die Änderung in der Changelog-Ansicht des CMS erscheint.
