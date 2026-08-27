@@ -13,10 +13,10 @@ ob_start();
     </section>
 
     <?php foreach ($errors as $e): ?>
-        <section class="surface"><div class="hint-card hint-card--danger"><?php echo htmlspecialchars((string)$e, ENT_QUOTES); ?></div></section>
+        <section class="surface"><div class="alert alert--error"><?php echo htmlspecialchars((string)$e, ENT_QUOTES); ?></div></section>
     <?php endforeach; ?>
     <?php if ($success): ?>
-        <section class="surface"><div class="hint-card"><?php echo htmlspecialchars((string)$success, ENT_QUOTES); ?></div></section>
+        <section class="surface"><div class="alert alert--success"><?php echo htmlspecialchars((string)$success, ENT_QUOTES); ?></div></section>
     <?php endif; ?>
 
     <?php if ($newToken): ?>
@@ -43,10 +43,10 @@ ob_start();
                in <code><?php echo htmlspecialchars($github['repo'], ENT_QUOTES); ?></code> auf Branch
                <code><?php echo htmlspecialchars($github['branch'], ENT_QUOTES); ?></code>.</p>
             <?php foreach ($kunden as $k): ?>
-                <form method="post" action="/admin/ci/dispatch/<?php echo (int)$k['id']; ?>" class="inline-form">
+                <form method="post" action="/admin/ci/dispatch/<?php echo (int)$k['id']; ?>" class="table-inline-form">
                     <?php echo Csrf::field(); ?>
-                    <span class="inline-form__label"><?php echo htmlspecialchars((string)$k['name'], ENT_QUOTES); ?></span>
-                    <label><input type="checkbox" name="erstinstallation" value="1"> Erstinstallation</label>
+                    <span class="mono"><?php echo htmlspecialchars((string)$k['name'], ENT_QUOTES); ?></span>
+                    <label class="checkbox-line"><input type="checkbox" name="erstinstallation" value="1"> Erstinstallation</label>
                     <button class="btn btn--warning btn--sm" type="submit">Ausrollen</button>
                 </form>
             <?php endforeach; ?>
@@ -67,7 +67,7 @@ ob_start();
         <?php if ($tokens === []): ?>
             <p class="section-copy">Noch keine Tokens angelegt.</p>
         <?php else: ?>
-        <table class="table">
+        <div class="table-wrap"><table class="data-table">
             <thead><tr><th>Bezeichnung</th><th>Zuletzt genutzt</th><th>Von</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($tokens as $t): ?>
@@ -87,7 +87,7 @@ ob_start();
                 </tr>
             <?php endforeach; ?>
             </tbody>
-        </table>
+        </table></div>
         <?php endif; ?>
     </section>
 </div>
