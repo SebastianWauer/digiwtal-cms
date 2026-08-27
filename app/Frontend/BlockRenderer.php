@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Frontend;
 
+use App\Core\FrontendSource;
+
 final class BlockRenderer
 {
     public function renderBlock(array $block): string
@@ -17,8 +19,8 @@ final class BlockRenderer
             return '';
         }
 
-        $tpl = dirname(__DIR__, 3) . '/Frontend/themes/default/blocks/' . $type . '.php';
-        if (!is_file($tpl)) {
+        $tpl = FrontendSource::file('themes/default/blocks/' . $type . '.php');
+        if ($tpl === null) {
             return '';
         }
 

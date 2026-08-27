@@ -3,7 +3,7 @@
 Diese Datei dokumentiert alle derzeit **im CMS-Core tatsächlich ausgelösten** Hooks.
 
 Quelle der Ermittlung:
-- `rg "Hooks::do_action|Hooks::apply_filters"` in `CMS/app` und `CMS/public`
+- `rg "Hooks::do_action|Hooks::apply_filters"` in `app` und `public`
 - Stand dieses Repositories: Es gibt aktuell 2 Core-Action-Hooks und 0 Core-Filter-Hooks.
 
 ## Core-Hooks (vollständig)
@@ -11,7 +11,7 @@ Quelle der Ermittlung:
 ### `cms_bootstrap_done`
 - Typ: `action`
 - Zeitpunkt: nach Bootstrap und nach Plugin-Load
-- Core-Quelle: `CMS/app/bootstrap.php`
+- Core-Quelle: `app/bootstrap.php`
 - Aufruf: `\App\Core\Hooks::do_action('cms_bootstrap_done')`
 - Parameter: keine
 - Rückgabewert: keiner
@@ -20,7 +20,7 @@ Quelle der Ermittlung:
 ### `cms_after_page_save`
 - Typ: `action`
 - Zeitpunkt: nach erfolgreichem Speichern einer Seite
-- Core-Quelle: `CMS/app/Services/PageService.php`
+- Core-Quelle: `app/Services/PageService.php`
 - Aufruf:
   - bei neuer Seite: `\App\Core\Hooks::do_action('cms_after_page_save', $newId, $slug)`
   - bei Update: `\App\Core\Hooks::do_action('cms_after_page_save', $id, $slug)`
@@ -33,7 +33,7 @@ Quelle der Ermittlung:
 ## Core-Filter (aktuell)
 
 Aktuell werden im CMS-Core keine `Hooks::apply_filters(...)` aufgerufen.
-Die Filter-API ist vorhanden (`CMS/app/Core/Hooks.php`), aber derzeit nur für Plugins/Custom-Code nutzbar.
+Die Filter-API ist vorhanden (`app/Core/Hooks.php`), aber derzeit nur für Plugins/Custom-Code nutzbar.
 
 ## Hook-API (Registrierung)
 
@@ -50,7 +50,7 @@ Die Filter-API ist vorhanden (`CMS/app/Core/Hooks.php`), aber derzeit nur für P
 ## Vollständiges Beispiel-Plugin
 
 Bestehendes Beispiel im Repository:
-- `CMS/plugins/example-plugin/plugin.php`
+- `plugins/example-plugin/plugin.php`
 
 ```php
 <?php
@@ -69,12 +69,12 @@ declare(strict_types=1);
 
 ## Plugin-Struktur und Laden
 
-- Ablage: `CMS/plugins/<plugin-name>/`
-- Einstiegspunkt: `CMS/plugins/<plugin-name>/plugin.php`
+- Ablage: `plugins/<plugin-name>/`
+- Einstiegspunkt: `plugins/<plugin-name>/plugin.php`
 - Laden: `PluginLoader::load()` lädt pro Unterordner die Datei `plugin.php` per `require_once`
 - Pflicht-Interface: keines (ausführbares `plugin.php` genügt)
 
 ## Wichtige Abgrenzung
 
-`CMS/docs/plugin-api.md` enthält zusätzlich Beispiel-Hook-Namen (z.B. `mein-plugin/*`), die als Muster dienen.
+`docs/plugin-api.md` enthält zusätzlich Beispiel-Hook-Namen (z.B. `mein-plugin/*`), die als Muster dienen.
 Diese sind **nicht automatisch Core-Hooks**, solange sie nicht im produktiven Code per `do_action`/`apply_filters` ausgelöst werden.

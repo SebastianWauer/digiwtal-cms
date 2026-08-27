@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Core\FrontendSource;
 use App\Repositories\PageRepositoryDb;
 use App\Repositories\MediaRepositoryDb;
 use App\Repositories\MediaUsageRepositoryDb;
@@ -114,10 +115,10 @@ final class PagesController
 
         $navItems = $this->buildPreviewNavigationItems($_pdo);
 
-        $frontendView = dirname(__DIR__, 3) . '/Frontend/app/view.php';
-        if (!is_file($frontendView)) {
-            http_response_code(500);
-            echo 'Frontend-View-Helper nicht gefunden.';
+        $frontendView = FrontendSource::file('app/view.php');
+        if ($frontendView === null) {
+            http_response_code(503);
+            echo 'Frontend-Vorschau ist nicht konfiguriert. FRONTEND_SOURCE_DIR pruefen.';
             return;
         }
 

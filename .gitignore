@@ -1,0 +1,24 @@
+# Secrets and local environment
+.env
+
+# Runtime data
+storage/
+vendor/
+.phpunit.result.cache
+
+# Local tools and editors
+.idea/
+.vscode/
+.claude/
+*.swp
+*.user.ini
+
+# Operating-system metadata
+.DS_Store
+._*
+Thumbs.db
+
+# Archives and private material
+*.zip
+secrets/
+.ssh/

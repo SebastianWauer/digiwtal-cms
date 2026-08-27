@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Frontend;
 
+use App\Core\FrontendSource;
 use App\Repositories\PageRepositoryDb;
 use App\Repositories\SeoRepositoryDb;
 use App\Repositories\SiteSettingsRepositoryDb;
@@ -65,7 +66,12 @@ final class ThemeEngine
         $brandTertiary = $this->normalizeHex((string)($settings['brand_color_tertiary'] ?? ''), '#f59e0b');
 
         $renderer  = new BlockRenderer();
-        $themeRoot = dirname(__DIR__, 3) . '/Frontend/themes/default';
+        $themeRoot = FrontendSource::directory('themes/default');
+        if ($themeRoot === null) {
+            http_response_code(503);
+            echo 'Frontend-Quelle ist nicht konfiguriert oder nicht erreichbar.';
+            return;
+        }
         $layout    = $themeRoot . '/layout.php';
 
         if (!is_file($layout)) {
