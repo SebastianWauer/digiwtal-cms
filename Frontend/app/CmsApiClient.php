@@ -81,6 +81,15 @@ class CmsApiClient
     }
 
     /**
+     * GET /instagram/media
+     * Returns connected, username, items[] (bereits vom CMS geladene Instagram-Posts).
+     */
+    public function getInstagramMedia(): array
+    {
+        return $this->get('/instagram/media');
+    }
+
+    /**
      * GET /media/{id}
      * Returns media metadata (url, mime, dimensions, alt).
      */
