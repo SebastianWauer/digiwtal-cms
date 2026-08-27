@@ -23,26 +23,14 @@ class CiController
         private CustomerRepository $customerRepo,
         private ServerAccessRepository $accessRepo,
         private SupportTokenRepository $supportTokens,
-        private AuditLogger $audit
+        private AuditLogger $audit,
+        private HealthMonitor $monitor
     ) {}
 
     /** GET /api/ci/deploy-target?customer=<id> */
     public function deployTarget(): void
     {
-        $token = $this->headerToken();
-        if ($token === '') {
-            $this->json(['ok' => false, 'error' => 'missing_token'], 401);
-        }
-
-        if (!$this->isSecure()) {
-            $this->json(['ok' => false, 'error' => 'https_required'], 400);
-        }
-
-        $matched = $this->ciTokens->findByPlainToken($token);
-        if ($matched === null) {
-            $this->audit->log('ci.token_rejected', 'ci_token', 0, 'ip: ' . $this->clientIp());
-            $this->json(['ok' => false, 'error' => 'invalid_token'], 403);
-        }
+        $matched = $this->authorize();
 
         $customerId = (int)($_GET['customer'] ?? 0);
         if ($customerId <= 0) {
@@ -79,7 +67,6 @@ class CiController
         $frontendUrl = rtrim((string)($access['health_frontend_url'] ?? ($access['canonical_base'] ?? '')), '/');
         $deployToken = $secret('deploy_token');
 
-        $this->ciTokens->markUsed((int)$matched['id'], $this->clientIp());
         $this->audit->log(
             'ci.deploy_target_read',
             'customer',
@@ -140,6 +127,138 @@ class CiController
                 'token' => (string)($this->supportTokens->ensureFor($customerId) ?? ''),
             ],
         ], 200);
+    }
+
+    /**
+     * GET /api/ci/instances
+     *
+     * Alle ueberwachbaren Instanzen fuer den geplanten Pruflauf. Die fertige
+     * Health-Adresse kommt aus der Verwaltung - so kann in der Pipeline niemand
+     * das api.php vergessen, an dem der Cron ein Jahr lang vorbeigelaufen ist.
+     */
+    public function instances(): void
+    {
+        $matched = $this->authorize();
+
+        $instances = [];
+        foreach ($this->monitor->targets() as $target) {
+            $instances[] = [
+                'customer'       => $target['id'],
+                'name'           => $target['name'],
+                'cms_health_url' => HealthMonitor::cmsHealthUrl($target['cms_url']),
+                'frontend_url'   => HealthMonitor::normalizeBaseUrl($target['frontend_url']),
+                'token'          => $target['token'],
+            ];
+        }
+
+        $this->audit->log(
+            'ci.instances_read',
+            'ci_token',
+            (int)$matched['id'],
+            'instanzen: ' . count($instances) . ', ip: ' . $this->clientIp()
+        );
+
+        $this->json(['ok' => true, 'instances' => $instances], 200);
+    }
+
+    /**
+     * POST /api/ci/health-report
+     *
+     * Nimmt Messungen der Pipeline entgegen. Bewertet wird hier, nicht dort:
+     * HealthMonitor::evaluate() ist die einzige Stelle, an der aus einer
+     * Messung ein Status wird - egal ob der Cron gemessen hat oder GitHub.
+     */
+    public function healthReport(): void
+    {
+        $matched = $this->authorize();
+
+        $raw = file_get_contents('php://input');
+        if (!is_string($raw) || $raw === '' || strlen($raw) > 262144) {
+            $this->json(['ok' => false, 'error' => 'invalid_body'], 400);
+        }
+
+        $payload = json_decode($raw, true);
+        if (!is_array($payload)) {
+            $this->json(['ok' => false, 'error' => 'invalid_json'], 400);
+        }
+
+        $source = (string)($payload['source'] ?? 'ci');
+        if (!in_array($source, ['ci', 'rollout'], true)) {
+            $this->json(['ok' => false, 'error' => 'invalid_source'], 400);
+        }
+
+        $results = $payload['results'] ?? null;
+        if (!is_array($results) || $results === []) {
+            $this->json(['ok' => false, 'error' => 'no_results'], 400);
+        }
+
+        $recorded = [];
+        $skipped  = [];
+
+        foreach ($results as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $customerId = (int)($entry['customer'] ?? 0);
+            $customer   = $customerId > 0 ? $this->customerRepo->findById($customerId) : null;
+            if ($customer === null) {
+                $skipped[] = ['customer' => $customerId, 'reason' => 'customer_not_found'];
+                continue;
+            }
+
+            $cms      = is_array($entry['cms'] ?? null) ? $entry['cms'] : [];
+            $frontend = is_array($entry['frontend'] ?? null) ? $entry['frontend'] : ['checked' => false];
+            $result   = $this->monitor->evaluate($cms, $frontend, $source);
+
+            try {
+                $this->monitor->record($customerId, (string)($customer['name'] ?? ''), $result, $source);
+                $recorded[] = ['customer' => $customerId, 'status' => $result['status']];
+            } catch (Throwable $e) {
+                $skipped[] = ['customer' => $customerId, 'reason' => 'write_failed'];
+            }
+        }
+
+        // Auch ein Lauf ohne verwertbares Ergebnis ist ein Lebenszeichen der
+        // Ueberwachung - sonst meldet das Dashboard spaeter Stillstand, obwohl
+        // gemessen wurde.
+        $this->monitor->noteRun($source, count($recorded), 'token: ' . (string)($matched['label'] ?? ''));
+
+        $this->audit->log(
+            'ci.health_report',
+            'ci_token',
+            (int)$matched['id'],
+            'quelle: ' . $source . ', gespeichert: ' . count($recorded) . ', uebersprungen: ' . count($skipped)
+        );
+
+        $this->json(['ok' => true, 'recorded' => $recorded, 'skipped' => $skipped], 200);
+    }
+
+    /**
+     * Gemeinsame Eingangskontrolle: gueltiges CI-Token, HTTPS, Spur im Log.
+     *
+     * @return array<string,mixed> Der Token-Datensatz
+     */
+    private function authorize(): array
+    {
+        $token = $this->headerToken();
+        if ($token === '') {
+            $this->json(['ok' => false, 'error' => 'missing_token'], 401);
+        }
+
+        if (!$this->isSecure()) {
+            $this->json(['ok' => false, 'error' => 'https_required'], 400);
+        }
+
+        $matched = $this->ciTokens->findByPlainToken($token);
+        if ($matched === null) {
+            $this->audit->log('ci.token_rejected', 'ci_token', 0, 'ip: ' . $this->clientIp());
+            $this->json(['ok' => false, 'error' => 'invalid_token'], 403);
+        }
+
+        $this->ciTokens->markUsed((int)$matched['id'], $this->clientIp());
+
+        return $matched;
     }
 
     /** SSH-Port aus dem Serverzugang, unabhaengig vom dort gesetzten Protokoll. */

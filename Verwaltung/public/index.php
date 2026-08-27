@@ -107,6 +107,7 @@ require_once __DIR__ . '/../controllers/CustomerDetailController.php';
 require_once __DIR__ . '/../services/AuditLogger.php';
 require_once __DIR__ . '/../controllers/AuditController.php';
 require_once __DIR__ . '/../services/MigrationRunner.php';
+require_once __DIR__ . '/../services/HealthMonitor.php';
 require_once __DIR__ . '/../controllers/MigrationController.php';
 require_once __DIR__ . '/../repositories/CiTokenRepository.php';
 require_once __DIR__ . '/../services/VerwaltungUrl.php';
@@ -158,6 +159,13 @@ $ciTokenRepo = new CiTokenRepository($pdo);
 $supportTickets = new SupportTicketRepository($pdo);
 $supportTokens  = new SupportTokenRepository($pdo);
 
+$healthMonitor = new HealthMonitor(
+    $pdo,
+    (string)(getenv('HEALTH_ALERT_EMAIL') ?: 'info@digiwtal.de'),
+    new PushService(),
+    $pushRepo
+);
+
 $moduleCombinator = new ModuleCombinator($customerModuleRepo, $moduleRepo);
 $cmsProvisioner = new CmsProvisioningService();
 $deployService = new DeployService($pdo, $deploymentRepo, $accessRepo, $moduleCombinator, $cmsProvisioner);
@@ -169,7 +177,7 @@ $auditLogger     = new AuditLogger($pdo);
 $auditController = new AuditController($pdo);
 
 $authController           = new AuthController($userRepo, $pdo, $auditLogger);
-$dashboardController      = new DashboardController($customerRepo);
+$dashboardController      = new DashboardController($customerRepo, $healthMonitor);
 $customerController       = new CustomerController($customerRepo, $auditLogger);
 $vaultController          = new VaultController($customerRepo, $vaultRepo);
 $moduleController         = new ModuleController($moduleRepo, $customerRepo, $customerModuleRepo);
@@ -180,7 +188,7 @@ $customerDetailController = new CustomerDetailController($customerRepo, $pdo);
 $adminUserController      = new AdminUserController($userRepo, $auditLogger);
 $webhookController        = new WebhookController($webhookRepo, $deploymentRepo, $deployService, $customerRepo, $auditLogger);
 $migrationController      = new MigrationController($pdo, $auditLogger);
-$ciController             = new CiController($ciTokenRepo, $customerRepo, $accessRepo, $supportTokens, $auditLogger);
+$ciController             = new CiController($ciTokenRepo, $customerRepo, $accessRepo, $supportTokens, $auditLogger, $healthMonitor);
 $supportController        = new SupportController($supportTickets, $customerRepo, $supportTokens, $auditLogger);
 $supportApiController     = new SupportApiController($supportTickets, $supportTokens, $auditLogger);
 $ciTokenController        = new CiTokenController($ciTokenRepo, $customerRepo, $auditLogger);
@@ -258,6 +266,8 @@ $router->add('GET',  '/admin/migrations', [$migrationController, 'index']);
 $router->add('POST', '/admin/migrations/baseline', [$migrationController, 'baseline']);
 $router->add('POST', '/admin/migrations/apply', [$migrationController, 'apply']);
 $router->add('GET',  '/api/ci/deploy-target', [$ciController, 'deployTarget']);
+$router->add('GET',  '/api/ci/instances', [$ciController, 'instances']);
+$router->add('POST', '/api/ci/health-report', [$ciController, 'healthReport']);
 $router->add('POST', '/api/support/tickets', [$supportApiController, 'store']);
 $router->add('GET',  '/api/support/tickets', [$supportApiController, 'index']);
 $router->add('GET',  '/admin/support', [$supportController, 'index']);

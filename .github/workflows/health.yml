@@ -1,0 +1,97 @@
+name: Instanzen ueberwachen
+
+# Dauerhafter Pruflauf ueber alle Kundeninstanzen.
+#
+# Warum zusaetzlich zum Cron des Verwaltungs-Webspace: Der Cron ist unsichtbar.
+# Am 26.08.2026 hat ein Deploy ihn gestoppt - gemerkt hat es niemand, weil das
+# Dashboard einfach den zuletzt gespeicherten Wert weiter anzeigte. Ein Lauf
+# hier steht im Actions-Log, schlaegt bei Problemen sichtbar fehl und traegt
+# sich als Lebenszeichen in die Verwaltung ein (Tabelle monitor_runs).
+#
+# Der Cron bleibt als zweiter Takt bestehen: GitHub fuehrt geplante Laeufe
+# nicht minutengenau aus und schaltet sie in ruhenden Repositories nach 60
+# Tagen ohne Aktivitaet ab. Zwei Quellen, die sich gegenseitig auffangen.
+#
+# Secrets - dieselben wie beim Rollout:
+#   VERWALTUNG_URL       z.B. https://verwaltung.digiwtal.de
+#   VERWALTUNG_CI_TOKEN  in der Verwaltung unter CI-Tokens erzeugt
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: health-sweep
+  cancel-in-progress: true
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instanzen aus der Verwaltung holen
+        env:
+          VERWALTUNG_URL: ${{ secrets.VERWALTUNG_URL }}
+          CI_TOKEN: ${{ secrets.VERWALTUNG_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          STATUS=$(curl -sS --max-time 30 -o /tmp/instanzen.json -w '%{http_code}' \
+            -H "X-Ci-Token: $CI_TOKEN" \
+            "${VERWALTUNG_URL%/}/api/ci/instances")
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Verwaltung antwortete mit HTTP $STATUS"
+            # Fehlerobjekt enthaelt keine Geheimnisse, darf also ins Log
+            cat /tmp/instanzen.json || true
+            exit 1
+          fi
+
+          # Health-Tokens maskieren, bevor irgendetwas davon im Log landen kann
+          jq -r '.instances[].token // empty' /tmp/instanzen.json | while read -r wert; do
+            [ -n "$wert" ] && echo "::add-mask::$wert"
+          done
+
+          echo "$(jq -r '.instances | length' /tmp/instanzen.json) Instanz(en) gemeldet."
+
+      - name: Messen
+        run: php .github/scripts/health_sweep.php /tmp/instanzen.json /tmp/report.json ci
+
+      - name: An die Verwaltung melden
+        env:
+          VERWALTUNG_URL: ${{ secrets.VERWALTUNG_URL }}
+          CI_TOKEN: ${{ secrets.VERWALTUNG_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          STATUS=$(curl -sS --max-time 30 -o /tmp/antwort.json -w '%{http_code}' \
+            -X POST \
+            -H "X-Ci-Token: $CI_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/report.json \
+            "${VERWALTUNG_URL%/}/api/ci/health-report")
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Report abgelehnt, HTTP $STATUS"
+            cat /tmp/antwort.json || true
+            exit 1
+          fi
+
+          jq -r '.recorded[] | "Kunde \(.customer): \(.status)"' /tmp/antwort.json
+          jq -r '.skipped[]? | "Kunde \(.customer) uebersprungen: \(.reason)"' /tmp/antwort.json
+
+      - name: Ergebnis bewerten
+        run: |
+          set -euo pipefail
+
+          # Bewertet hat die Verwaltung - hier wird nur noch sichtbar gemacht,
+          # was sie gespeichert hat.
+          PROBLEME=$(jq -r '[.recorded[] | select(.status != "healthy")] | length' /tmp/antwort.json)
+          if [ "$PROBLEME" != "0" ]; then
+            echo "::error::$PROBLEME Instanz(en) nicht healthy."
+            exit 1
+          fi
+          echo "Alle gemeldeten Instanzen sind healthy."

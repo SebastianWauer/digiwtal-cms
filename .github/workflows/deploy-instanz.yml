@@ -75,6 +75,7 @@ jobs:
             echo "CMS_PATH=$(jq -r '.ssh.cms_path' /tmp/ziel.json)"
             echo "FRONTEND_PATH=$(jq -r '.ssh.frontend_path' /tmp/ziel.json)"
             echo "CMS_URL=$(jq -r '.urls.cms' /tmp/ziel.json)"
+            echo "FRONTEND_URL=$(jq -r '.urls.frontend' /tmp/ziel.json)"
             echo "HEALTH_TOKEN=$(jq -r '.tokens.health' /tmp/ziel.json)"
           } >> "$GITHUB_ENV"
 
@@ -103,6 +104,15 @@ jobs:
               exit 1
             fi
           done
+
+          # Ein leeres Health-Token wandert sonst als leerer Wert in die .env -
+          # das CMS behandelt eine leere Erwartung als "verboten", und der
+          # Health-Endpunkt antwortet danach dauerhaft 403. Die Instanz gilt
+          # als ungesund, obwohl sie laeuft.
+          if [ -z "${HEALTH_TOKEN:-}" ]; then
+            echo "::error::Kein Health-Token im Serverzugang hinterlegt. Ohne das Token ist die Instanz nicht ueberwachbar."
+            exit 1
+          fi
 
           case "$CMS_PATH" in
             /CMS|/Frontend|/|"")
@@ -243,16 +253,49 @@ jobs:
           set -euo pipefail
           $SSH_CMD "$SSH_USER@$SSH_HOST" "cd '$CMS_PATH' && php scripts/migrate.php"
 
-      - name: Health pruefen
+      # Gemessen wird mit demselben Code wie beim Dauercheck, bewertet und
+      # gespeichert wird in der Verwaltung. Damit steht das Ergebnis eines
+      # Rollouts sofort im Dashboard - frueher blieb es im Actions-Log liegen,
+      # und eine frisch ausgerollte Instanz galt dort als "nie geprueft".
+      # always(), damit auch ein gescheiterter Rollout eine Messung hinterlaesst -
+      # aber nur, wenn die Konfiguration ueberhaupt geholt werden konnte.
+      - name: Health pruefen und an die Verwaltung melden
+        if: ${{ always() && env.CMS_URL != '' && env.HEALTH_TOKEN != '' }}
+        env:
+          VERWALTUNG_URL: ${{ secrets.VERWALTUNG_URL }}
+          CI_TOKEN: ${{ secrets.VERWALTUNG_CI_TOKEN }}
         run: |
           set -euo pipefail
-          ANTWORT=$(curl -sS --max-time 20 -H "X-Health-Token: $HEALTH_TOKEN" \
-            "$CMS_URL/api.php/api/health")
-          echo "$ANTWORT" | jq .
 
-          STATUS=$(echo "$ANTWORT" | jq -r '.status // ""')
-          if [ "$STATUS" != "healthy" ]; then
-            echo "::error::$KUNDE_NAME meldet '$STATUS' statt 'healthy'."
+          jq -n \
+            --arg kunde "${{ inputs.kunde }}" \
+            --arg name "$KUNDE_NAME" \
+            --arg cms "$CMS_URL" \
+            --arg frontend "$FRONTEND_URL" \
+            --arg token "$HEALTH_TOKEN" \
+            '{instances:[{customer:($kunde|tonumber), name:$name, cms_health_url:$cms, frontend_url:$frontend, token:$token}]}' \
+            > /tmp/instanzen.json
+
+          php .github/scripts/health_sweep.php /tmp/instanzen.json /tmp/report.json rollout
+
+          STATUS=$(curl -sS --max-time 30 -o /tmp/antwort.json -w '%{http_code}' \
+            -X POST \
+            -H "X-Ci-Token: $CI_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/report.json \
+            "${VERWALTUNG_URL%/}/api/ci/health-report")
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Verwaltung nahm den Health-Report nicht an, HTTP $STATUS"
+            cat /tmp/antwort.json || true
             exit 1
           fi
-          echo "$KUNDE_NAME laeuft. CMS $(echo "$ANTWORT" | jq -r .cms_version), Migration $(echo "$ANTWORT" | jq -r .last_migration)"
+
+          ERGEBNIS=$(jq -r '.recorded[0].status // "unbekannt"' /tmp/antwort.json)
+          echo "$KUNDE_NAME meldet: $ERGEBNIS (in der Verwaltung gespeichert)"
+
+          if [ "$ERGEBNIS" != "healthy" ]; then
+            echo "::error::$KUNDE_NAME meldet '$ERGEBNIS' statt 'healthy'."
+            jq -r '.results[0].cms | "HTTP \(.http_code) auf \(.url)"' /tmp/report.json
+            exit 1
+          fi
