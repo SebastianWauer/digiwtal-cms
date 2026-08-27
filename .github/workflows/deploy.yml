@@ -24,6 +24,7 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }}" \
             --exclude='.git/' \
             --exclude='.github/' \
+            --exclude='AGENTS.md' \
             --exclude='secrets/' \
             --exclude='.env' \
             --exclude='storage/' \
