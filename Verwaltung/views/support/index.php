@@ -57,6 +57,25 @@ ob_start();
         </section>
     <?php endif; ?>
 
+    <?php if ($zugangsdaten !== null): ?>
+        <section class="surface">
+            <div class="hint-card hint-card--warning">
+                <h2 class="section-title">Zugangsdaten für „<?php echo htmlspecialchars((string)$zugangsdaten['kunde'], ENT_QUOTES); ?>"</h2>
+                <p class="section-copy">
+                    Diese zwei Zeilen ans Ende der <code>.env</code> des CMS dieser Instanz setzen. Danach ist
+                    „Hilfe" dort einsatzbereit. Das Token wird nur jetzt angezeigt.
+                </p>
+                <code class="code-block">SUPPORT_URL=<?php echo htmlspecialchars((string)$zugangsdaten['url'], ENT_QUOTES); ?>
+
+SUPPORT_TOKEN=<?php echo htmlspecialchars((string)$zugangsdaten['token'], ENT_QUOTES); ?></code>
+                <p class="section-copy text-muted">
+                    Instanzen, die über <em>Rollout</em> ausgerollt werden, bekommen beides automatisch —
+                    hier steht es für alles, was von Hand gepflegt wird.
+                </p>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <section class="surface">
         <div class="submit-row">
             <a class="btn btn--sm <?php echo $aktiverStatus === '' ? 'btn--primary' : 'btn--ghost'; ?>"
@@ -117,6 +136,42 @@ ob_start();
                             </td>
                             <td>
                                 <a class="btn btn--secondary btn--sm" href="/admin/support/<?php echo (int)$eintrag['id']; ?>">Öffnen</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
+    <section class="surface">
+        <h2 class="section-title">Instanz verbinden</h2>
+        <p class="section-copy text-muted">
+            Eine Instanz meldet sich mit einem eigenen Token. Beim Rollout wandert es von selbst in die
+            <code>.env</code>. Für Installationen, die nicht über die Pipeline laufen — die eigene zum
+            Beispiel — stehen die zwei Zeilen hier zum Abschreiben.
+        </p>
+        <?php if ($verwaltungUrl === ''): ?>
+            <div class="alert alert--error">
+                Eigene Adresse unbekannt. <code>ADMIN_HOST</code> in der <code>.env</code> der Verwaltung setzen,
+                sonst weiß eine Instanz nicht, wohin sie melden soll.
+            </div>
+        <?php elseif ($kunden === []): ?>
+            <p class="empty-state">Noch keine Kunden angelegt.</p>
+        <?php else: ?>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Kunde</th><th>Meldet an</th><th></th></tr></thead>
+                    <tbody>
+                    <?php foreach ($kunden as $kunde): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars((string)$kunde['name'], ENT_QUOTES); ?></td>
+                            <td class="mono text-muted"><?php echo htmlspecialchars($verwaltungUrl, ENT_QUOTES); ?></td>
+                            <td>
+                                <form method="post" action="/admin/support/zugang/<?php echo (int)$kunde['id']; ?>">
+                                    <?php echo Csrf::field(); ?>
+                                    <button class="btn btn--secondary btn--sm" type="submit">Zugangsdaten anzeigen</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
