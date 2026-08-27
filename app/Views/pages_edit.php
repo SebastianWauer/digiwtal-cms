@@ -206,6 +206,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
               <button type="button" class="btn btn--ghost btn--sm" data-add-block="imprint">+ Impressum</button>
               <button type="button" class="btn btn--ghost btn--sm" data-add-block="events">+ Events</button>
               <button type="button" class="btn btn--ghost btn--sm" data-add-block="news">+ News</button>
+              <button type="button" class="btn btn--ghost btn--sm" data-add-block="social_account">+ Social-Media-Account</button>
             </div>
           <?php else: ?>
             <div class="pages-edit-field-hint pages-edit-pb-readonly">
@@ -466,6 +467,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     gallery: 'Galerie',
     events: 'Events',
     news: 'News',
+    social_account: 'Social-Media-Account',
   };
   function blockLabel(type) {
     const t = String(type || '').trim();

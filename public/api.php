@@ -803,6 +803,77 @@ if ($sub === '/settings/public') {
     json_response(get_public_settings($pdo));
 }
 
+/**
+ * Liefert die zuletzt geladenen Instagram-Beitraege des verbundenen
+ * Business-/Creator-Kontos (native Meta Graph API, siehe README
+ * "Grundsatz: keine Drittanbieter-Embed-Dienste"). Zwischenspeichert das
+ * Ergebnis fuer INSTAGRAM_MEDIA_CACHE_TTL Sekunden in site_settings, um
+ * nicht bei jedem Seitenaufruf gegen Instagram zu fragen, und erneuert den
+ * Access-Token automatisch, bevor er ablaeuft.
+ */
+function get_instagram_media(PDO $pdo): array
+{
+    $cacheTtl = 1200; // 20 Minuten
+    $tokenRefreshMargin = 7 * 86400; // 7 Tage vor Ablauf erneuern
+
+    $repo = new \App\Repositories\SiteSettingsRepositoryDb($pdo);
+    $s = $repo->getAll();
+
+    $tokenEnc = trim((string)($s['instagram_access_token_enc'] ?? ''));
+    $username = trim((string)($s['instagram_username'] ?? ''));
+    if ($tokenEnc === '') {
+        return ['connected' => false, 'username' => '', 'items' => []];
+    }
+
+    $cacheJson = (string)($s['instagram_media_cache_json'] ?? '');
+    $cacheAt = (int)($s['instagram_media_cache_at'] ?? 0);
+    if ($cacheJson !== '' && (time() - $cacheAt) < $cacheTtl) {
+        $items = json_decode($cacheJson, true);
+        return ['connected' => true, 'username' => $username, 'items' => is_array($items) ? $items : []];
+    }
+
+    $appId = trim((string)(getenv('INSTAGRAM_APP_ID') ?: ''));
+    $appSecret = trim((string)(getenv('INSTAGRAM_APP_SECRET') ?: ''));
+    if ($appId === '' || $appSecret === '') {
+        $items = json_decode($cacheJson, true);
+        return ['connected' => true, 'username' => $username, 'items' => is_array($items) ? $items : []];
+    }
+
+    try {
+        $accessToken = \App\Services\InstagramTokenCrypto::decrypt($tokenEnc);
+        $client = new \App\Services\InstagramClient($appId, $appSecret);
+
+        $expiresAt = (int)($s['instagram_token_expires_at'] ?? 0);
+        if ($expiresAt > 0 && ($expiresAt - time()) < $tokenRefreshMargin) {
+            $refreshed = $client->refreshLongLivedToken($accessToken);
+            $accessToken = $refreshed['access_token'];
+            $repo->set('instagram_access_token_enc', \App\Services\InstagramTokenCrypto::encrypt($accessToken));
+            $repo->set('instagram_token_expires_at', (string)(time() + $refreshed['expires_in']));
+        }
+
+        $items = $client->fetchMedia($accessToken, 12);
+        $repo->set('instagram_media_cache_json', (string)json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $repo->set('instagram_media_cache_at', (string)time());
+
+        return ['connected' => true, 'username' => $username, 'items' => $items];
+    } catch (\Throwable $e) {
+        cms_api_debug_log('[INSTAGRAM] media fetch failed: ' . $e->getMessage());
+        // Bei Fehler (z.B. Instagram kurzzeitig nicht erreichbar, Token widerrufen):
+        // alten Cache weiterverwenden, statt die Seite kaputtzumachen.
+        $items = json_decode($cacheJson, true);
+        return ['connected' => true, 'username' => $username, 'items' => is_array($items) ? $items : []];
+    }
+}
+
+// --- /instagram/media ---
+if ($sub === '/instagram/media') {
+    if ($method !== 'GET') {
+        json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
+    }
+    header('Cache-Control: no-store');
+    json_response(['ok' => true] + get_instagram_media($pdo));
+}
+
 // --- GET /api/v1/pages (list of all public pages) ---
 if ($sub === '/pages' && !isset($_GET['slug'])) {
     if ($method !== 'GET') {

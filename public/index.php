@@ -141,6 +141,9 @@ $router->post('/roles/purge', \App\Controller\RolesController::class, 'purge');
 
 $router->get('/settings', \App\Controller\SiteSettingsController::class, 'show');
 $router->post('/settings', \App\Controller\SiteSettingsController::class, 'save');
+$router->get('/settings/instagram/connect', \App\Controller\InstagramController::class, 'connect');
+$router->get('/settings/instagram/callback', \App\Controller\InstagramController::class, 'callback');
+$router->post('/settings/instagram/disconnect', \App\Controller\InstagramController::class, 'disconnect');
 
 $router->get('/changelog', \App\Controller\ChangelogController::class, 'show');
 
