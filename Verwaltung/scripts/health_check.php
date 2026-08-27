@@ -69,9 +69,33 @@ function normalizeBaseUrl(string $value): string
     return rtrim($value, '/');
 }
 
+/**
+ * Adresse des Health-Endpunkts einer Instanz.
+ *
+ * Die API des CMS haengt hinter api.php: die .htaccess leitet alles, was keine
+ * echte Datei ist, an index.php (den Admin-Router). Ein Aufruf von /api/health
+ * landet deshalb dort und antwortet mit 404 - die Instanz gilt dann als "down",
+ * obwohl sie laeuft. Derselbe Weg wird auch sonst ueberall benutzt
+ * (CmsProvisioningService, DeployService, deploy-instanz.yml).
+ */
+function healthEndpointUrl(string $cmsBaseUrl): string
+{
+    $base = normalizeBaseUrl($cmsBaseUrl);
+    if ($base === '') {
+        return '';
+    }
+
+    // Toleriert einen Serverzugang, in dem die URL bereits auf /api.php endet.
+    if (!str_ends_with($base, '/api.php')) {
+        $base .= '/api.php';
+    }
+
+    return $base . '/api/health';
+}
+
 function performCmsHealthCheck(string $cmsBaseUrl, string $token): array
 {
-    $url = normalizeBaseUrl($cmsBaseUrl) . '/api/health?token=' . urlencode($token);
+    $url = healthEndpointUrl($cmsBaseUrl);
     $startTime = microtime(true);
     
     $ch = curl_init();
@@ -83,6 +107,12 @@ function performCmsHealthCheck(string $cmsBaseUrl, string $token): array
         CURLOPT_SSL_VERIFYPEER => true,
         CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_FOLLOWLOCATION => false,
+        // Token im Header: der Query-Parameter ist im CMS als deprecated
+        // markiert und stuende im Access-Log jedes Aufrufs.
+        CURLOPT_HTTPHEADER => [
+            'X-Health-Token: ' . $token,
+            'Accept: application/json',
+        ],
     ]);
     
     $body = curl_exec($ch);
@@ -107,7 +137,7 @@ function performCmsHealthCheck(string $cmsBaseUrl, string $token): array
         return [
             'status' => 'down',
             'response_ms' => $responseMs,
-            'raw_response' => ['error' => 'http_error', 'http_code' => $httpCode, 'curl_errno' => $curlErrno],
+            'raw_response' => ['error' => 'http_error', 'http_code' => $httpCode, 'curl_errno' => $curlErrno, 'url' => $url],
         ];
     }
     

@@ -98,7 +98,7 @@ ob_start();
             <div class="field">
                 <label for="health_cms_url">Health CMS URL</label>
                 <input class="input" type="url" id="health_cms_url" name="health_cms_url" placeholder="https://cms.example.com" value="<?php echo htmlspecialchars((string)($old['healthCmsUrl'] ?? $access['health_cms_url'] ?? ''), ENT_QUOTES); ?>">
-                <div class="field__hint">Öffentliche CMS-URL. Der Health-Check ruft dort <code>/api/health?token=...</code> auf.</div>
+                <div class="field__hint">Öffentliche CMS-URL, ohne <code>/api.php</code>. Der Health-Check ruft dort <code>/api.php/api/health</code> auf.</div>
             </div>
 
             <div class="field">
