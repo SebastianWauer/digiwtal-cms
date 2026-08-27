@@ -17,6 +17,7 @@ function sidebar_render(array $params): void
     $username = (string)($user['username'] ?? '');
     $role     = admin_role_label($user);
     $version  = admin_version();
+    $updatesAvailableUntil = admin_updates_available_until();
 
     $isActive = static fn(string $key): string => $active === $key ? 'is-active' : '';
 
@@ -292,6 +293,7 @@ function sidebar_render(array $params): void
           <div class="sidebar-meta">
             <div>© <?= date('Y') ?> DIGIWTAL – CMS</div>
             <div>Version <?= h($version) ?></div>
+            <div>Updates verfügbar bis: <?= h($updatesAvailableUntil) ?></div>
           </div>
         </div>
       </div>

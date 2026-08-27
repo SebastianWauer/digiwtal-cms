@@ -77,6 +77,7 @@ jobs:
             echo "CMS_URL=$(jq -r '.urls.cms' /tmp/ziel.json)"
             echo "FRONTEND_URL=$(jq -r '.urls.frontend' /tmp/ziel.json)"
             echo "HEALTH_TOKEN=$(jq -r '.tokens.health' /tmp/ziel.json)"
+            echo "UPDATES_AVAILABLE_UNTIL=$(jq -r '.customer.updates_available_until // "unlimited"' /tmp/ziel.json)"
           } >> "$GITHUB_ENV"
 
           echo "Ziel: $(jq -r '.customer.name' /tmp/ziel.json) (Kunde ${{ inputs.kunde }})"
@@ -185,6 +186,7 @@ jobs:
             "HEALTH_TOKEN=" + .tokens.health,
             "DEPLOY_TOKEN=" + .tokens.deploy,
             "SETUP_TOKEN=" + .tokens.setup,
+            "UPDATES_AVAILABLE_UNTIL=" + (.customer.updates_available_until // "unlimited"),
             "CMS_BASE_PATH=" + .urls.base_path,
             "SUPPORT_URL=" + (.support.url // ""),
             "SUPPORT_TOKEN=" + (.support.token // "")
@@ -217,24 +219,39 @@ jobs:
 
           $SSH_CMD "$ziel" "mkdir -p '$CMS_PATH/storage' && chmod 755 '$CMS_PATH/storage'"
 
-      - name: Hilfe-Zugang nachtragen
+      - name: Vertragsinfo und Hilfe-Zugang nachtragen
         run: |
           set -euo pipefail
 
-          # Fuer Instanzen, die es schon vor der Hilfe-Funktion gab: Die .env
-          # wird nie ueberschrieben, sonst waeren von Hand gepflegte Werte weg.
-          # Fehlende Schluessel duerfen aber dazukommen.
+          # Bestehende .env-Dateien werden nicht komplett ueberschrieben, weil
+          # sie kundenspezifische Werte enthalten koennen. Die Vertragsinfo
+          # muss sich bei jedem Rollout aktualisieren; fehlende Hilfe-Werte
+          # werden weiterhin nur einmalig ergaenzt.
           SUPPORT_URL=$(jq -r '.support.url // ""' /tmp/ziel.json)
           SUPPORT_TOKEN=$(jq -r '.support.token // ""' /tmp/ziel.json)
           ziel="$SSH_USER@$SSH_HOST"
 
-          if [ -z "$SUPPORT_URL" ] || [ -z "$SUPPORT_TOKEN" ]; then
-            echo "Kein Hilfe-Zugang geliefert - uebersprungen."
+          if ! $SSH_CMD "$ziel" "test -f '$CMS_PATH/.env'"; then
+            echo "Keine .env vorhanden - uebersprungen."
             exit 0
           fi
 
-          if ! $SSH_CMD "$ziel" "test -f '$CMS_PATH/.env'"; then
-            echo "Keine .env vorhanden - uebersprungen."
+          if [[ "$UPDATES_AVAILABLE_UNTIL" != "unlimited" \
+             && ! "$UPDATES_AVAILABLE_UNTIL" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::Ungueltiger Wert fuer UPDATES_AVAILABLE_UNTIL."
+            exit 1
+          fi
+
+          if $SSH_CMD "$ziel" "grep -q '^UPDATES_AVAILABLE_UNTIL=' '$CMS_PATH/.env'"; then
+            $SSH_CMD "$ziel" "sed -i 's/^UPDATES_AVAILABLE_UNTIL=.*/UPDATES_AVAILABLE_UNTIL=$UPDATES_AVAILABLE_UNTIL/' '$CMS_PATH/.env'"
+          else
+            printf 'UPDATES_AVAILABLE_UNTIL=%s\n' "$UPDATES_AVAILABLE_UNTIL" \
+              | $SSH_CMD "$ziel" "cat >> '$CMS_PATH/.env'"
+          fi
+          echo "Update-Zeitraum in der CMS-.env aktualisiert."
+
+          if [ -z "$SUPPORT_URL" ] || [ -z "$SUPPORT_TOKEN" ]; then
+            echo "Kein Hilfe-Zugang geliefert - uebersprungen."
             exit 0
           fi
 

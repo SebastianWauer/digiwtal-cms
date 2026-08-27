@@ -64,6 +64,7 @@ final class HealthMonitor
             INNER JOIN server_access sa ON c.id = sa.customer_id
             WHERE c.abo_status = 'active'
               AND c.is_active = 1
+              AND (c.abo_active_until IS NULL OR c.abo_active_until >= CURRENT_DATE)
               AND sa.health_cms_url != ''
               AND sa.health_token_enc != ''
             ORDER BY c.id ASC

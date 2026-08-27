@@ -14,7 +14,13 @@ class CustomerRepository
     {
         $stmt = $this->pdo->query("
             SELECT
-                c.id, c.name, c.domain, c.email, c.is_active, c.abo_status,
+                c.id, c.name, c.domain, c.email, c.is_active, c.abo_status, c.abo_active_until,
+                CASE
+                    WHEN c.is_active = 1
+                     AND c.abo_status = 'active'
+                     AND (c.abo_active_until IS NULL OR c.abo_active_until >= CURRENT_DATE)
+                    THEN 1 ELSE 0
+                END AS subscription_is_active,
                 c.created_at, c.updated_at,
                 COALESCE(hc.status, 'unknown') AS health_status,
                 hc.checked_at AS last_check_at,
@@ -116,14 +122,15 @@ class CustomerRepository
         string $domain,
         string $email     = '',
         string $aboStatus = 'active',
+        ?string $aboActiveUntil = null,
         string $notes     = '',
         int    $isActive  = 1
     ): int {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO customers (name, domain, email, abo_status, notes, is_active)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO customers (name, domain, email, abo_status, abo_active_until, notes, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$name, $domain, $email, $aboStatus, $notes ?: null, $isActive]);
+        $stmt->execute([$name, $domain, $email, $aboStatus, $aboActiveUntil, $notes ?: null, $isActive]);
 
         $id = (int)$this->pdo->lastInsertId();
 
@@ -142,14 +149,15 @@ class CustomerRepository
         string $domain,
         string $email     = '',
         string $aboStatus = 'active',
+        ?string $aboActiveUntil = null,
         string $notes     = ''
     ): void {
         $stmt = $this->pdo->prepare(
             'UPDATE customers
-             SET name = ?, domain = ?, email = ?, abo_status = ?, notes = ?
+             SET name = ?, domain = ?, email = ?, abo_status = ?, abo_active_until = ?, notes = ?
              WHERE id = ?'
         );
-        $stmt->execute([$name, $domain, $email, $aboStatus, $notes ?: null, $id]);
+        $stmt->execute([$name, $domain, $email, $aboStatus, $aboActiveUntil, $notes ?: null, $id]);
     }
 
     public function toggleActive(int $id, int $isActive): void
@@ -158,6 +166,26 @@ class CustomerRepository
             'UPDATE customers SET is_active = ? WHERE id = ?'
         );
         $stmt->execute([$isActive, $id]);
+    }
+
+    /**
+     * Einheitliche Vertragspruefung fuer UI, API, Webhooks und Rollout.
+     * Ein leeres Ablaufdatum steht ausdruecklich fuer ein unbegrenztes Abo.
+     * Das eingetragene Enddatum gilt einschliesslich dieses Kalendertags.
+     */
+    public static function hasActiveSubscription(array $customer, ?string $today = null): bool
+    {
+        if ((int)($customer['is_active'] ?? 0) !== 1
+            || (string)($customer['abo_status'] ?? '') !== 'active') {
+            return false;
+        }
+
+        $activeUntil = trim((string)($customer['abo_active_until'] ?? ''));
+        if ($activeUntil === '') {
+            return true;
+        }
+
+        return $activeUntil >= ($today ?? date('Y-m-d'));
     }
 
     private function buildCmsHealthDetail(string $status, array $raw): string

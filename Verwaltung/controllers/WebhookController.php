@@ -34,8 +34,8 @@ class WebhookController
         $deployType = (string)($matched['deploy_type'] ?? 'cms');
         $customer = $this->customerRepo->findById($customerId);
 
-        if ($customer === null || (int)($customer['is_active'] ?? 0) !== 1) {
-            $this->json(['error' => 'Customer not found or inactive'], 404);
+        if ($customer === null || !CustomerRepository::hasActiveSubscription($customer)) {
+            $this->json(['error' => 'Customer not found or subscription inactive'], 404);
             return;
         }
 

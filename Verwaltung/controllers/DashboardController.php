@@ -22,7 +22,7 @@ class DashboardController
         $monitorState = $this->monitor->monitorState();
 
         foreach ($customers as &$customer) {
-            $isActive = (int)($customer['is_active'] ?? 0) === 1;
+            $isActive = CustomerRepository::hasActiveSubscription($customer);
             $status = (string)($customer['health_status'] ?? 'unknown');
 
             $lastCheckAt = trim((string)($customer['last_check_at'] ?? ''));

@@ -191,7 +191,7 @@ $migrationController      = new MigrationController($pdo, $auditLogger);
 $ciController             = new CiController($ciTokenRepo, $customerRepo, $accessRepo, $supportTokens, $auditLogger, $healthMonitor);
 $supportController        = new SupportController($supportTickets, $customerRepo, $supportTokens, $auditLogger);
 $supportApiController     = new SupportApiController($supportTickets, $supportTokens, $auditLogger);
-$ciTokenController        = new CiTokenController($ciTokenRepo, $customerRepo, $auditLogger, $healthMonitor);
+$ciTokenController        = new CiTokenController($ciTokenRepo, $customerRepo, $accessRepo, $auditLogger, $healthMonitor);
 $webhookManageController  = new WebhookManageController($webhookRepo, $customerRepo, $auditLogger);
 
 // -------------------------------------------------------
@@ -278,7 +278,7 @@ $router->add('POST', '/admin/support/{id}', [$supportController, 'update']);
 $router->add('GET',  '/admin/ci-tokens', [$ciTokenController, 'index']);
 $router->add('POST', '/admin/ci-tokens', [$ciTokenController, 'store']);
 $router->add('POST', '/admin/ci-tokens/{id}/revoke', [$ciTokenController, 'revoke']);
-$router->add('POST', '/admin/ci/dispatch/{id}', [$ciTokenController, 'dispatch']);
+$router->add('POST', '/admin/ci/dispatch', [$ciTokenController, 'dispatchAll']);
 $router->add('POST', '/admin/ci/health-run', [$ciTokenController, 'runHealth']);
 
 // -------------------------------------------------------

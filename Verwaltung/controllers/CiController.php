@@ -38,14 +38,23 @@ class CiController
         }
 
         $customer = $this->customerRepo->findById($customerId);
-        if ($customer === null || (int)($customer['is_active'] ?? 0) !== 1) {
-            $this->json(['ok' => false, 'error' => 'customer_not_found_or_inactive'], 404);
+        if ($customer === null || !CustomerRepository::hasActiveSubscription($customer)) {
+            $this->json(['ok' => false, 'error' => 'customer_not_found_or_subscription_inactive'], 404);
         }
 
         $access = $this->accessRepo->findByCustomer($customerId);
         $encrypted = $this->accessRepo->findEncrypted($customerId);
         if ($access === null || $encrypted === null) {
             $this->json(['ok' => false, 'error' => 'no_server_access'], 404);
+        }
+
+        $readiness = $this->accessRepo->rolloutReadiness($customerId);
+        if (!$readiness['ready']) {
+            $this->json([
+                'ok' => false,
+                'error' => 'incomplete_rollout_configuration',
+                'missing' => $readiness['missing'],
+            ], 422);
         }
 
         $aad = 'cust:' . $customerId;
@@ -79,6 +88,7 @@ class CiController
             'customer' => [
                 'id'   => $customerId,
                 'name' => (string)($customer['name'] ?? ''),
+                'updates_available_until' => trim((string)($customer['abo_active_until'] ?? '')) ?: 'unlimited',
             ],
             'ssh' => [
                 'host'     => (string)($access['host'] ?? ''),

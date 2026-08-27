@@ -53,13 +53,19 @@ ob_start();
                     <label for="abo_status">Abo-Status</label>
                     <select class="select" id="abo_status" name="abo_status">
                         <?php
-                        $currentAbo = (string)($old['abo_status'] ?? $customer['abo_status'] ?? 'active');
+                        $currentAbo = (string)($old['aboStatus'] ?? $old['abo_status'] ?? $customer['abo_status'] ?? 'active');
                         foreach (['active' => 'Aktiv', 'cancelled' => 'Gekündigt', 'suspended' => 'Gesperrt'] as $val => $lbl):
                         ?>
                             <option value="<?php echo $val; ?>" <?php echo $val === $currentAbo ? 'selected' : ''; ?>><?php echo $lbl; ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
+            </div>
+
+            <div class="field">
+                <label for="abo_active_until">Abo aktiv bis</label>
+                <input class="input" type="date" id="abo_active_until" name="abo_active_until" value="<?php echo htmlspecialchars((string)($old['aboActiveUntil'] ?? $old['abo_active_until'] ?? $customer['abo_active_until'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                <div class="field__hint">Leer lassen, wenn das Abo unbegrenzt aktiv ist. Das gewählte Datum zählt einschließlich.</div>
             </div>
 
             <div class="field">

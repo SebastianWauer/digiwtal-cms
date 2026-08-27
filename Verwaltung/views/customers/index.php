@@ -39,7 +39,7 @@ ob_start();
                             <th>Status</th>
                             <th>Name</th>
                             <th>Domain</th>
-                            <th>Aktiv</th>
+                            <th>Abo</th>
                             <th>Health CMS</th>
                             <th>Health Frontend</th>
                             <th class="text-right">Aktionen</th>
@@ -81,7 +81,26 @@ ob_start();
                                 </a>
                             </td>
                             <td class="text-muted"><?php echo htmlspecialchars((string)($c['domain'] ?? ''), ENT_QUOTES); ?></td>
-                            <td><?php echo ((int)($c['is_active'] ?? 0) === 1) ? 'Ja' : 'Nein'; ?></td>
+                            <td>
+                                <?php
+                                $aboStatus = (string)($c['abo_status'] ?? '');
+                                $aboUntil = trim((string)($c['abo_active_until'] ?? ''));
+                                if ((int)($c['is_active'] ?? 0) !== 1) {
+                                    $aboLabel = 'Deaktiviert';
+                                } elseif ($aboStatus === 'cancelled') {
+                                    $aboLabel = 'Gekündigt';
+                                } elseif ($aboStatus === 'suspended') {
+                                    $aboLabel = 'Gesperrt';
+                                } elseif ($aboUntil === '') {
+                                    $aboLabel = 'Aktiv · unbegrenzt';
+                                } elseif (CustomerRepository::hasActiveSubscription($c)) {
+                                    $aboLabel = 'Aktiv bis ' . date('d.m.Y', strtotime($aboUntil));
+                                } else {
+                                    $aboLabel = 'Abgelaufen am ' . date('d.m.Y', strtotime($aboUntil));
+                                }
+                                echo htmlspecialchars($aboLabel, ENT_QUOTES);
+                                ?>
+                            </td>
                             <td>
                                 <button type="button" class="badge-button badge-button--<?php echo $cmsClass; ?>" data-health-detail="<?php echo htmlspecialchars((string)($c['health_cms_detail'] ?? ''), ENT_QUOTES); ?>">
                                     <?php echo htmlspecialchars($cmsHealth, ENT_QUOTES); ?>

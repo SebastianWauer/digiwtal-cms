@@ -18,7 +18,8 @@ class CmsProvisioningService
         array $access,
         string $dbPassword,
         array $tokens = [],
-        ?string $cmsBaseUrl = null
+        ?string $cmsBaseUrl = null,
+        ?string $updatesAvailableUntil = null
     ): string {
         $lines = [
             $this->envLine('APP_ENV', 'production'),
@@ -41,6 +42,10 @@ class CmsProvisioningService
         // CMS-URL. Liegt das CMS unter https://kunde.de/verwaltung, ist der
         // Basis-Pfad /verwaltung; bei eigener Subdomain bleibt er leer.
         $lines[] = $this->envLine('CMS_BASE_PATH', self::basePathFromUrl($cmsBaseUrl));
+        $lines[] = $this->envLine(
+            'UPDATES_AVAILABLE_UNTIL',
+            trim((string)$updatesAvailableUntil) !== '' ? (string)$updatesAvailableUntil : 'unlimited'
+        );
 
         return implode("\n", $lines) . "\n";
     }

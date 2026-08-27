@@ -14,6 +14,7 @@ class CiTokenController
     public function __construct(
         private CiTokenRepository $ciTokens,
         private CustomerRepository $customerRepo,
+        private ServerAccessRepository $accessRepo,
         private AuditLogger $audit,
         private HealthMonitor $monitor
     ) {}
@@ -23,7 +24,7 @@ class CiTokenController
         AdminAuth::requireAuth();
 
         $tokens = $this->ciTokens->all();
-        $kunden = $this->customerRepo->listAllWithHealth();
+        $rollout = $this->rolloutOverview();
 
         $github = [
             'repo'     => (string)(getenv('GITHUB_REPO') ?: ''),
@@ -132,18 +133,12 @@ class CiTokenController
         $this->back();
     }
 
-    /** Startet den Deploy-Workflow auf GitHub fuer einen Kunden. */
-    public function dispatch(int $customerId): void
+    /** Startet den aktuellen Stand fuer alle berechtigten, fertigen Kunden. */
+    public function dispatchAll(): void
     {
         AdminAuth::requireAuth();
         if (!Csrf::verify($_POST['csrf_token'] ?? '')) {
             $_SESSION['flash_errors'] = ['CSRF token invalid'];
-            $this->back();
-        }
-
-        $customer = $this->customerRepo->findById($customerId);
-        if ($customer === null) {
-            $_SESSION['flash_errors'] = ['Kunde nicht gefunden.'];
             $this->back();
         }
 
@@ -157,19 +152,111 @@ class CiTokenController
             $this->back();
         }
 
+        $overview = $this->rolloutOverview();
+        $started = [];
+        $failed = [];
+
+        foreach ($overview['ready'] as $customer) {
+            $customerId = (int)$customer['id'];
+            $result = $this->dispatchGitHub($customerId, $repo, $token, $workflow, $branch);
+            if ($result['ok']) {
+                $started[] = (string)$customer['name'];
+                $this->audit->log('ci.workflow_dispatched', 'customer', $customerId, 'workflow: ' . $workflow . ', rollout: all');
+                continue;
+            }
+
+            $failed[] = (string)$customer['name'] . ': ' . $result['detail'];
+            $this->audit->log(
+                'ci.workflow_dispatch_failed',
+                'customer',
+                $customerId,
+                'HTTP ' . $result['status'] . ', rollout: all'
+            );
+        }
+
+        if ($started !== []) {
+            $_SESSION['flash_success'] = 'Rollout für ' . count($started) . ' Kunde(n) gestartet: '
+                . implode(', ', $started) . '. Der Fortschritt steht in GitHub unter Actions.';
+        }
+        if ($failed !== []) {
+            $_SESSION['flash_errors'] = array_map(
+                static fn(string $message): string => 'Rollout konnte nicht gestartet werden: ' . $message,
+                $failed
+            );
+        } elseif ($started === []) {
+            $_SESSION['flash_errors'] = ['Kein Kunde erfüllt aktuell alle Voraussetzungen für den Rollout.'];
+        }
+
+        $this->audit->log(
+            'ci.rollout_all',
+            'customer',
+            null,
+            'gestartet: ' . count($started) . ', fehlgeschlagen: ' . count($failed)
+                . ', uebersprungen: ' . count($overview['skipped'])
+        );
+
+        $this->back();
+    }
+
+    /** @return array{ready:list<array<string,mixed>>,skipped:list<array<string,mixed>>} */
+    private function rolloutOverview(): array
+    {
+        $ready = [];
+        $skipped = [];
+
+        foreach ($this->customerRepo->listAllWithHealth() as $customer) {
+            $reason = null;
+            if ((int)($customer['is_active'] ?? 0) !== 1) {
+                $reason = 'Kunde ist deaktiviert';
+            } elseif ((string)($customer['abo_status'] ?? '') !== 'active') {
+                $reason = 'Abo-Status ist nicht aktiv';
+            } elseif (!CustomerRepository::hasActiveSubscription($customer)) {
+                $until = trim((string)($customer['abo_active_until'] ?? ''));
+                $reason = $until !== '' ? 'Abo ist seit ' . date('d.m.Y', strtotime($until)) . ' abgelaufen' : 'Abo ist nicht aktiv';
+            }
+
+            if ($reason === null) {
+                $readiness = $this->accessRepo->rolloutReadiness((int)$customer['id']);
+                if (!$readiness['ready']) {
+                    $reason = 'Unvollständig: ' . implode(', ', $readiness['missing']);
+                }
+            }
+
+            if ($reason === null) {
+                $ready[] = $customer;
+            } else {
+                $customer['rollout_skip_reason'] = $reason;
+                $skipped[] = $customer;
+            }
+        }
+
+        return ['ready' => $ready, 'skipped' => $skipped];
+    }
+
+    /** @return array{ok:bool,status:int,detail:string} */
+    private function dispatchGitHub(
+        int $customerId,
+        string $repo,
+        string $token,
+        string $workflow,
+        string $branch
+    ): array {
         $body = json_encode([
             'ref' => $branch,
             'inputs' => [
                 'kunde'            => (string)$customerId,
-                'erstinstallation' => !empty($_POST['erstinstallation']) ? 'true' : 'false',
-                'migrationen'      => empty($_POST['keine_migrationen']) ? 'true' : 'false',
+                'erstinstallation' => 'false',
+                'migrationen'      => 'true',
             ],
         ], JSON_UNESCAPED_SLASHES);
 
         $url = 'https://api.github.com/repos/' . $repo . '/actions/workflows/'
-             . rawurlencode($workflow) . '/dispatches';
-
+            . rawurlencode($workflow) . '/dispatches';
         $ch = curl_init($url);
+        if ($ch === false) {
+            return ['ok' => false, 'status' => 0, 'detail' => 'GitHub-Verbindung konnte nicht initialisiert werden.'];
+        }
+
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $body,
@@ -184,22 +271,20 @@ class CiTokenController
             ],
         ]);
         $response = curl_exec($ch);
-        $status   = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
-        // 204 = angenommen. GitHub liefert keinen Inhalt zurueck.
         if ($status === 204) {
-            $this->audit->log('ci.workflow_dispatched', 'customer', $customerId, 'workflow: ' . $workflow);
-            $_SESSION['flash_success'] = 'Rollout fuer "' . (string)($customer['name'] ?? '')
-                . '" gestartet. Der Fortschritt steht in GitHub unter Actions.';
-        } else {
-            $detail = $curlErr !== '' ? $curlErr : substr((string)$response, 0, 300);
-            $this->audit->log('ci.workflow_dispatch_failed', 'customer', $customerId, 'HTTP ' . $status);
-            $_SESSION['flash_errors'] = ['GitHub antwortete mit HTTP ' . $status . ': ' . $detail];
+            return ['ok' => true, 'status' => $status, 'detail' => ''];
         }
 
-        $this->back();
+        $detail = $curlError !== '' ? $curlError : trim(substr((string)$response, 0, 300));
+        return [
+            'ok' => false,
+            'status' => $status,
+            'detail' => 'GitHub HTTP ' . $status . ($detail !== '' ? ': ' . $detail : ''),
+        ];
     }
 
     private function back(): void

@@ -19,7 +19,7 @@ class CustomerController
         $customers = $this->customerRepo->listAllWithHealth();
 
         foreach ($customers as &$customer) {
-            $isActive = (int)($customer['is_active'] ?? 0) === 1;
+            $isActive = CustomerRepository::hasActiveSubscription($customer);
             $status   = (string)($customer['health_status'] ?? 'unknown');
 
             if (!$isActive) {
@@ -68,6 +68,7 @@ class CustomerController
         $domain    = trim($_POST['domain']    ?? '');
         $email     = trim($_POST['email']     ?? '');
         $aboStatus = (string)($_POST['abo_status'] ?? 'active');
+        $aboActiveUntil = trim((string)($_POST['abo_active_until'] ?? ''));
         $notes     = trim($_POST['notes']     ?? '');
         $isActive  = isset($_POST['is_active']) ? 1 : 0;
 
@@ -97,14 +98,26 @@ class CustomerController
             $aboStatus = 'active';
         }
 
+        if ($aboActiveUntil !== '' && !$this->isValidDate($aboActiveUntil)) {
+            $errors[] = '„Abo aktiv bis“ muss ein gültiges Datum sein.';
+        }
+
         if (!empty($errors)) {
             $_SESSION['flash_errors'] = $errors;
-            $_SESSION['flash_old']    = compact('name', 'domain', 'email', 'aboStatus', 'notes', 'isActive');
+            $_SESSION['flash_old']    = compact('name', 'domain', 'email', 'aboStatus', 'aboActiveUntil', 'notes', 'isActive');
             header('Location: /admin/customers/create');
             exit;
         }
 
-        $newId = $this->customerRepo->create($name, $domain, $email ?? '', $aboStatus ?? 'active', $notes ?? '', $isActive ?? 1);
+        $newId = $this->customerRepo->create(
+            $name,
+            $domain,
+            $email,
+            $aboStatus,
+            $aboActiveUntil !== '' ? $aboActiveUntil : null,
+            $notes,
+            $isActive
+        );
         $this->audit->log('customer.create', 'customer', $newId, "Name: {$name}");
 
         $_SESSION['flash_success'] = 'Kunde erfolgreich erstellt.';
@@ -151,6 +164,7 @@ class CustomerController
         $domain    = trim($_POST['domain']    ?? '');
         $email     = trim($_POST['email']     ?? '');
         $aboStatus = (string)($_POST['abo_status'] ?? 'active');
+        $aboActiveUntil = trim((string)($_POST['abo_active_until'] ?? ''));
         $notes     = trim($_POST['notes']     ?? '');
 
         $errors = [];
@@ -179,14 +193,26 @@ class CustomerController
             $aboStatus = 'active';
         }
 
+        if ($aboActiveUntil !== '' && !$this->isValidDate($aboActiveUntil)) {
+            $errors[] = '„Abo aktiv bis“ muss ein gültiges Datum sein.';
+        }
+
         if (!empty($errors)) {
             $_SESSION['flash_errors'] = $errors;
-            $_SESSION['flash_old']    = compact('name', 'domain', 'email', 'aboStatus', 'notes');
+            $_SESSION['flash_old']    = compact('name', 'domain', 'email', 'aboStatus', 'aboActiveUntil', 'notes');
             header('Location: /admin/customers/' . $id . '/edit');
             exit;
         }
 
-        $this->customerRepo->update($id, $name, $domain, $email ?? '', $aboStatus ?? 'active', $notes ?? '');
+        $this->customerRepo->update(
+            $id,
+            $name,
+            $domain,
+            $email,
+            $aboStatus,
+            $aboActiveUntil !== '' ? $aboActiveUntil : null,
+            $notes
+        );
         $this->audit->log('customer.update', 'customer', $id, "Name: {$name}");
 
         $_SESSION['flash_success'] = 'Kunde erfolgreich aktualisiert.';
@@ -230,5 +256,15 @@ class CustomerController
                 . '<p><a href="/admin/customers">Zurück zur Kundenübersicht</a></p></main></body></html>';
             exit;
         }
+    }
+
+    private function isValidDate(string $value): bool
+    {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $errors = DateTimeImmutable::getLastErrors();
+
+        return $date !== false
+            && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
+            && $date->format('Y-m-d') === $value;
     }
 }

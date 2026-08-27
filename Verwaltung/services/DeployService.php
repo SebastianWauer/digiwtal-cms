@@ -293,7 +293,13 @@ class DeployService
                 }
             }
 
-            $envContent = $this->cmsProvisioner->buildEnvContent($access, $dbPassword, $tokens, $cmsBaseUrl);
+            $envContent = $this->cmsProvisioner->buildEnvContent(
+                $access,
+                $dbPassword,
+                $tokens,
+                $cmsBaseUrl,
+                (string)($customer['abo_active_until'] ?? '')
+            );
             if (!$this->uploadRemoteTextFile($access, $password, $remotePath . '/.env', $envContent, $method)) {
                 $this->log($deploymentId, '[ERROR] .env konnte nicht auf den Zielserver geschrieben werden.');
                 $this->deployRepo->markFinished($deploymentId, 'failed');

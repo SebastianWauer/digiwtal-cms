@@ -14,6 +14,25 @@ function admin_version(): string
     return (string)($ver['cms_version'] ?? '—');
 }
 
+/** Lesbare Laufzeit des Update-Anspruchs fuer die Sidebar. */
+function admin_updates_available_until(): string
+{
+    $value = trim((string)\App\Core\Env::get('UPDATES_AVAILABLE_UNTIL', 'unlimited'));
+    if ($value === '' || strtolower($value) === 'unlimited') {
+        return 'unbegrenzt';
+    }
+
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+    $errors = DateTimeImmutable::getLastErrors();
+    if ($date === false
+        || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))
+        || $date->format('Y-m-d') !== $value) {
+        return 'nicht hinterlegt';
+    }
+
+    return $date->format('d.m.Y');
+}
+
 /**
  * Gibt eine lesbare Rollen-Beschriftung für die Sidebar zurück.
  * Quelle: DB (user_roles -> roles).

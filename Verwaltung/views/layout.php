@@ -19,6 +19,7 @@ function verwaltung_active_nav(string $uri): string
         str_starts_with($uri, '/admin/audit') => 'audit',
         str_starts_with($uri, '/admin/migrations') => 'migrations',
         str_starts_with($uri, '/admin/support') => 'support',
+        str_starts_with($uri, '/admin/ci-tokens') || str_starts_with($uri, '/admin/ci/') => 'rollout',
         default => '',
     };
 }

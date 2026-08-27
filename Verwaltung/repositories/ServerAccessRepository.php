@@ -40,6 +40,56 @@ class ServerAccessRepository
         return $row !== false ? $row : null;
     }
 
+    /**
+     * Prueft genau die Angaben, die der zentrale GitHub-Rollout benoetigt.
+     * Geheimnisse werden dabei nicht entschluesselt; vollstaendige
+     * Ciphertext-/Nonce-/Tag-Saetze genuegen fuer die Vorpruefung.
+     *
+     * @return array{ready:bool,missing:list<string>}
+     */
+    public function rolloutReadiness(int $customerId): array
+    {
+        $access = $this->findByCustomer($customerId);
+        $encrypted = $this->findEncrypted($customerId);
+
+        if ($access === null || $encrypted === null) {
+            return ['ready' => false, 'missing' => ['Serverzugang']];
+        }
+
+        $missing = [];
+        $required = [
+            'host'                => 'SFTP-Host',
+            'username'            => 'Benutzername',
+            'server_path'         => 'CMS-Zielpfad',
+            'html_path'           => 'Frontend-Zielpfad',
+            'health_cms_url'      => 'CMS-URL',
+            'health_frontend_url' => 'Frontend-URL',
+        ];
+        foreach ($required as $key => $label) {
+            if (trim((string)($access[$key] ?? '')) === '') {
+                $missing[] = $label;
+            }
+        }
+
+        foreach (['server_path' => 'CMS-Zielpfad', 'html_path' => 'Frontend-Zielpfad'] as $key => $label) {
+            $path = rtrim(trim((string)($access[$key] ?? '')), '/');
+            if (in_array($path, ['', '/CMS', '/Frontend'], true) && !in_array($label, $missing, true)) {
+                $missing[] = $label . ' ist nicht sicher';
+            }
+        }
+
+        foreach (['password' => 'Server-Passwort', 'health_token' => 'Health-Token'] as $prefix => $label) {
+            foreach (['_enc', '_nonce', '_tag'] as $suffix) {
+                if (trim((string)($encrypted[$prefix . $suffix] ?? '')) === '') {
+                    $missing[] = $label;
+                    break;
+                }
+            }
+        }
+
+        return ['ready' => $missing === [], 'missing' => $missing];
+    }
+
     public function upsert(int $customerId, array $data, array $encrypted = []): void
     {
         $existing = $this->findByCustomer($customerId);
@@ -148,6 +198,8 @@ class ServerAccessRepository
             FROM customers c
             INNER JOIN server_access sa ON c.id = sa.customer_id
             WHERE c.abo_status = 'active'
+              AND c.is_active = 1
+              AND (c.abo_active_until IS NULL OR c.abo_active_until >= CURRENT_DATE)
               AND (sa.health_cms_url != '' OR sa.host != '')
               AND sa.health_token_enc != ''
             ORDER BY c.id ASC

@@ -66,17 +66,51 @@ ob_start();
                <code>GITHUB_TOKEN</code> (Fine-grained Token mit <em>Actions: Read and write</em>) und optional
                <code>GITHUB_WORKFLOW</code> sowie <code>GITHUB_BRANCH</code>.</p>
         <?php else: ?>
-            <p class="section-copy">Startet <code><?php echo htmlspecialchars($github['workflow'], ENT_QUOTES); ?></code>
-               in <code><?php echo htmlspecialchars($github['repo'], ENT_QUOTES); ?></code> auf Branch
-               <code><?php echo htmlspecialchars($github['branch'], ENT_QUOTES); ?></code>.</p>
-            <?php foreach ($kunden as $k): ?>
-                <form method="post" action="/admin/ci/dispatch/<?php echo (int)$k['id']; ?>" class="table-inline-form">
+            <p class="section-copy">
+                Rollt den aktuellen Stand von Branch <code><?php echo htmlspecialchars($github['branch'], ENT_QUOTES); ?></code>
+                an alle freigeschalteten Kunden mit wirksamem Abo und vollständiger Konfiguration aus.
+                Migrationen werden automatisch ausgeführt.
+            </p>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <dt class="detail-item__label">Bereit</dt>
+                    <dd class="detail-item__value"><?php echo count($rollout['ready']); ?> Kunde(n)</dd>
+                </div>
+                <div class="detail-item">
+                    <dt class="detail-item__label">Übersprungen</dt>
+                    <dd class="detail-item__value"><?php echo count($rollout['skipped']); ?> Kunde(n)</dd>
+                </div>
+            </div>
+
+            <?php if ($rollout['ready'] !== []): ?>
+                <p class="section-copy">
+                    <strong>Teilnehmende Kunden:</strong>
+                    <?php echo htmlspecialchars(implode(', ', array_column($rollout['ready'], 'name')), ENT_QUOTES); ?>
+                </p>
+                <form method="post" action="/admin/ci/dispatch">
                     <?php echo Csrf::field(); ?>
-                    <span class="mono"><?php echo htmlspecialchars((string)$k['name'], ENT_QUOTES); ?></span>
-                    <label class="checkbox-line"><input type="checkbox" name="erstinstallation" value="1"> Erstinstallation</label>
-                    <button class="btn btn--warning btn--sm" type="submit">Ausrollen</button>
+                    <button class="btn btn--warning" type="submit">Aktuellen Stand an alle aktiven Kunden ausrollen</button>
                 </form>
-            <?php endforeach; ?>
+            <?php else: ?>
+                <div class="hint-card hint-card--warning">Aktuell erfüllt kein Kunde alle Rollout-Voraussetzungen.</div>
+            <?php endif; ?>
+
+            <?php if ($rollout['skipped'] !== []): ?>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Übersprungener Kunde</th><th>Grund</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($rollout['skipped'] as $customer): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars((string)$customer['name'], ENT_QUOTES); ?></td>
+                                <td class="text-muted"><?php echo htmlspecialchars((string)$customer['rollout_skip_reason'], ENT_QUOTES); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 

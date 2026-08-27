@@ -99,6 +99,19 @@ ob_start();
                     $lastDeployAt = trim((string)($c['last_deploy_at'] ?? ''));
                     $lastDeployStatus = trim((string)($c['last_deploy_status'] ?? ''));
                     $lastDeployType = trim((string)($c['last_deploy_type'] ?? ''));
+                    $aboUntil = trim((string)($c['abo_active_until'] ?? ''));
+                    $aboStatus = (string)($c['abo_status'] ?? '');
+                    if ((int)($c['is_active'] ?? 0) !== 1) {
+                        $aboLabel = 'deaktiviert';
+                    } elseif ($aboStatus !== 'active') {
+                        $aboLabel = $aboStatus === 'cancelled' ? 'gekündigt' : 'gesperrt';
+                    } elseif ($aboUntil === '') {
+                        $aboLabel = 'aktiv · unbegrenzt';
+                    } elseif (CustomerRepository::hasActiveSubscription($c)) {
+                        $aboLabel = 'aktiv bis ' . date('d.m.Y', strtotime($aboUntil));
+                    } else {
+                        $aboLabel = 'abgelaufen am ' . date('d.m.Y', strtotime($aboUntil));
+                    }
                     $staleHealth = (bool)($c['stale_health'] ?? false);
                     $lastCheckLabel = '—';
                     if ($lastCheck !== '') {
@@ -149,6 +162,10 @@ ob_start();
                         </div>
 
                         <dl class="dashboard-card__meta">
+                            <div>
+                                <dt>Abo</dt>
+                                <dd><?php echo htmlspecialchars($aboLabel, ENT_QUOTES); ?></dd>
+                            </div>
                             <div>
                                 <dt>Letzter Check</dt>
                                 <dd><?php echo htmlspecialchars($lastCheckLabel, ENT_QUOTES); ?></dd>

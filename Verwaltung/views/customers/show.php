@@ -12,12 +12,23 @@ ob_start();
                 </div>
                 <?php
                 $aboStatus = (string)($customer['abo_status'] ?? 'inactive');
-                $aboClass = $aboStatus === 'active' ? 'healthy' : 'down';
+                $aboUntil = trim((string)($customer['abo_active_until'] ?? ''));
+                $subscriptionActive = CustomerRepository::hasActiveSubscription($customer);
+                $aboClass = $subscriptionActive ? 'healthy' : 'down';
+                if ($aboStatus === 'active' && $aboUntil === '') {
+                    $aboLabel = 'Abo aktiv · unbegrenzt';
+                } elseif ($aboStatus === 'active' && $subscriptionActive) {
+                    $aboLabel = 'Abo aktiv bis ' . date('d.m.Y', strtotime($aboUntil));
+                } elseif ($aboStatus === 'active' && $aboUntil !== '') {
+                    $aboLabel = 'Abo abgelaufen am ' . date('d.m.Y', strtotime($aboUntil));
+                } else {
+                    $aboLabel = 'Abo ' . $aboStatus;
+                }
                 $isActive = (int)($customer['is_active'] ?? 0) === 1;
                 ?>
                 <div class="header-meta">
-                    <span class="status-pill status-pill--<?php echo $aboClass; ?>"><?php echo htmlspecialchars(strtoupper($aboStatus), ENT_QUOTES); ?></span>
-                    <span class="mini-status"><?php echo $isActive ? 'Aktiv' : 'Inaktiv'; ?></span>
+                    <span class="status-pill status-pill--<?php echo $aboClass; ?>"><?php echo htmlspecialchars($aboLabel, ENT_QUOTES); ?></span>
+                    <span class="mini-status"><?php echo $isActive ? 'Freigeschaltet' : 'Deaktiviert'; ?></span>
                 </div>
             </div>
             <div class="page-actions">
