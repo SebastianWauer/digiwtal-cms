@@ -109,6 +109,10 @@ require_once __DIR__ . '/../controllers/AuditController.php';
 require_once __DIR__ . '/../services/MigrationRunner.php';
 require_once __DIR__ . '/../controllers/MigrationController.php';
 require_once __DIR__ . '/../repositories/CiTokenRepository.php';
+require_once __DIR__ . '/../repositories/SupportTicketRepository.php';
+require_once __DIR__ . '/../repositories/SupportTokenRepository.php';
+require_once __DIR__ . '/../controllers/SupportController.php';
+require_once __DIR__ . '/../controllers/SupportApiController.php';
 require_once __DIR__ . '/../controllers/CiController.php';
 require_once __DIR__ . '/../controllers/CiTokenController.php';
 require_once __DIR__ . '/../controllers/AdminUserController.php';
@@ -150,6 +154,8 @@ $deploymentRepo = new DeploymentRepository($pdo);
 $pushRepo = new PushSubscriptionRepository($pdo);
 $webhookRepo = new WebhookTokenRepository($pdo);
 $ciTokenRepo = new CiTokenRepository($pdo);
+$supportTickets = new SupportTicketRepository($pdo);
+$supportTokens  = new SupportTokenRepository($pdo);
 
 $moduleCombinator = new ModuleCombinator($customerModuleRepo, $moduleRepo);
 $cmsProvisioner = new CmsProvisioningService();
@@ -173,9 +179,25 @@ $customerDetailController = new CustomerDetailController($customerRepo, $pdo);
 $adminUserController      = new AdminUserController($userRepo, $auditLogger);
 $webhookController        = new WebhookController($webhookRepo, $deploymentRepo, $deployService, $customerRepo, $auditLogger);
 $migrationController      = new MigrationController($pdo, $auditLogger);
-$ciController             = new CiController($ciTokenRepo, $customerRepo, $accessRepo, $auditLogger);
+$ciController             = new CiController($ciTokenRepo, $customerRepo, $accessRepo, $supportTokens, $auditLogger);
+$supportController        = new SupportController($supportTickets, $customerRepo, $auditLogger);
+$supportApiController     = new SupportApiController($supportTickets, $supportTokens, $auditLogger);
 $ciTokenController        = new CiTokenController($ciTokenRepo, $customerRepo, $auditLogger);
 $webhookManageController  = new WebhookManageController($webhookRepo, $customerRepo, $auditLogger);
+
+// -------------------------------------------------------
+// Zaehler fuer die Seitenleiste
+// -------------------------------------------------------
+// Nur fuer Admin-Seiten: API-Aufrufe und Webhooks brauchen ihn nicht, und auf
+// einer noch nicht migrierten Installation gibt es die Tabelle noch gar nicht.
+$GLOBALS['verwaltung_support_offen'] = 0;
+if (str_starts_with((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/admin')) {
+    try {
+        $GLOBALS['verwaltung_support_offen'] = $supportTickets->countOpen();
+    } catch (Throwable) {
+        // Tabelle fehlt noch - dann eben ohne Zaehler.
+    }
+}
 
 // -------------------------------------------------------
 // Router setup
@@ -235,6 +257,11 @@ $router->add('GET',  '/admin/migrations', [$migrationController, 'index']);
 $router->add('POST', '/admin/migrations/baseline', [$migrationController, 'baseline']);
 $router->add('POST', '/admin/migrations/apply', [$migrationController, 'apply']);
 $router->add('GET',  '/api/ci/deploy-target', [$ciController, 'deployTarget']);
+$router->add('POST', '/api/support/tickets', [$supportApiController, 'store']);
+$router->add('GET',  '/api/support/tickets', [$supportApiController, 'index']);
+$router->add('GET',  '/admin/support', [$supportController, 'index']);
+$router->add('GET',  '/admin/support/{id}', [$supportController, 'show']);
+$router->add('POST', '/admin/support/{id}', [$supportController, 'update']);
 $router->add('GET',  '/admin/ci-tokens', [$ciTokenController, 'index']);
 $router->add('POST', '/admin/ci-tokens', [$ciTokenController, 'store']);
 $router->add('POST', '/admin/ci-tokens/{id}/revoke', [$ciTokenController, 'revoke']);
