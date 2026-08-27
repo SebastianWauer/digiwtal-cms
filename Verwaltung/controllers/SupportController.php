@@ -13,6 +13,7 @@ class SupportController
     public function __construct(
         private SupportTicketRepository $tickets,
         private CustomerRepository $customerRepo,
+        private SupportTokenRepository $supportTokens,
         private AuditLogger $audit
     ) {}
 
@@ -27,9 +28,12 @@ class SupportController
         $zaehler   = $this->tickets->countsByStatus();
         $kunden    = $this->customerRepo->listAllWithHealth();
 
-        $success = $_SESSION['flash_success'] ?? null;
-        $errors  = $_SESSION['flash_errors'] ?? [];
-        unset($_SESSION['flash_success'], $_SESSION['flash_errors']);
+        $success     = $_SESSION['flash_success'] ?? null;
+        $errors      = $_SESSION['flash_errors'] ?? [];
+        $zugangsdaten = $_SESSION['flash_support_zugang'] ?? null;
+        unset($_SESSION['flash_success'], $_SESSION['flash_errors'], $_SESSION['flash_support_zugang']);
+
+        $verwaltungUrl = VerwaltungUrl::base();
 
         require __DIR__ . '/../views/support/index.php';
     }
@@ -104,6 +108,58 @@ class SupportController
         }
 
         $this->back($id);
+    }
+
+    /**
+     * Zeigt die zwei .env-Zeilen, mit denen sich eine Instanz verbindet.
+     *
+     * Gebraucht fuer alles, was die Instanz-Pipeline nicht ausrollt - die
+     * eigene Installation zum Beispiel. Das Token wird dabei erzeugt, falls es
+     * noch keines gibt, und danach nicht mehr angezeigt.
+     */
+    public function zugang(int $customerId): void
+    {
+        AdminAuth::requireAuth();
+        if (!Csrf::verify((string)($_POST['csrf_token'] ?? ''))) {
+            $_SESSION['flash_errors'] = ['CSRF-Token ungueltig. Seite neu laden und erneut versuchen.'];
+            $this->zurueckZurListe();
+        }
+
+        $kunde = $this->customerRepo->findById($customerId);
+        if ($kunde === null) {
+            $_SESSION['flash_errors'] = ['Kunde nicht gefunden.'];
+            $this->zurueckZurListe();
+        }
+
+        $url = VerwaltungUrl::base();
+        if ($url === '') {
+            $_SESSION['flash_errors'] = ['Eigene Adresse unbekannt. ADMIN_HOST in der .env der Verwaltung setzen.'];
+            $this->zurueckZurListe();
+        }
+
+        $token = $this->supportTokens->ensureFor($customerId);
+        if ($token === null) {
+            $_SESSION['flash_errors'] = [
+                'Fuer "' . (string)($kunde['name'] ?? '') . '" ist kein Serverzugang hinterlegt. '
+                . 'Das Token haengt daran - erst den Serverzugang anlegen.',
+            ];
+            $this->zurueckZurListe();
+        }
+
+        $this->audit->log('support.token_revealed', 'customer', $customerId);
+
+        $_SESSION['flash_support_zugang'] = [
+            'kunde' => (string)($kunde['name'] ?? ''),
+            'url'   => $url,
+            'token' => $token,
+        ];
+        $this->zurueckZurListe();
+    }
+
+    private function zurueckZurListe(): never
+    {
+        header('Location: /admin/support');
+        exit;
     }
 
     private function back(int $id): never

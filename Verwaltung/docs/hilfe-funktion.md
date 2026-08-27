@@ -46,6 +46,11 @@ Beides schreibt der Rollout. Bei bestehenden Instanzen ergaenzt der Schritt
 anzufassen. Fehlen die Werte, ist die Hilfe-Seite trotzdem sichtbar, das
 Absenden aber deaktiviert - mit einem Hinweis statt einer Fehlermeldung.
 
+Nicht jede Installation laeuft ueber die Pipeline: die eigene zum Beispiel,
+die von `deploy.yml` mitgespiegelt wird. Fuer sie stehen die beiden Zeilen im
+Posteingang unter *Instanz verbinden* zum Abschreiben. Das Token ist dasselbe,
+das auch die Pipeline bekaeme - beide Wege fuehren zum selben Wert.
+
 ## Rechte
 
 Im CMS: keine. Wer sich anmelden kann, darf um Hilfe bitten. Ein Recht, das
