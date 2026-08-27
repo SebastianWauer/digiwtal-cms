@@ -106,6 +106,9 @@ require_once __DIR__ . '/../controllers/PushController.php';
 require_once __DIR__ . '/../controllers/CustomerDetailController.php';
 require_once __DIR__ . '/../services/AuditLogger.php';
 require_once __DIR__ . '/../controllers/AuditController.php';
+require_once __DIR__ . '/../repositories/CiTokenRepository.php';
+require_once __DIR__ . '/../controllers/CiController.php';
+require_once __DIR__ . '/../controllers/CiTokenController.php';
 require_once __DIR__ . '/../controllers/AdminUserController.php';
 require_once __DIR__ . '/../controllers/WebhookController.php';
 require_once __DIR__ . '/../controllers/WebhookManageController.php';
@@ -144,6 +147,7 @@ $accessRepo = new ServerAccessRepository($pdo);
 $deploymentRepo = new DeploymentRepository($pdo);
 $pushRepo = new PushSubscriptionRepository($pdo);
 $webhookRepo = new WebhookTokenRepository($pdo);
+$ciTokenRepo = new CiTokenRepository($pdo);
 
 $moduleCombinator = new ModuleCombinator($customerModuleRepo, $moduleRepo);
 $cmsProvisioner = new CmsProvisioningService();
@@ -166,6 +170,8 @@ $pushController           = new PushController($pushRepo);
 $customerDetailController = new CustomerDetailController($customerRepo, $pdo);
 $adminUserController      = new AdminUserController($userRepo, $auditLogger);
 $webhookController        = new WebhookController($webhookRepo, $deploymentRepo, $deployService, $customerRepo, $auditLogger);
+$ciController             = new CiController($ciTokenRepo, $customerRepo, $accessRepo, $auditLogger);
+$ciTokenController        = new CiTokenController($ciTokenRepo, $customerRepo, $auditLogger);
 $webhookManageController  = new WebhookManageController($webhookRepo, $customerRepo, $auditLogger);
 
 // -------------------------------------------------------
@@ -222,6 +228,11 @@ $router->add('GET',  '/admin/customers/{id}/webhooks', [$webhookManageController
 $router->add('POST', '/admin/customers/{id}/webhooks', [$webhookManageController, 'store']);
 $router->add('POST', '/admin/webhooks/{id}/delete', [$webhookManageController, 'delete']);
 $router->add('POST', '/webhook/deploy', [$webhookController, 'trigger']);
+$router->add('GET',  '/api/ci/deploy-target', [$ciController, 'deployTarget']);
+$router->add('GET',  '/admin/ci-tokens', [$ciTokenController, 'index']);
+$router->add('POST', '/admin/ci-tokens', [$ciTokenController, 'store']);
+$router->add('POST', '/admin/ci-tokens/{id}/revoke', [$ciTokenController, 'revoke']);
+$router->add('POST', '/admin/ci/dispatch/{id}', [$ciTokenController, 'dispatch']);
 
 // -------------------------------------------------------
 // Dispatch request

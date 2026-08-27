@@ -1,0 +1,184 @@
+name: Instanz ausrollen
+
+# Rollt CMS und Frontend auf den Webspace eines Kunden aus.
+#
+# Warum ueber CI und nicht aus der Verwaltung heraus: Auf IONOS-Webspace fehlt
+# die ssh2-Erweiterung, eine nutzbare Shell gibt es nicht, und der FTP-Port ist
+# geschlossen. Die Verwaltung hat dort also keine Transfermethode. Sie bleibt
+# aber die Steuerzentrale - dieser Workflow holt sich Zugangsdaten, Pfade,
+# URLs und Tokens bei ihr ab, statt sie ein zweites Mal in GitHub zu pflegen.
+#
+# Deshalb braucht GitHub nur zwei Secrets, ein fuer alle Mal:
+#   VERWALTUNG_URL       z.B. https://verwaltung.digiwtal.de
+#   VERWALTUNG_CI_TOKEN  in der Verwaltung unter CI-Tokens erzeugt
+#
+# Alles andere - welcher Kunde, welcher Host, welche Datenbank - steht im
+# Vault der Verwaltung und wird zur Laufzeit geholt.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kunde:
+        description: "Kunden-ID aus der Verwaltung"
+        required: true
+        type: string
+      erstinstallation:
+        description: ".env anlegen, falls noch keine da ist"
+        type: boolean
+        default: false
+      migrationen:
+        description: "Migrationen nach dem Upload ausfuehren"
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-kunde-${{ inputs.kunde }}
+  cancel-in-progress: false
+
+jobs:
+  ausrollen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Konfiguration aus der Verwaltung holen
+        env:
+          VERWALTUNG_URL: ${{ secrets.VERWALTUNG_URL }}
+          CI_TOKEN: ${{ secrets.VERWALTUNG_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          STATUS=$(curl -sS --max-time 30 -o /tmp/ziel.json -w '%{http_code}' \
+            -H "X-Ci-Token: $CI_TOKEN" \
+            "${VERWALTUNG_URL%/}/api/ci/deploy-target?customer=${{ inputs.kunde }}")
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Verwaltung antwortete mit HTTP $STATUS"
+            # Fehlerobjekt enthaelt keine Geheimnisse, darf also ins Log
+            cat /tmp/ziel.json || true
+            exit 1
+          fi
+
+          # Geheimnisse maskieren, bevor irgendetwas davon im Log landen kann
+          for pfad in .ssh.password .db.password .tokens.health .tokens.deploy; do
+            wert=$(jq -r "$pfad // empty" /tmp/ziel.json)
+            [ -n "$wert" ] && echo "::add-mask::$wert"
+          done
+
+          {
+            echo "KUNDE_NAME=$(jq -r '.customer.name' /tmp/ziel.json)"
+            echo "SSH_HOST=$(jq -r '.ssh.host' /tmp/ziel.json)"
+            echo "SSH_PORT=$(jq -r '.ssh.port' /tmp/ziel.json)"
+            echo "SSH_USER=$(jq -r '.ssh.user' /tmp/ziel.json)"
+            echo "SSHPASS=$(jq -r '.ssh.password' /tmp/ziel.json)"
+            echo "CMS_PATH=$(jq -r '.ssh.cms_path' /tmp/ziel.json)"
+            echo "FRONTEND_PATH=$(jq -r '.ssh.frontend_path' /tmp/ziel.json)"
+            echo "CMS_URL=$(jq -r '.urls.cms' /tmp/ziel.json)"
+            echo "HEALTH_TOKEN=$(jq -r '.tokens.health' /tmp/ziel.json)"
+          } >> "$GITHUB_ENV"
+
+          echo "Ziel: $(jq -r '.customer.name' /tmp/ziel.json) (Kunde ${{ inputs.kunde }})"
+          echo "CMS-Version im Repo: $(php -r 'echo (include "CMS/config/version.php")["cms_version"] ?? "unbekannt";')"
+
+      - name: SSH vorbereiten
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+          mkdir -p "$HOME/.ssh"
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> "$HOME/.ssh/known_hosts" 2>/dev/null
+          echo "SSH_CMD=sshpass -e ssh -p $SSH_PORT" >> "$GITHUB_ENV"
+
+      - name: Dateien uebertragen
+        run: |
+          set -euo pipefail
+          # --delete raeumt im Zielordner auf. Ausgeschlossene Pfade bleiben
+          # unangetastet - NICHT --delete-excluded verwenden, das wuerde .env
+          # und storage/ auf dem Zielserver loeschen.
+          COMMON="--archive --compress --delete --human-readable
+            --exclude=.git/ --exclude=.github/ --exclude=.env --exclude=.claude/
+            --exclude=storage/ --exclude=vendor/ --exclude=node_modules/
+            --exclude=secrets/ --exclude=keys/ --exclude=*.zip --exclude=upload.sh"
+
+          echo "::group::CMS"
+          rsync $COMMON -e "$SSH_CMD" ./CMS/ "$SSH_USER@$SSH_HOST:$CMS_PATH/"
+          echo "::endgroup::"
+
+          echo "::group::Frontend"
+          rsync $COMMON -e "$SSH_CMD" ./Frontend/ "$SSH_USER@$SSH_HOST:$FRONTEND_PATH/"
+          echo "::endgroup::"
+
+          echo "::group::shared"
+          ELTERN=$(dirname "$CMS_PATH")
+          rsync $COMMON -e "$SSH_CMD" ./shared/ "$SSH_USER@$SSH_HOST:$ELTERN/shared/"
+          echo "::endgroup::"
+
+      - name: .env anlegen, falls sie fehlt
+        if: ${{ inputs.erstinstallation }}
+        run: |
+          set -euo pipefail
+
+          # Werte hier im Runner erzeugen und ueber stdin schreiben. Kein
+          # verschachteltes Heredoc auf der Gegenseite - das terminiert bei
+          # eingerueckten Bloecken nicht - und Passwoerter mit $, " oder \
+          # ueberstehen den Weg so unveraendert.
+          jq -r '
+            "APP_ENV=production",
+            "DB_HOST=" + .db.host,
+            "DB_PORT=" + (.db.port|tostring),
+            "DB_NAME=" + .db.name,
+            "DB_USER=" + .db.user,
+            "DB_PASS=" + .db.password,
+            "MIGRATION_TOKEN=" + .tokens.migration,
+            "HEALTH_TOKEN=" + .tokens.health,
+            "DEPLOY_TOKEN=" + .tokens.deploy,
+            "SETUP_TOKEN=" + .tokens.setup,
+            "CMS_BASE_PATH=" + .urls.base_path
+          ' /tmp/ziel.json > /tmp/cms.env
+
+          jq -r '
+            "CMS_API_URL=" + .urls.cms + "/api.php/api/v1",
+            "CMS_API_TOKEN=",
+            "CMS_TIMEOUT=5",
+            "CMS_CACHE_TTL=300",
+            "FRONTEND_BASE_URL=" + .urls.frontend,
+            "CMS_SITEMAP_URL=" + .urls.cms + "/sitemap.xml"
+          ' /tmp/ziel.json > /tmp/frontend.env
+
+          ziel="$SSH_USER@$SSH_HOST"
+
+          # Bewusst nur anlegen, nie ueberschreiben: Eine bestehende .env kann
+          # von Hand angepasste Werte enthalten, etwa die Instagram-Zugangsdaten.
+          anlegen() {
+            if $SSH_CMD "$ziel" "test -f '$2'"; then
+              echo "$2 existiert bereits - unveraendert gelassen."
+            else
+              $SSH_CMD "$ziel" "cat > '$2' && chmod 600 '$2'" < "$1"
+              echo "$2 angelegt."
+            fi
+          }
+
+          anlegen /tmp/cms.env      "$CMS_PATH/.env"
+          anlegen /tmp/frontend.env "$FRONTEND_PATH/.env"
+
+          $SSH_CMD "$ziel" "mkdir -p '$CMS_PATH/storage' && chmod 755 '$CMS_PATH/storage'"
+
+      - name: Migrationen ausfuehren
+        if: ${{ inputs.migrationen }}
+        run: |
+          set -euo pipefail
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "cd '$CMS_PATH' && php scripts/migrate.php"
+
+      - name: Health pruefen
+        run: |
+          set -euo pipefail
+          ANTWORT=$(curl -sS --max-time 20 -H "X-Health-Token: $HEALTH_TOKEN" \
+            "$CMS_URL/api.php/api/health")
+          echo "$ANTWORT" | jq .
+
+          STATUS=$(echo "$ANTWORT" | jq -r '.status // ""')
+          if [ "$STATUS" != "healthy" ]; then
+            echo "::error::$KUNDE_NAME meldet '$STATUS' statt 'healthy'."
+            exit 1
+          fi
+          echo "$KUNDE_NAME laeuft. CMS $(echo "$ANTWORT" | jq -r .cms_version), Migration $(echo "$ANTWORT" | jq -r .last_migration)"
