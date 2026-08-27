@@ -24,10 +24,6 @@ on:
         description: "Kunden-ID aus der Verwaltung"
         required: true
         type: string
-      erstinstallation:
-        description: ".env anlegen, falls noch keine da ist"
-        type: boolean
-        default: false
       migrationen:
         description: "Migrationen nach dem Upload ausfuehren"
         type: boolean
@@ -63,7 +59,7 @@ jobs:
           fi
 
           # Geheimnisse maskieren, bevor irgendetwas davon im Log landen kann
-          for pfad in .ssh.password .db.password .tokens.health .tokens.deploy .support.token; do
+          for pfad in .ssh.password .db.password .tokens.health .tokens.deploy .tokens.migration .tokens.setup .tokens.api .support.token; do
             wert=$(jq -r "$pfad // empty" /tmp/ziel.json)
             [ -n "$wert" ] && echo "::add-mask::$wert"
           done
@@ -213,105 +209,44 @@ jobs:
             echo "::endgroup::"
           fi
 
-      - name: .env anlegen, falls sie fehlt
-        if: ${{ inputs.erstinstallation }}
+      - name: CMS-.env aus der Verwaltung synchronisieren
         run: |
           set -euo pipefail
 
-          # Werte hier im Runner erzeugen und ueber stdin schreiben. Kein
-          # verschachteltes Heredoc auf der Gegenseite - das terminiert bei
-          # eingerueckten Bloecken nicht - und Passwoerter mit $, " oder \
-          # ueberstehen den Weg so unveraendert.
-          jq -r '
-            "APP_ENV=production",
-            "DB_HOST=" + .db.host,
-            "DB_PORT=" + (.db.port|tostring),
-            "DB_NAME=" + .db.name,
-            "DB_USER=" + .db.user,
-            "DB_PASS=" + .db.password,
-            "MIGRATION_TOKEN=" + .tokens.migration,
-            "HEALTH_TOKEN=" + .tokens.health,
-            "DEPLOY_TOKEN=" + .tokens.deploy,
-            "SETUP_TOKEN=" + .tokens.setup,
-            "UPDATES_AVAILABLE_UNTIL=" + (.customer.updates_available_until // "unlimited"),
-            "CMS_BASE_PATH=" + .urls.base_path,
-            "FRONTEND_SOURCE_DIR=" + .ssh.frontend_path,
-            "FRONTEND_BASE_URL=" + .urls.frontend,
-            "SUPPORT_URL=" + (.support.url // ""),
-            "SUPPORT_TOKEN=" + (.support.token // "")
-          ' /tmp/ziel.json > /tmp/cms.env
+          php .github/scripts/render-env.php cms /tmp/ziel.json > /tmp/cms.env
 
           ziel="$SSH_USER@$SSH_HOST"
+          $SSH_CMD "$ziel" "if test -f '$CMS_PATH/.env'; then cat '$CMS_PATH/.env'; fi" > /tmp/cms-current.env
 
-          # Bewusst nur anlegen, nie ueberschreiben: Eine bestehende .env kann
-          # von Hand angepasste Werte enthalten, etwa die Instagram-Zugangsdaten.
-          anlegen() {
-            if $SSH_CMD "$ziel" "test -f '$2'"; then
-              echo "$2 existiert bereits - unveraendert gelassen."
-            else
-              $SSH_CMD "$ziel" "cat > '$2' && chmod 600 '$2'" < "$1"
-              echo "$2 angelegt."
-            fi
-          }
+          # Nur Schluessel aus der Verwaltung ersetzen. Zusaetzliche Werte wie
+          # Instagram-Konfigurationen bleiben unveraendert erhalten.
+          awk -F= '
+            NR == FNR {
+              key = $1
+              if (!(key in managed)) order[++count] = key
+              managed[key] = $0
+              next
+            }
+            {
+              key = $1
+              if (key in managed) {
+                if (!(key in written)) print managed[key]
+                written[key] = 1
+                next
+              }
+              print
+            }
+            END {
+              for (i = 1; i <= count; i++) {
+                key = order[i]
+                if (!(key in written)) print managed[key]
+              }
+            }
+          ' /tmp/cms.env /tmp/cms-current.env > /tmp/cms-merged.env
 
-          anlegen /tmp/cms.env "$CMS_PATH/.env"
-
+          $SSH_CMD "$ziel" "cat > '$CMS_PATH/.env.new' && chmod 600 '$CMS_PATH/.env.new' && mv '$CMS_PATH/.env.new' '$CMS_PATH/.env'" < /tmp/cms-merged.env
           $SSH_CMD "$ziel" "mkdir -p '$CMS_PATH/storage' && chmod 755 '$CMS_PATH/storage'"
-
-      - name: Vertragsinfo und Hilfe-Zugang nachtragen
-        run: |
-          set -euo pipefail
-
-          # Bestehende .env-Dateien werden nicht komplett ueberschrieben, weil
-          # sie kundenspezifische Werte enthalten koennen. Die Vertragsinfo
-          # muss sich bei jedem Rollout aktualisieren; fehlende Hilfe-Werte
-          # werden weiterhin nur einmalig ergaenzt.
-          SUPPORT_URL=$(jq -r '.support.url // ""' /tmp/ziel.json)
-          SUPPORT_TOKEN=$(jq -r '.support.token // ""' /tmp/ziel.json)
-          ziel="$SSH_USER@$SSH_HOST"
-
-          if ! $SSH_CMD "$ziel" "test -f '$CMS_PATH/.env'"; then
-            echo "Keine .env vorhanden - uebersprungen."
-            exit 0
-          fi
-
-          if [[ "$UPDATES_AVAILABLE_UNTIL" != "unlimited" \
-             && ! "$UPDATES_AVAILABLE_UNTIL" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            echo "::error::Ungueltiger Wert fuer UPDATES_AVAILABLE_UNTIL."
-            exit 1
-          fi
-
-          if $SSH_CMD "$ziel" "grep -q '^UPDATES_AVAILABLE_UNTIL=' '$CMS_PATH/.env'"; then
-            $SSH_CMD "$ziel" "sed -i 's/^UPDATES_AVAILABLE_UNTIL=.*/UPDATES_AVAILABLE_UNTIL=$UPDATES_AVAILABLE_UNTIL/' '$CMS_PATH/.env'"
-          else
-            printf 'UPDATES_AVAILABLE_UNTIL=%s\n' "$UPDATES_AVAILABLE_UNTIL" \
-              | $SSH_CMD "$ziel" "cat >> '$CMS_PATH/.env'"
-          fi
-          echo "Update-Zeitraum in der CMS-.env aktualisiert."
-
-          if ! $SSH_CMD "$ziel" "grep -q '^FRONTEND_SOURCE_DIR=' '$CMS_PATH/.env'"; then
-            printf 'FRONTEND_SOURCE_DIR=%s\n' "$FRONTEND_PATH" \
-              | $SSH_CMD "$ziel" "cat >> '$CMS_PATH/.env'"
-          fi
-          if ! $SSH_CMD "$ziel" "grep -q '^FRONTEND_BASE_URL=' '$CMS_PATH/.env'"; then
-            printf 'FRONTEND_BASE_URL=%s\n' "$FRONTEND_URL" \
-              | $SSH_CMD "$ziel" "cat >> '$CMS_PATH/.env'"
-          fi
-          echo "Frontend-Zuordnung in der CMS-.env ist vorhanden."
-
-          if [ -z "$SUPPORT_URL" ] || [ -z "$SUPPORT_TOKEN" ]; then
-            echo "Kein Hilfe-Zugang geliefert - uebersprungen."
-            exit 0
-          fi
-
-          if $SSH_CMD "$ziel" "grep -q '^SUPPORT_TOKEN=' '$CMS_PATH/.env'"; then
-            echo "Hilfe-Zugang steht bereits in der .env - unveraendert gelassen."
-            exit 0
-          fi
-
-          printf 'SUPPORT_URL=%s\nSUPPORT_TOKEN=%s\n' "$SUPPORT_URL" "$SUPPORT_TOKEN" \
-            | $SSH_CMD "$ziel" "cat >> '$CMS_PATH/.env'"
-          echo "Hilfe-Zugang in die .env eingetragen."
+          echo "CMS-.env aus der Verwaltung synchronisiert; eigene Zusatzwerte wurden erhalten."
 
       - name: Migrationen ausfuehren
         if: ${{ inputs.migrationen }}

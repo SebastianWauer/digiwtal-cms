@@ -52,7 +52,7 @@ jobs:
 
             NAME=$(jq -r '.customer.name' "/tmp/ziel-$KUNDE.json")
             gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main \
-              -f kunde="$KUNDE" -f erstinstallation=false -f migrationen=true
+              -f kunde="$KUNDE" -f migrationen=true
             echo "CMS-Rollout fuer $NAME (Kunde $KUNDE) gestartet."
             GESTARTET=$((GESTARTET + 1))
           done < <(jq -r '.instances[].customer' /tmp/instanzen.json)
