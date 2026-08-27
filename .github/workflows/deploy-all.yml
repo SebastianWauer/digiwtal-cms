@@ -1,0 +1,64 @@
+name: CMS an alle Kunden ausrollen
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: deploy-cms-all
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERWALTUNG_URL: ${{ secrets.VERWALTUNG_URL }}
+      CI_TOKEN: ${{ secrets.VERWALTUNG_CI_TOKEN }}
+    steps:
+      - name: Deploybereite Kunden ermitteln und starten
+        run: |
+          set -euo pipefail
+
+          STATUS=$(curl -sS --max-time 30 -o /tmp/instanzen.json -w '%{http_code}' \
+            -H "X-Ci-Token: $CI_TOKEN" \
+            "${VERWALTUNG_URL%/}/api/ci/instances")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Instanzliste konnte nicht geladen werden, HTTP $STATUS."
+            exit 1
+          fi
+
+          jq -r '.instances[].token // empty' /tmp/instanzen.json | while read -r token; do
+            [ -n "$token" ] && echo "::add-mask::$token"
+          done
+
+          GESTARTET=0
+          UEBERSPRUNGEN=0
+          while read -r KUNDE; do
+            [ -n "$KUNDE" ] || continue
+            TARGET_STATUS=$(curl -sS --max-time 30 -o "/tmp/ziel-$KUNDE.json" -w '%{http_code}' \
+              -H "X-Ci-Token: $CI_TOKEN" \
+              "${VERWALTUNG_URL%/}/api/ci/deploy-target?customer=$KUNDE")
+            if [ "$TARGET_STATUS" != "200" ]; then
+              echo "::warning::Kunde $KUNDE ist nicht deploybereit und wird uebersprungen (HTTP $TARGET_STATUS)."
+              UEBERSPRUNGEN=$((UEBERSPRUNGEN + 1))
+              continue
+            fi
+
+            NAME=$(jq -r '.customer.name' "/tmp/ziel-$KUNDE.json")
+            gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main \
+              -f kunde="$KUNDE" -f erstinstallation=false -f migrationen=true
+            echo "CMS-Rollout fuer $NAME (Kunde $KUNDE) gestartet."
+            GESTARTET=$((GESTARTET + 1))
+          done < <(jq -r '.instances[].customer' /tmp/instanzen.json)
+
+          echo "$GESTARTET CMS-Rollout(s) gestartet, $UEBERSPRUNGEN uebersprungen."
+          if [ "$GESTARTET" -eq 0 ]; then
+            echo "::error::Kein deploybereiter Kunde gefunden."
+            exit 1
+          fi
