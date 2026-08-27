@@ -79,6 +79,25 @@ require_once $ROOT . '/app/Core/Env.php';
  * unter /verwaltung statt eigener Subdomain). Wird per Apache SetEnv gesetzt
  * (siehe public/.htaccess). Leer = Domain-Root (Standardfall, Subdomain, lokal).
  */
+/**
+ * Zeichenlaenge und Kleinschreibung, ohne mbstring zwingend vorauszusetzen.
+ * Ist die Erweiterung da, wird sie genutzt; sonst greift die Byte-Variante.
+ * Verhindert fatale Fehler an Stellen, die nur validieren oder kuerzen.
+ */
+if (!function_exists('cms_str_len')) {
+    function cms_str_len(string $value): int
+    {
+        return function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
+    }
+}
+
+if (!function_exists('cms_str_lower')) {
+    function cms_str_lower(string $value): string
+    {
+        return function_exists('mb_strtolower') ? mb_strtolower($value) : strtolower($value);
+    }
+}
+
 if (!function_exists('cms_base_path')) {
     function cms_base_path(): string
     {

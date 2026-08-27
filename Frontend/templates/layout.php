@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php
+    $client = $client ?? null; // nicht jeder Render-Pfad reicht ihn durch (z.B. Fehlerseiten)
     $brandVersion = @filemtime(__DIR__ . '/../assets/css/brand.php') ?: time();
     $themeVersion = @filemtime(__DIR__ . '/../assets/css/theme.css') ?: time();
     $assetBaseUrl = (isset($assetBaseUrl) && is_string($assetBaseUrl)) ? rtrim($assetBaseUrl, '/') : '';

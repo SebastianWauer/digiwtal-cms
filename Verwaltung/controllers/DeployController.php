@@ -70,8 +70,12 @@ class DeployController
 
         $this->ensureNoRunningDeployment($customerId);
 
-        $deploymentId = $this->deploymentRepo->create($customerId, 'cms', 'first_install');
-        $queued = $this->enqueueDeployWorker('provision', $deploymentId, $customerId, 'cms');
+        // 'combined': Die Erstinstallation richtet die komplette Seite ein, also CMS
+        // UND Frontend. Nur so bekommt auch das Frontend seine .env mit CMS_API_URL -
+        // vorher lief die Erstinstallation mit 'cms' und liess die Website ohne
+        // Konfiguration zurueck.
+        $deploymentId = $this->deploymentRepo->create($customerId, 'combined', 'first_install');
+        $queued = $this->enqueueDeployWorker('provision', $deploymentId, $customerId, 'combined');
 
         $this->audit->log(
             'deploy.first_install',
