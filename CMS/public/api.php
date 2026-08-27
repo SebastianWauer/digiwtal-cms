@@ -141,7 +141,14 @@ function get_public_settings(PDO $pdo): array
         'contact_email',
         'contact_phone',
         'contact_address',
-        'contact_postal_city'
+        'contact_postal_city',
+        // Profil-URLs der Social-Media-Kanaele. Werden im CMS unter
+        // Einstellungen gepflegt und vom social_account-Block gebraucht.
+        'social_facebook',
+        'social_instagram',
+        'social_youtube',
+        'social_tiktok',
+        'social_x'
     ];
     $in   = implode(', ', array_fill(0, count($keys), '?'));
     $stmt = $pdo->prepare("SELECT `key`, `value` FROM site_settings WHERE `key` IN ({$in})");
@@ -175,6 +182,11 @@ function get_public_settings(PDO $pdo): array
         'contact_phone'         => (string)($raw['contact_phone'] ?? ''),
         'contact_address'       => (string)($raw['contact_address'] ?? ''),
         'contact_postal_city'   => (string)($raw['contact_postal_city'] ?? ''),
+        'social_facebook'       => (string)($raw['social_facebook'] ?? ''),
+        'social_instagram'      => (string)($raw['social_instagram'] ?? ''),
+        'social_youtube'        => (string)($raw['social_youtube'] ?? ''),
+        'social_tiktok'         => (string)($raw['social_tiktok'] ?? ''),
+        'social_x'              => (string)($raw['social_x'] ?? ''),
     ];
 }
 

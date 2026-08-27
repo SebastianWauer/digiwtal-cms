@@ -1148,7 +1148,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 
 try {
-    render('templates/layout.php', compact('siteName', 'title', 'pageTitle', 'pageSubtitle', 'blocks', 'navItems', 'slug', 'seo', 'faviconUrl', 'headerLogoUrl', 'contactFormStates', 'contactTurnstileSiteKey', 'publicSettings'));
+    render('templates/layout.php', compact('siteName', 'title', 'pageTitle', 'pageSubtitle', 'blocks', 'navItems', 'slug', 'seo', 'faviconUrl', 'headerLogoUrl', 'contactFormStates', 'contactTurnstileSiteKey', 'publicSettings', 'client'));
 } catch (Throwable) {
     render500($siteName);
 }
