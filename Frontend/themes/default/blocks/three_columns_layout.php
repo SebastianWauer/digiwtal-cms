@@ -34,7 +34,7 @@ if ($blockTitle === '' && !$hasAny) {
       <?php foreach ($columns as $column): ?>
         <div class="block-three-columns__column <?= $column['class'] ?>">
           <?php if ($column['blocks'] !== []): ?>
-            <?php render_page_blocks($column['blocks'], compact('contactFormStates', 'currentSlug', 'contactTurnstileSiteKey', 'publicSettings')); ?>
+            <?php render_page_blocks($column['blocks'], compact('contactFormStates', 'currentSlug', 'contactTurnstileSiteKey', 'publicSettings', 'client')); ?>
           <?php else: ?>
             <div class="block-three-columns__empty">Keine Inhalte</div>
           <?php endif; ?>

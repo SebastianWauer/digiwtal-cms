@@ -126,8 +126,23 @@
           </div>
 
           <div>
+            <div class="ss-label">Instagram Bilder-Raster (Live-Feed)</div>
+            <?php $igUsername = trim((string)($data['instagram_username'] ?? '')); ?>
+            <?php if ($igUsername !== ''): ?>
+              <div class="ss-fieldhint">
+                Verbunden als <strong>@<?= h($igUsername) ?></strong><?php $igSince = (int)($data['instagram_connected_at'] ?? 0); if ($igSince > 0): ?> (seit <?= h(date('d.m.Y', $igSince)) ?>)<?php endif; ?>.
+              </div>
+              <button type="submit" form="ss-instagram-disconnect" class="btn btn--ghost btn--sm" style="margin-top:.4rem;">Instagram trennen</button>
+            <?php else: ?>
+              <div class="ss-fieldhint">Noch nicht verbunden. Für ein Live-Bilder-Raster im Page-Builder-Block „Social-Media-Account" das eigene Instagram-Business-/Creator-Konto direkt verbinden (native Meta-API, kein Drittanbieter-Tool).</div>
+              <a href="<?= cms_base_path() ?>/settings/instagram/connect" class="btn btn--ghost btn--sm" style="margin-top:.4rem; display:inline-block;">Mit Instagram verbinden</a>
+            <?php endif; ?>
+          </div>
+
+          <div>
             <div class="ss-label">YouTube</div>
-            <input class="ss-input" type="text" name="social_youtube" value="<?= h($data['social_youtube'] ?? '') ?>" placeholder="https://youtube.com/...">
+            <input class="ss-input" type="text" name="social_youtube" value="<?= h($data['social_youtube'] ?? '') ?>" placeholder="https://youtube.com/channel/UC...">
+            <div class="ss-fieldhint">Für das Live-Embed im Page-Builder wird die Kanal-URL im Format /channel/UC... benötigt (nicht @Handle).</div>
           </div>
 
           <div>
@@ -237,4 +252,8 @@
     <button type="submit" class="btn btn--primary">Speichern</button>
   </div>
 
+</form>
+
+<form method="post" action="<?= cms_base_path() ?>/settings/instagram/disconnect" id="ss-instagram-disconnect">
+  <?= admin_csrf_field() ?>
 </form>

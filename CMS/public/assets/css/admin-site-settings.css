@@ -44,6 +44,12 @@
   font-size: 13px;
 }
 
+.ss-fieldhint{
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
 .ss-fields{
   display:flex;
   flex-direction: column;
