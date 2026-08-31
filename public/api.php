@@ -149,6 +149,12 @@ function get_public_settings(PDO $pdo): array
         'contact_phone',
         'contact_address',
         'contact_postal_city',
+        'opening_status',
+        'legal_owner',
+        'legal_register_entry',
+        'legal_register_court',
+        'legal_register_number',
+        'legal_vat_id',
         // Profil-URLs der Social-Media-Kanaele. Werden im CMS unter
         // Einstellungen gepflegt und vom social_account-Block gebraucht.
         'social_facebook',
@@ -173,6 +179,10 @@ function get_public_settings(PDO $pdo): array
     $cmsLogoLightUrl = $cmsLogoLightId > 0 ? api_cms_path('/media/file?id=' . $cmsLogoLightId) : null;
     $cmsLogoDarkId = (int)($raw['cms_logo_dark_media_id'] ?? 0);
     $cmsLogoDarkUrl = $cmsLogoDarkId > 0 ? api_cms_path('/media/file?id=' . $cmsLogoDarkId) : null;
+    $openingStatus = (string)($raw['opening_status'] ?? 'hidden');
+    if (!in_array($openingStatus, ['hidden', 'open', 'closed'], true)) {
+        $openingStatus = 'hidden';
+    }
 
     return [
         'site_name'             => (string)($raw['site_title'] ?? ''),
@@ -189,6 +199,12 @@ function get_public_settings(PDO $pdo): array
         'contact_phone'         => (string)($raw['contact_phone'] ?? ''),
         'contact_address'       => (string)($raw['contact_address'] ?? ''),
         'contact_postal_city'   => (string)($raw['contact_postal_city'] ?? ''),
+        'opening_status'        => $openingStatus,
+        'legal_owner'           => (string)($raw['legal_owner'] ?? ''),
+        'legal_register_entry'  => (string)($raw['legal_register_entry'] ?? ''),
+        'legal_register_court'  => (string)($raw['legal_register_court'] ?? ''),
+        'legal_register_number' => (string)($raw['legal_register_number'] ?? ''),
+        'legal_vat_id'          => (string)($raw['legal_vat_id'] ?? ''),
         'social_facebook'       => (string)($raw['social_facebook'] ?? ''),
         'social_instagram'      => (string)($raw['social_instagram'] ?? ''),
         'social_youtube'        => (string)($raw['social_youtube'] ?? ''),

@@ -72,11 +72,11 @@
         </div>
       </div>
 
-      <!-- Kontakt & Rechtliches -->
+      <!-- Kontakt -->
       <div class="ss-card">
         <div class="ss-cardhead">
-          <h2>Kontakt &amp; Rechtliches</h2>
-          <div class="ss-sub">Angaben f&uuml;r Impressum, Kontakt &amp; Datenschutz.</div>
+          <h2>Kontakt</h2>
+          <div class="ss-sub">Kontaktdaten und sichtbarer &Ouml;ffnungsstatus.</div>
         </div>
 
         <div class="ss-row2">
@@ -103,6 +103,52 @@
           <div>
             <div class="ss-label">PLZ und Ort</div>
             <input class="ss-input" type="text" name="contact_postal_city" value="<?= h($data['contact_postal_city'] ?? '') ?>">
+          </div>
+
+          <div>
+            <div class="ss-label">&Ouml;ffnungsstatus</div>
+            <?php $openingStatus = (string)($data['opening_status'] ?? 'hidden'); ?>
+            <select class="ss-input" name="opening_status">
+              <option value="hidden" <?= $openingStatus === 'hidden' ? 'selected' : '' ?>>Nicht anzeigen</option>
+              <option value="open" <?= $openingStatus === 'open' ? 'selected' : '' ?>>Aktuell ge&ouml;ffnet</option>
+              <option value="closed" <?= $openingStatus === 'closed' ? 'selected' : '' ?>>Aktuell geschlossen</option>
+            </select>
+            <div class="ss-fieldhint">Wird beispielsweise in der Sidebar des Frontends angezeigt.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rechtliche Angaben -->
+      <div class="ss-card">
+        <div class="ss-cardhead">
+          <h2>Rechtliche Angaben</h2>
+          <div class="ss-sub">Angaben f&uuml;r Footer und Impressum.</div>
+        </div>
+
+        <div class="ss-row2">
+          <div>
+            <div class="ss-label">Inhaber / Vertretungsberechtigte Person</div>
+            <input class="ss-input" type="text" name="legal_owner" value="<?= h($data['legal_owner'] ?? '') ?>" placeholder="Vorname Nachname">
+          </div>
+
+          <div>
+            <div class="ss-label">Eintragung im &hellip;</div>
+            <input class="ss-input" type="text" name="legal_register_entry" value="<?= h($data['legal_register_entry'] ?? '') ?>" placeholder="z. B. Handelsregister">
+          </div>
+
+          <div>
+            <div class="ss-label">Registergericht</div>
+            <input class="ss-input" type="text" name="legal_register_court" value="<?= h($data['legal_register_court'] ?? '') ?>" placeholder="z. B. Amtsgericht Wuppertal">
+          </div>
+
+          <div>
+            <div class="ss-label">Registernummer</div>
+            <input class="ss-input" type="text" name="legal_register_number" value="<?= h($data['legal_register_number'] ?? '') ?>" placeholder="z. B. HRA 12345">
+          </div>
+
+          <div>
+            <div class="ss-label">Umsatzsteuer-ID</div>
+            <input class="ss-input" type="text" name="legal_vat_id" value="<?= h($data['legal_vat_id'] ?? '') ?>" placeholder="z. B. DE123456789">
           </div>
         </div>
       </div>

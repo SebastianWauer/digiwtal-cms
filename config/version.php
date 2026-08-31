@@ -2,5 +2,5 @@
 declare(strict_types=1);
 
 return [
-  'cms_version' => '2.3.1',
+  'cms_version' => '2.4.0',
 ];

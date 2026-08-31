@@ -73,6 +73,16 @@ final class SiteSettingsController
         $repo->set('contact_address', trim((string)($_POST['contact_address'] ?? '')));
         $repo->set('contact_postal_city', trim((string)($_POST['contact_postal_city'] ?? '')));
 
+        $openingStatusAllowed = ['hidden', 'open', 'closed'];
+        $openingStatus = trim((string)($_POST['opening_status'] ?? 'hidden'));
+        $repo->set('opening_status', in_array($openingStatus, $openingStatusAllowed, true) ? $openingStatus : 'hidden');
+
+        $repo->set('legal_owner', trim((string)($_POST['legal_owner'] ?? '')));
+        $repo->set('legal_register_entry', trim((string)($_POST['legal_register_entry'] ?? '')));
+        $repo->set('legal_register_court', trim((string)($_POST['legal_register_court'] ?? '')));
+        $repo->set('legal_register_number', trim((string)($_POST['legal_register_number'] ?? '')));
+        $repo->set('legal_vat_id', trim((string)($_POST['legal_vat_id'] ?? '')));
+
         $repo->set('social_facebook', trim((string)($_POST['social_facebook'] ?? '')));
         $repo->set('social_instagram', trim((string)($_POST['social_instagram'] ?? '')));
         $repo->set('social_youtube', trim((string)($_POST['social_youtube'] ?? '')));
