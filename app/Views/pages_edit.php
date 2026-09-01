@@ -57,6 +57,40 @@ $defs = BlockRegistry::definitions();
 $defsJson = json_encode($defs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if (!is_string($defsJson) || $defsJson === '') $defsJson = '{}';
 
+// Die Auswahl wird aus der Registry erzeugt. So ist jeder registrierte Block
+// automatisch auch im PageBuilder auswählbar; die Map steuert nur Reihenfolge
+// und verständlichere Beschriftungen.
+$preferredBlockLabels = [
+    'text' => 'Textblock',
+    'image' => 'Bild',
+    'hero' => 'Herobanner',
+    'dual_hero' => 'Doppel-Hero',
+    'columns' => 'Kacheln',
+    'three_columns_layout' => '3-Spalten Layout',
+    'cta' => 'Call-to-Action',
+    'faq' => 'FAQ',
+    'video' => 'Video',
+    'gallery' => 'Galerie',
+    'contact_form' => 'Kontaktformular',
+    'imprint' => 'Impressum',
+    'events' => 'Events',
+    'news' => 'News',
+    'social_account' => 'Social-Media-Account',
+];
+$blockAddOptions = [];
+foreach ($preferredBlockLabels as $blockType => $blockLabel) {
+    if (isset($defs[$blockType])) {
+        $blockAddOptions[$blockType] = $blockLabel;
+    }
+}
+foreach ($defs as $blockType => $definition) {
+    if (!isset($blockAddOptions[$blockType])) {
+        $blockAddOptions[$blockType] = (string)($definition['label'] ?? $blockType);
+    }
+}
+$blockLabelsJson = json_encode($blockAddOptions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+if (!is_string($blockLabelsJson) || $blockLabelsJson === '') $blockLabelsJson = '{}';
+
 // Status label for readonly
 $statusLabel = ($status === 'draft') ? 'Entwurf' : 'Live';
 
@@ -193,20 +227,9 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
             <div class="pages-edit-pb-actions">
               <button type="button" class="btn btn--ghost btn--sm" id="pbUndoBtn">↩ Rückgängig</button>
               <button type="button" class="btn btn--ghost btn--sm" id="pbRedoBtn">↪ Wiederholen</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="text">+ Textblock</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="image">+ Bild</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="hero">+ Herobanner</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="columns">+ Kacheln</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="three_columns_layout">+ 3-Spalten Layout</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="cta">+ Call-to-Action</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="faq">+ FAQ</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="video">+ Video</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="gallery">+ Galerie</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="contact_form">+ Kontaktformular</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="imprint">+ Impressum</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="events">+ Events</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="news">+ News</button>
-              <button type="button" class="btn btn--ghost btn--sm" data-add-block="social_account">+ Social-Media-Account</button>
+              <?php foreach ($blockAddOptions as $blockType => $blockLabel): ?>
+                <button type="button" class="btn btn--ghost btn--sm" data-add-block="<?= h($blockType) ?>">+ <?= h($blockLabel) ?></button>
+              <?php endforeach; ?>
             </div>
           <?php else: ?>
             <div class="pages-edit-field-hint pages-edit-pb-readonly">
@@ -455,20 +478,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   const EVENT_CATEGORY_OPTIONS = <?= $eventCategoryOptionsJson ?>;
   const NEWS_CATEGORY_OPTIONS = <?= $newsCategoryOptionsJson ?>;
   const CAN_EDIT = <?= $canSave ? 'true' : 'false' ?>;
-  const BLOCK_LABELS = {
-    text: 'Textblock',
-    hero: 'Herobanner',
-    image: 'Bild',
-    columns: 'Kacheln',
-    three_columns_layout: '3-Spalten Layout',
-    cta: 'Call-to-Action',
-    faq: 'FAQ',
-    video: 'Video',
-    gallery: 'Galerie',
-    events: 'Events',
-    news: 'News',
-    social_account: 'Social-Media-Account',
-  };
+  const BLOCK_LABELS = <?= $blockLabelsJson ?>;
   function blockLabel(type) {
     const t = String(type || '').trim();
     if (t in BLOCK_LABELS) return BLOCK_LABELS[t];
