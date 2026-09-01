@@ -816,7 +816,10 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     if (!activeMediaPickerInput) return;
     const url = String(nextUrl || '').trim();
     if (url === '') return;
-    activeMediaPickerInput.value = url;
+    const pickedId = mediaIdFromUrl(url);
+    activeMediaPickerInput.value = activeMediaPickerInput.dataset.mediaIdInput === '1' && pickedId > 0
+      ? String(pickedId)
+      : url;
     activeMediaPickerInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
@@ -1214,12 +1217,21 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     }
 
     if (isImageUrlField) {
-      input = el('input', {class: 'pages-edit-input', type: 'text', placeholder: '/media/file?id=123'});
-      input.value = val;
-      input.readOnly = true;
+      input = el('input', {
+        class: 'pages-edit-input',
+        type: 'text',
+        placeholder: 'z. B. 123 oder /media/file?id=123',
+        'data-media-id-input': '1'
+      });
+      const initialMediaId = mediaIdFromUrl(val);
+      input.value = initialMediaId > 0 ? String(initialMediaId) : val;
+      input.readOnly = !CAN_EDIT;
       input.addEventListener('input', () => {
         if (!CAN_EDIT) return;
-        block.data[key] = input.value;
+        const rawValue = input.value.trim();
+        block.data[key] = /^\d+$/.test(rawValue)
+          ? mediaFileUrlFromId(rawValue)
+          : rawValue;
         serialize();
       });
 
@@ -1240,6 +1252,10 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
       fieldWrap.appendChild(input);
       fieldWrap.appendChild(pickerActions);
+      fieldWrap.appendChild(el('div', {
+        class: 'pages-edit-field-hint',
+        html: 'Media-ID direkt eingeben oder ein Bild aus der Mediathek auswÃ¤hlen.'
+      }));
     } else if (control === 'select' && enumVals) {
       input = el('select', {class: 'pages-edit-input'});
       enumVals.forEach(opt => {
@@ -1678,16 +1694,22 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         grid.appendChild(copy);
 
         const media = el('div', {class: 'pages-edit-carousel-editor__media'});
-        const mediaLabel = el('div', {class: 'pages-edit-field-label', html: 'Bild'});
+        const mediaLabel = el('div', {class: 'pages-edit-field-label', html: 'Bild (Media-ID oder URL)'});
         const preview = el('div', {class: 'pages-edit-carousel-editor__preview'});
         const previewImage = el('img', {alt: ''});
         preview.appendChild(previewImage);
-        const imageInput = el('input', {class: 'pages-edit-input', type: 'text', placeholder: '/media/file?id=123'});
-        imageInput.value = item.image_url;
-        imageInput.readOnly = true;
+        const imageInput = el('input', {
+          class: 'pages-edit-input',
+          type: 'text',
+          placeholder: 'z. B. 123 oder /media/file?id=123',
+          'data-media-id-input': '1'
+        });
+        const initialMediaId = mediaIdFromUrl(item.image_url);
+        imageInput.value = initialMediaId > 0 ? String(initialMediaId) : item.image_url;
+        imageInput.readOnly = !CAN_EDIT;
 
         const updatePreview = () => {
-          const source = resolvePreviewImageSource(imageInput.value, '');
+          const source = resolvePreviewImageSource(item.image_url, '');
           if (source.primary === '') {
             previewImage.removeAttribute('src');
             preview.classList.add('is-empty');
@@ -1704,7 +1726,10 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         };
         imageInput.addEventListener('input', () => {
           if (!CAN_EDIT) return;
-          item.image_url = imageInput.value;
+          const rawValue = imageInput.value.trim();
+          item.image_url = /^\d+$/.test(rawValue)
+            ? mediaFileUrlFromId(rawValue)
+            : rawValue;
           updatePreview();
           commit();
         });

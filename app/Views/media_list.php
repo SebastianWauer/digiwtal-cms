@@ -97,6 +97,7 @@ function media_render_folder_nodes(
     int $activeFolderId,
     string $view,
     bool $canEdit,
+    bool $pickerMode,
     int $parentIdOrNullFlag, // -1 means NULL, otherwise parent id
     int $depth = 0
 ): void {
@@ -122,6 +123,13 @@ function media_render_folder_nodes(
         }
 
         $depthClass = 'media-folder--d' . (string)min(8, max(0, $depth));
+        $folderParams = [
+            'folder' => $fid,
+            'view' => $view,
+        ];
+        if ($pickerMode) {
+            $folderParams['picker'] = '1';
+        }
         ?>
         <div class="<?= $nodeClasses ?>" data-folder-node="<?= (int)$fid ?>">
             <div class="media-folder-row">
@@ -138,7 +146,7 @@ function media_render_folder_nodes(
 
                 <a
                     class="media-folder <?= $active ? 'is-active' : '' ?> <?= $depthClass ?>"
-                    href="<?= cms_base_path() ?>/media?folder=<?= (int)$fid ?>&view=<?= h($view) ?>"
+                    href="<?= cms_base_path() ?>/media?<?= h(http_build_query($folderParams)) ?>"
                     data-folder-id="<?= (int)$fid ?>"
                     <?php if ($canEdit && $fid > 1): ?>data-folder-drag-id="<?= (int)$fid ?>" draggable="true"<?php endif; ?>
                 >
@@ -149,7 +157,7 @@ function media_render_folder_nodes(
 
             <?php if ($hasChildren): ?>
                 <div class="media-folder-children" data-folder-children="<?= (int)$fid ?>">
-                    <?php media_render_folder_nodes($childrenByParent, $folderNameById, $openIds, $activeFolderId, $view, $canEdit, $fid, $depth + 1); ?>
+                    <?php media_render_folder_nodes($childrenByParent, $folderNameById, $openIds, $activeFolderId, $view, $canEdit, $pickerMode, $fid, $depth + 1); ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -189,6 +197,9 @@ function media_render_folder_nodes(
   <form method="get" action="<?= cms_base_path() ?>/media" class="media-filters">
     <input type="hidden" name="folder" value="<?= (int)$folderId ?>">
     <input type="hidden" name="per_page" value="<?= (int)$perPage ?>">
+    <?php if ($pickerMode): ?>
+      <input type="hidden" name="picker" value="1">
+    <?php endif; ?>
 
     <div class="media-filters__row">
       <div class="media-filters__field">
@@ -250,7 +261,7 @@ function media_render_folder_nodes(
       <?php endif; ?>
 
       <div class="media-folder-tree" id="mediaFolderTree">
-        <?php media_render_folder_nodes($childrenByParent, $folderNameById, $openIds, (int)$folderId, $view, $canEdit, -1, 0); ?>
+        <?php media_render_folder_nodes($childrenByParent, $folderNameById, $openIds, (int)$folderId, $view, $canEdit, $pickerMode, -1, 0); ?>
       </div>
     </aside>
 
@@ -266,7 +277,11 @@ function media_render_folder_nodes(
               <button type="submit" class="btn btn--ghost btn--danger btn--sm">Löschen</button>
             <?php endif; ?>
 
-            <a href="<?= cms_base_path() ?>/media?folder=0&view=<?= h($view) ?>" class="btn btn--ghost btn--sm">Alle Medien</a>
+            <?php
+              $allMediaParams = ['folder' => 0, 'view' => $view];
+              if ($pickerMode) $allMediaParams['picker'] = '1';
+            ?>
+            <a href="<?= cms_base_path() ?>/media?<?= h(http_build_query($allMediaParams)) ?>" class="btn btn--ghost btn--sm">Alle Medien</a>
 
             <?php if ($canDelete): ?>
               <a href="<?= cms_base_path() ?>/media/deleted?view=<?= h($view) ?>" class="btn btn--ghost btn--sm">Papierkorb</a>
