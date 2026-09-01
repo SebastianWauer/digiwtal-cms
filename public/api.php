@@ -299,13 +299,28 @@ function api_auth_bearer_token(): string
     return trim((string)($m[1] ?? ''));
 }
 
+function api_has_valid_frontend_token(): bool
+{
+    $expectedToken = trim((string)(getenv('CMS_API_TOKEN') ?: ''));
+    $providedToken = api_auth_bearer_token();
+
+    return $expectedToken !== ''
+        && $providedToken !== ''
+        && hash_equals($expectedToken, $providedToken);
+}
+
 /**
- * Simple fixed-window limiter: 60 req/min per IP.
+ * Simple fixed-window limiter per IP and request bucket.
  * Uses APCu if available, otherwise DB table `rate_limits`.
  */
-function enforce_api_rate_limit(int $maxRequests = 60, int $windowSeconds = 60): void
+function enforce_api_rate_limit(
+    int $maxRequests = 60,
+    int $windowSeconds = 60,
+    string $bucket = 'public'
+): void
 {
     $ip = api_client_ip();
+    $bucket = preg_replace('/[^a-z0-9_-]+/i', '-', trim($bucket)) ?: 'public';
     $now = time();
     $windowStart = (int)(floor($now / $windowSeconds) * $windowSeconds);
     $retryAfter = max(1, $windowSeconds - ($now - $windowStart));
@@ -313,7 +328,7 @@ function enforce_api_rate_limit(int $maxRequests = 60, int $windowSeconds = 60):
 
     $apcuEnabled = function_exists('apcu_enabled') && apcu_enabled();
     if ($apcuEnabled) {
-        $key = 'cms_api_rl:' . sha1($ip . ':' . (string)$windowStart);
+        $key = 'cms_api_rl:' . sha1($bucket . ':' . $ip . ':' . (string)$windowStart);
         $ok = false;
         $count = (int)apcu_inc($key, 1, $ok, $windowSeconds + 5);
         if (!$ok) {
@@ -333,7 +348,7 @@ function enforce_api_rate_limit(int $maxRequests = 60, int $windowSeconds = 60):
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
-            $ipHash = hash('sha256', $ip);
+            $ipHash = hash('sha256', $bucket . ':' . $ip);
             $stmt = $pdo->prepare("
                 INSERT INTO rate_limits (ip_hash, window_start, requests, updated_at)
                 VALUES (:ip_hash, :window_start, 1, NOW())
@@ -368,8 +383,16 @@ function enforce_api_rate_limit(int $maxRequests = 60, int $windowSeconds = 60):
     }
 }
 
-// Per-request API rate limit (global, before routing)
-enforce_api_rate_limit(60, 60);
+// Browser und Bots teilen sich weiterhin das enge öffentliche Limit. Gültig
+// authentifizierte GET-Anfragen der Kundenfrontends erhalten einen eigenen,
+// höheren Bucket, weil alle Besucher über dieselbe Server-IP zum CMS gelangen.
+$isTrustedFrontendRead = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET'
+    && api_has_valid_frontend_token();
+enforce_api_rate_limit(
+    $isTrustedFrontendRead ? 600 : 60,
+    60,
+    $isTrustedFrontendRead ? 'frontend-read' : 'public'
+);
 
 // --------------------------------------------------
 // Manifest Helpers (cms-manifest.json, außerhalb public/)
