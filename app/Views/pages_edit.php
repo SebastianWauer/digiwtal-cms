@@ -1651,14 +1651,21 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const previewImage = el('img', {class: 'pages-edit-hero-preview__image', alt: ''});
     const previewOverlay = el('div', {class: 'pages-edit-hero-preview__overlay'});
     const previewBody = el('div', {class: 'pages-edit-hero-preview__body'});
+    const previewTopline = el('div', {class: 'pages-edit-hero-preview__topline'});
     const previewTitle = el('div', {class: 'pages-edit-hero-preview__title'});
     const previewSubtitle = el('div', {class: 'pages-edit-hero-preview__subtitle'});
-    const previewButton = el('a', {class: 'pages-edit-hero-preview__button', href: '#', html: 'Button'});
+    const previewActions = el('div', {class: 'pages-edit-hero-preview__actions'});
+    const previewButton = el('a', {class: 'pages-edit-hero-preview__button', href: '#', html: 'Button 1'});
+    const previewSecondaryButton = el('a', {class: 'pages-edit-hero-preview__button pages-edit-hero-preview__button--secondary', href: '#', html: 'Button 2'});
     const previewMeta = el('div', {class: 'pages-edit-hero-preview__meta'});
     previewButton.setAttribute('tabindex', '-1');
+    previewSecondaryButton.setAttribute('tabindex', '-1');
+    previewActions.appendChild(previewButton);
+    previewActions.appendChild(previewSecondaryButton);
+    previewBody.appendChild(previewTopline);
     previewBody.appendChild(previewTitle);
     previewBody.appendChild(previewSubtitle);
-    previewBody.appendChild(previewButton);
+    previewBody.appendChild(previewActions);
     previewMedia.appendChild(previewImage);
     previewMedia.appendChild(previewOverlay);
     previewMedia.appendChild(previewBody);
@@ -1669,25 +1676,22 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const panelWrap = el('div', {class: 'pages-edit-hero-tabs__panels'});
 
     const mediaKeys = ['image_url', 'media_id', 'focus_x', 'focus_y'];
-    const displayKeys = ['height_vh', 'overlay_opacity', 'image_fit', 'overlay', 'overlay_color'];
-    const contentKeys = ['headline', 'title', 'subtitle', 'text', 'button_text', 'button_label', 'button_url'];
+    const contentKeys = ['topline', 'headline', 'title', 'subtitle', 'text', 'button_text', 'button_label', 'button_url', 'button_secondary_text', 'button_secondary_url'];
 
-    const known = new Set([...mediaKeys, ...displayKeys, ...contentKeys]);
+    const known = new Set([...mediaKeys, ...contentKeys]);
     const remaining = Object.keys(fields).filter((k) => !known.has(k));
     if (remaining.length > 0) {
-      displayKeys.push(...remaining);
+      contentKeys.push(...remaining);
     }
 
     const tabs = [
       { id: 'media', label: 'Medien', keys: mediaKeys },
-      { id: 'display', label: 'Darstellung', keys: displayKeys },
       { id: 'content', label: 'Inhalt', keys: contentKeys },
     ];
 
     const buttons = [];
     const panels = [];
     let mediaImageFieldWrap = null;
-    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
     const valueFrom = (keys, fallback = '') => {
       for (const key of keys) {
         const raw = block && block.data ? block.data[key] : null;
@@ -1707,25 +1711,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       try {
       const imageUrl = valueFrom(['image_url'], mediaFileUrlFromId(valueFrom(['media_id'], '0')));
       const mediaIdRaw = valueFrom(['media_id'], '0');
+      const topline = valueFrom(['topline'], '');
       const title = valueFrom(['headline', 'title'], 'Hero Vorschau');
       const subtitle = valueFrom(['subtitle'], '');
       const textFallback = previewTextFromHtml(valueFrom(['text'], ''));
       const buttonLabel = valueFrom(['button_text', 'button_label'], '');
       const buttonUrl = valueFrom(['button_url'], '');
-      const heightRaw = valueFrom(['height_vh'], '55');
-      const overlayRaw = valueFrom(['overlay_opacity'], '35');
-
-      let heightVh = Number.parseFloat(heightRaw);
-      if (!Number.isFinite(heightVh)) heightVh = 55;
-      heightVh = clamp(heightVh, 25, 95);
-
-      let overlayPct = Number.parseFloat(overlayRaw);
-      if (!Number.isFinite(overlayPct)) overlayPct = 35;
-      // Editor-Vorschau: nie komplett schwarz darstellen, auch wenn Frontend-Overlay sehr hoch ist.
-      overlayPct = clamp(overlayPct, 0, 70);
-
-      preview.style.setProperty('--hero-preview-height', `${heightVh}vh`);
-      previewOverlay.style.opacity = String(overlayPct / 100);
+      const secondaryButtonLabel = valueFrom(['button_secondary_text'], '');
+      const secondaryButtonUrl = valueFrom(['button_secondary_url'], '');
 
       const src = resolvePreviewImageSource(imageUrl, mediaIdRaw);
       if (src.primary !== '') {
@@ -1747,7 +1740,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         previewImage.src = src.primary;
         previewImage.style.display = 'block';
         preview.classList.remove('is-empty');
-        previewMeta.textContent = `Bildquelle: ${src.primary} · Overlay: ${Math.round(overlayPct)}%`;
+        previewMeta.textContent = `Bildquelle: ${src.primary}`;
       } else {
         previewImage.onerror = null;
         previewImage.onload = null;
@@ -1757,6 +1750,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         previewMeta.textContent = 'Kein Bild ausgewählt.';
       }
 
+      previewTopline.textContent = topline;
+      previewTopline.style.display = topline !== '' ? '' : 'none';
       previewTitle.textContent = title;
       previewSubtitle.textContent = subtitle !== '' ? subtitle : textFallback.slice(0, 140);
       previewSubtitle.style.display = previewSubtitle.textContent ? '' : 'none';
@@ -1768,6 +1763,15 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       } else {
         previewButton.style.display = 'none';
       }
+
+      if (secondaryButtonLabel !== '') {
+        previewSecondaryButton.textContent = secondaryButtonLabel;
+        previewSecondaryButton.setAttribute('href', secondaryButtonUrl !== '' ? secondaryButtonUrl : '#');
+        previewSecondaryButton.style.display = '';
+      } else {
+        previewSecondaryButton.style.display = 'none';
+      }
+      previewActions.style.display = buttonLabel !== '' || secondaryButtonLabel !== '' ? '' : 'none';
       } catch (e) {
         console.error('Hero preview update failed:', e);
       }
