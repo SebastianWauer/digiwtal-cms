@@ -22,7 +22,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
     {
         $stmt = $this->pdo->query("
             SELECT
-              id, slug, title,
+              id, slug, title, frontend_title, nav_label,
               status,
               is_home, is_deleted, deleted_at, updated_at,
               nav_visible, nav_area, nav_order

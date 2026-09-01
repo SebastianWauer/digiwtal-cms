@@ -65,6 +65,7 @@ $preferredBlockLabels = [
     'image' => 'Bild',
     'hero' => 'Herobanner',
     'dual_hero' => 'Doppel-Hero',
+    'page_carousel' => 'Seiten-Karussell',
     'columns' => 'Kacheln',
     'three_columns_layout' => '3-Spalten Layout',
     'cta' => 'Call-to-Action',
@@ -106,6 +107,27 @@ $seoOgImage      = (string)($seoOverride['og_image_url']     ?? '');
 $revisions       = is_array($revisions ?? null) ? $revisions : [];
 $selectedRevision = is_array($selectedRevision ?? null) ? $selectedRevision : null;
 $navCandidates = is_array($navCandidates ?? null) ? $navCandidates : [];
+$pagePickerOptions = [];
+foreach ($navCandidates as $candidate) {
+    if (!is_array($candidate)) continue;
+    $candidateId = (int)($candidate['id'] ?? 0);
+    $candidateSlug = '/' . trim((string)($candidate['slug'] ?? ''), '/');
+    $candidateTitle = trim((string)($candidate['frontend_title'] ?? ''));
+    if ($candidateTitle === '') $candidateTitle = trim((string)($candidate['nav_label'] ?? ''));
+    if ($candidateTitle === '') $candidateTitle = trim((string)($candidate['title'] ?? ''));
+    if ($candidateId <= 0 || $candidateTitle === '') continue;
+    $pagePickerOptions[] = [
+        'id' => $candidateId,
+        'slug' => $candidateSlug,
+        'title' => $candidateTitle,
+        'status' => (string)($candidate['status'] ?? 'live'),
+    ];
+}
+$pagePickerOptionsJson = json_encode(
+    $pagePickerOptions,
+    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+);
+if (!is_string($pagePickerOptionsJson) || $pagePickerOptionsJson === '') $pagePickerOptionsJson = '[]';
 $eventCategoryOptions = is_array($eventCategoryOptions ?? null) ? $eventCategoryOptions : [];
 $eventCategoryOptions = array_values(array_filter(array_map(static function ($row): array {
     if (!is_array($row)) return [];
@@ -475,6 +497,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 <script>
 (() => {
   const defs = <?= $defsJson ?>;
+  const PAGE_OPTIONS = <?= $pagePickerOptionsJson ?>;
   const EVENT_CATEGORY_OPTIONS = <?= $eventCategoryOptionsJson ?>;
   const NEWS_CATEGORY_OPTIONS = <?= $newsCategoryOptionsJson ?>;
   const CAN_EDIT = <?= $canSave ? 'true' : 'false' ?>;
@@ -1495,6 +1518,211 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     return wrapper;
   }
 
+  function renderPageCarouselBlockFields(block) {
+    const fields = (defs.page_carousel && defs.page_carousel.fields && typeof defs.page_carousel.fields === 'object')
+      ? defs.page_carousel.fields
+      : {};
+    if (!block.data || typeof block.data !== 'object') block.data = {};
+
+    const rawItems = Array.isArray(block.data.items) ? block.data.items : [];
+    block.data.items = rawItems.slice(0, 12).map((item) => ({
+      page_id: Number.parseInt(String(item && item.page_id ? item.page_id : '0'), 10) || 0,
+      page_slug: String(item && item.page_slug ? item.page_slug : ''),
+      page_title: String(item && item.page_title ? item.page_title : ''),
+      image_url: String(item && item.image_url ? item.image_url : ''),
+      text: String(item && item.text ? item.text : ''),
+    }));
+
+    const wrapper = el('div', {class: 'pages-edit-carousel-editor'});
+    const settings = el('div', {class: 'pages-edit-fields'});
+    if (fields.headline) settings.appendChild(renderField(block, 'headline', fields.headline));
+    settings.appendChild(el('div', {
+      class: 'pages-edit-field-hint',
+      html: 'Jede Folie verlinkt eine CMS-Seite und erhält ein eigenes Bild sowie einen eigenen Beschreibungstext.'
+    }));
+    wrapper.appendChild(settings);
+
+    const itemsWrap = el('div', {class: 'pages-edit-carousel-editor__items'});
+    const actions = el('div', {class: 'pages-edit-pb-actions'});
+    const addBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '+ Seite hinzufügen'});
+    addBtn.disabled = !CAN_EDIT;
+
+    const commit = () => serialize();
+
+    const renderItems = () => {
+      itemsWrap.innerHTML = '';
+      const items = block.data.items;
+      if (items.length === 0) {
+        itemsWrap.appendChild(el('div', {
+          class: 'pages-edit-field-hint',
+          html: 'Noch keine Seite ausgewählt.'
+        }));
+      }
+
+      items.forEach((item, index) => {
+        const card = el('section', {class: 'pages-edit-carousel-editor__item'});
+        const head = el('div', {class: 'pages-edit-carousel-editor__head'});
+        head.appendChild(el('strong', {html: `Folie ${index + 1}`}));
+
+        const itemActions = el('div', {class: 'pages-edit-pb-actions'});
+        const upBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '↑'});
+        const downBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '↓'});
+        const removeBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--danger btn--sm', html: 'Entfernen'});
+        upBtn.disabled = !CAN_EDIT || index === 0;
+        downBtn.disabled = !CAN_EDIT || index === items.length - 1;
+        removeBtn.disabled = !CAN_EDIT;
+        upBtn.addEventListener('click', () => {
+          if (!CAN_EDIT || index === 0) return;
+          [items[index - 1], items[index]] = [items[index], items[index - 1]];
+          renderItems();
+          commit();
+        });
+        downBtn.addEventListener('click', () => {
+          if (!CAN_EDIT || index >= items.length - 1) return;
+          [items[index + 1], items[index]] = [items[index], items[index + 1]];
+          renderItems();
+          commit();
+        });
+        removeBtn.addEventListener('click', () => {
+          if (!CAN_EDIT) return;
+          items.splice(index, 1);
+          renderItems();
+          commit();
+        });
+        itemActions.appendChild(upBtn);
+        itemActions.appendChild(downBtn);
+        itemActions.appendChild(removeBtn);
+        head.appendChild(itemActions);
+        card.appendChild(head);
+
+        const grid = el('div', {class: 'pages-edit-carousel-editor__grid'});
+        const copy = el('div', {class: 'pages-edit-fields'});
+
+        const pageField = el('div', {class: 'pages-edit-field'});
+        pageField.appendChild(el('div', {class: 'pages-edit-field-label', html: 'Verlinkte Seite'}));
+        const pageSelect = el('select', {class: 'pages-edit-input'});
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Seite auswählen …';
+        pageSelect.appendChild(placeholder);
+        PAGE_OPTIONS.forEach((page) => {
+          const option = document.createElement('option');
+          option.value = String(page.slug || '');
+          option.textContent = `${String(page.title || page.slug)}${String(page.status || 'live') === 'live' ? '' : ' (Entwurf)'}`;
+          if (option.value === item.page_slug) option.selected = true;
+          pageSelect.appendChild(option);
+        });
+        if (item.page_slug && !PAGE_OPTIONS.some((page) => String(page.slug || '') === item.page_slug)) {
+          const missing = document.createElement('option');
+          missing.value = item.page_slug;
+          missing.textContent = `${item.page_title || item.page_slug} (nicht mehr verfügbar)`;
+          missing.selected = true;
+          pageSelect.appendChild(missing);
+        }
+        pageSelect.disabled = !CAN_EDIT;
+        pageSelect.addEventListener('change', () => {
+          if (!CAN_EDIT) return;
+          const selected = PAGE_OPTIONS.find((page) => String(page.slug || '') === pageSelect.value);
+          if (selected) {
+            item.page_id = Number.parseInt(String(selected.id || '0'), 10) || 0;
+            item.page_slug = String(selected.slug || '');
+            item.page_title = String(selected.title || selected.slug || '');
+          } else {
+            item.page_id = 0;
+            item.page_slug = '';
+            item.page_title = '';
+          }
+          commit();
+        });
+        pageField.appendChild(pageSelect);
+        copy.appendChild(pageField);
+
+        const textField = el('div', {class: 'pages-edit-field'});
+        textField.appendChild(el('div', {class: 'pages-edit-field-label', html: 'Beschreibung'}));
+        const textArea = el('textarea', {class: 'pages-edit-input', rows: '5', maxlength: '1000'});
+        textArea.value = item.text;
+        textArea.readOnly = !CAN_EDIT;
+        textArea.addEventListener('input', () => {
+          if (!CAN_EDIT) return;
+          item.text = textArea.value;
+          commit();
+        });
+        textField.appendChild(textArea);
+        copy.appendChild(textField);
+        grid.appendChild(copy);
+
+        const media = el('div', {class: 'pages-edit-carousel-editor__media'});
+        const mediaLabel = el('div', {class: 'pages-edit-field-label', html: 'Bild'});
+        const preview = el('div', {class: 'pages-edit-carousel-editor__preview'});
+        const previewImage = el('img', {alt: ''});
+        preview.appendChild(previewImage);
+        const imageInput = el('input', {class: 'pages-edit-input', type: 'text', placeholder: '/media/file?id=123'});
+        imageInput.value = item.image_url;
+        imageInput.readOnly = true;
+
+        const updatePreview = () => {
+          const source = resolvePreviewImageSource(imageInput.value, '');
+          if (source.primary === '') {
+            previewImage.removeAttribute('src');
+            preview.classList.add('is-empty');
+            return;
+          }
+          preview.classList.remove('is-empty');
+          previewImage.dataset.fallbackApplied = '0';
+          previewImage.onerror = source.fallback !== '' ? () => {
+            if (previewImage.dataset.fallbackApplied === '1') return;
+            previewImage.dataset.fallbackApplied = '1';
+            previewImage.src = source.fallback;
+          } : null;
+          previewImage.src = source.primary;
+        };
+        imageInput.addEventListener('input', () => {
+          if (!CAN_EDIT) return;
+          item.image_url = imageInput.value;
+          updatePreview();
+          commit();
+        });
+
+        const mediaActions = el('div', {class: 'pages-edit-pb-actions'});
+        const pickBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: 'Bild auswählen'});
+        const clearBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: 'Entfernen'});
+        pickBtn.disabled = !CAN_EDIT;
+        clearBtn.disabled = !CAN_EDIT;
+        pickBtn.addEventListener('click', () => openMediaPicker(imageInput));
+        clearBtn.addEventListener('click', () => {
+          if (!CAN_EDIT) return;
+          imageInput.value = '';
+          imageInput.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+        mediaActions.appendChild(pickBtn);
+        mediaActions.appendChild(clearBtn);
+        media.appendChild(mediaLabel);
+        media.appendChild(preview);
+        media.appendChild(imageInput);
+        media.appendChild(mediaActions);
+        grid.appendChild(media);
+
+        card.appendChild(grid);
+        itemsWrap.appendChild(card);
+        updatePreview();
+      });
+
+      addBtn.disabled = !CAN_EDIT || items.length >= 12;
+    };
+
+    addBtn.addEventListener('click', () => {
+      if (!CAN_EDIT || block.data.items.length >= 12) return;
+      block.data.items.push({page_id: 0, page_slug: '', page_title: '', image_url: '', text: ''});
+      renderItems();
+      commit();
+    });
+    actions.appendChild(addBtn);
+    wrapper.appendChild(itemsWrap);
+    wrapper.appendChild(actions);
+    renderItems();
+    return wrapper;
+  }
+
   function normalizeNestedBuilderBlock(rawBlock) {
     if (!rawBlock || typeof rawBlock !== 'object') return null;
     const type = String(rawBlock.type || '').trim();
@@ -1528,6 +1756,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   function renderBlockEditorContent(block) {
     if (block.type === 'hero') return renderHeroBlockFields(block);
     if (block.type === 'dual_hero') return renderDualHeroBlockFields(block);
+    if (block.type === 'page_carousel') return renderPageCarouselBlockFields(block);
     if (block.type === 'text') return renderTextBlockFields(block);
     if (block.type === 'columns') return renderColumnsBlockFields(block);
     if (block.type === 'three_columns_layout') return renderThreeColumnsLayoutFields(block);
@@ -2017,6 +2246,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         blockModalSub.textContent = 'Text-Block: Inhalte und Bild sind in getrennten Kacheln';
       } else if (block.type === 'columns') {
         blockModalSub.textContent = 'Kachel-Block: Anzahl und Inhalte der Kacheln';
+      } else if (block.type === 'page_carousel') {
+        blockModalSub.textContent = 'Seiten-Karussell: Seiten auswählen und mit Bild sowie Beschreibung hervorheben';
       } else if (block.type === 'three_columns_layout') {
         blockModalSub.textContent = '3-Spalten Layout: Jede Spalte kann eigene PageBuilder-Module enthalten';
       } else {
