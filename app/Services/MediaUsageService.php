@@ -24,7 +24,7 @@ final class MediaUsageService
      * @param int $pageId
      * @param string $contentJson
      */
-    public function syncPageUsages(int $pageId, string $contentJson): void
+    public function syncPageUsages(int $pageId, string $contentJson, ?int $pageIconMediaId = null): void
     {
         if ($pageId <= 0) return;
 
@@ -40,6 +40,9 @@ final class MediaUsageService
         // Neue Usages extrahieren
         $rows = [];
         $this->scanForMediaUrls($data, '', $rows);
+        if ($pageIconMediaId !== null && $pageIconMediaId > 0) {
+            $rows[] = ['media_id' => $pageIconMediaId, 'field_key' => 'page_icon_media_id'];
+        }
 
         // dedupe
         $uniq = [];

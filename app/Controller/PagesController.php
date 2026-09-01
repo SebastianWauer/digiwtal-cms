@@ -49,6 +49,7 @@ final class PagesController
                 'title' => (string)($data['title'] ?? ''),
                 'frontend_title' => (string)($data['frontend_title'] ?? ''),
                 'subtitle' => (string)($data['subtitle'] ?? ''),
+                'page_icon_media_id' => (int)($data['page_icon_media_id'] ?? 0),
                 'is_home' => !empty($data['is_home']) ? 1 : 0,
             ];
         }
@@ -57,6 +58,7 @@ final class PagesController
         $page['title'] = (string)($data['title'] ?? $page['title'] ?? '');
         $page['frontend_title'] = (string)($data['frontend_title'] ?? $page['frontend_title'] ?? '');
         $page['subtitle'] = (string)($data['subtitle'] ?? $page['subtitle'] ?? '');
+        $page['page_icon_media_id'] = (int)($data['page_icon_media_id'] ?? $page['page_icon_media_id'] ?? 0);
         $page['is_home'] = !empty($data['is_home']) ? 1 : (int)($page['is_home'] ?? 0);
 
         $contentJson = (string)($data['content_json'] ?? '');
@@ -75,6 +77,7 @@ final class PagesController
         }
         try {
             $blocks = $this->enrichBlocksWithFocusFromDb($_pdo, $blocks);
+            $blocks = $this->enrichBlocksWithPageIconsFromDb($_pdo, $blocks);
             $blocks = $this->enrichBlocksWithEventsFromDb($_pdo, $blocks);
         } catch (\Throwable $e) {
             // Preview darf nie komplett ausfallen: bei Fehlern ohne Focus-Enrichment weiter rendern.
@@ -396,10 +399,62 @@ final class PagesController
         return $apply($blocks);
     }
 
+    private function enrichBlocksWithPageIconsFromDb(\PDO $pdo, array $blocks): array
+    {
+        $stmt = $pdo->query("
+            SELECT id, slug, page_icon_media_id
+            FROM pages
+            WHERE is_deleted = 0
+        ");
+        $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+        $byId = [];
+        $bySlug = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            if (!is_array($row)) continue;
+            $mediaId = (int)($row['page_icon_media_id'] ?? 0);
+            if ($mediaId <= 0) continue;
+            $pageId = (int)($row['id'] ?? 0);
+            $pageSlug = '/' . trim((string)($row['slug'] ?? ''), '/');
+            if ($pageId > 0) $byId[$pageId] = $mediaId;
+            $bySlug[$pageSlug] = $mediaId;
+        }
+
+        $cmsBaseUrl = $this->cmsBaseUrlFromRequest();
+        $enrichItems = function (array $items) use ($byId, $bySlug, $cmsBaseUrl): array {
+            foreach ($items as $index => $item) {
+                if (!is_array($item)) continue;
+                $pageId = (int)($item['page_id'] ?? 0);
+                $pageSlug = '/' . trim((string)($item['page_slug'] ?? ''), '/');
+                $mediaId = $byId[$pageId] ?? $bySlug[$pageSlug] ?? 0;
+                if ($mediaId > 0) {
+                    $item['page_icon_url'] = $this->absolutizeCmsMediaUrl('/media/file?id=' . $mediaId, $cmsBaseUrl);
+                } else {
+                    unset($item['page_icon_url']);
+                }
+                $items[$index] = $item;
+            }
+            return $items;
+        };
+
+        foreach ($blocks as $index => $block) {
+            if (!is_array($block) || (string)($block['type'] ?? '') !== 'page_carousel') continue;
+            if (isset($block['data']['items']) && is_array($block['data']['items'])) {
+                $block['data']['items'] = $enrichItems($block['data']['items']);
+            } elseif (isset($block['payload']['items']) && is_array($block['payload']['items'])) {
+                $block['payload']['items'] = $enrichItems($block['payload']['items']);
+            } elseif (isset($block['items']) && is_array($block['items'])) {
+                $block['items'] = $enrichItems($block['items']);
+            }
+            $blocks[$index] = $block;
+        }
+
+        return $blocks;
+    }
+
     private function buildPreviewNavigationItems(\PDO $pdo): array
     {
         $stmt = $pdo->query("
-            SELECT id, nav_label, slug, nav_area, nav_order
+            SELECT id, nav_label, slug, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE is_deleted = 0 AND status = 'live' AND nav_visible = 1
             ORDER BY nav_order ASC, id ASC
@@ -426,6 +481,9 @@ final class PagesController
                 'title' => $title,
                 'url' => $url,
                 'slug' => $slug,
+                'icon_url' => (int)($r['page_icon_media_id'] ?? 0) > 0
+                    ? $this->absolutizeCmsMediaUrl('/media/file?id=' . (int)$r['page_icon_media_id'], $this->cmsBaseUrlFromRequest())
+                    : '',
                 'area' => (string)($r['nav_area'] ?? 'header'),
                 'sort_order' => (int)($r['nav_order'] ?? 0),
                 'nav_order' => (int)($r['nav_order'] ?? 0),
@@ -895,6 +953,7 @@ final class PagesController
                 'is_home'        => 0,
                 'nav_visible'    => 0,
                 'nav_label'      => '',
+                'page_icon_media_id' => 0,
                 'nav_area'       => 'header',
                 'nav_order'      => 0,
             ];
@@ -906,6 +965,7 @@ final class PagesController
             $page['is_home']     = (int)($page['is_home'] ?? 0);
             $page['nav_visible'] = (int)($page['nav_visible'] ?? 0);
             $page['nav_label']   = (string)($page['nav_label'] ?? '');
+            $page['page_icon_media_id'] = (int)($page['page_icon_media_id'] ?? 0);
             $page['nav_area']    = (string)($page['nav_area'] ?? 'header');
             $page['nav_order']   = (int)($page['nav_order'] ?? 0);
         }
@@ -1014,6 +1074,7 @@ final class PagesController
         $isHome     = !empty($_POST['is_home']);
         $navVisible = !empty($_POST['nav_visible']);
         $navLabel   = (string)($_POST['nav_label'] ?? '');
+        $pageIconMediaId = max(0, (int)($_POST['page_icon_media_id'] ?? 0));
         $navArea    = (string)($_POST['nav_area'] ?? 'header');
         $navOrder   = (int)($_POST['nav_order'] ?? 0);
         $navPlaceMode = (string)($_POST['nav_place_mode'] ?? 'after');
@@ -1049,8 +1110,9 @@ final class PagesController
         $seoSvc = new SeoService(new SeoRepositoryDb($_pdo), new SiteSettingsRepositoryDb($_pdo));
 
         if (($res['ok'] ?? false) && $id2 > 0) {
+            $repo->setIconMediaId($id2, $pageIconMediaId > 0 ? $pageIconMediaId : null);
             $mus = new MediaUsageService($_pdo, new MediaUsageRepositoryDb($_pdo), new MediaRepositoryDb($_pdo));
-            $mus->syncPageUsages($id2, $content);
+            $mus->syncPageUsages($id2, $content, $pageIconMediaId > 0 ? $pageIconMediaId : null);
 
             // SEO-Override speichern
             $seoSvc->saveForPage($id2, [
@@ -1098,6 +1160,7 @@ final class PagesController
                 'is_home'        => $isHome ? 1 : 0,
                 'nav_visible'    => $navVisible ? 1 : 0,
                 'nav_label'      => $navLabel,
+                'page_icon_media_id' => $pageIconMediaId,
                 'nav_area'       => $navArea,
                 'nav_order'      => $navOrder,
                 '_nav_place_mode'=> $navPlaceMode,

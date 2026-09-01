@@ -22,7 +22,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
     {
         $stmt = $this->pdo->query("
             SELECT
-              id, slug, title, frontend_title, nav_label,
+              id, slug, title, frontend_title, nav_label, page_icon_media_id,
               status,
               is_home, is_deleted, deleted_at, updated_at,
               nav_visible, nav_area, nav_order
@@ -104,7 +104,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
               id, slug, title,
               frontend_title, subtitle, status,
               content_json,
-              is_home, nav_visible, nav_label, nav_area, nav_order,
+              is_home, nav_visible, nav_label, page_icon_media_id, nav_area, nav_order,
               is_deleted, deleted_at
             FROM pages
             WHERE id = :id
@@ -120,7 +120,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt = $this->pdo->prepare("
             SELECT
               id, slug, title,
-              frontend_title, subtitle, status,
+              frontend_title, subtitle, status, page_icon_media_id,
               content_json
             FROM pages
             WHERE slug = :s AND is_deleted = 0
@@ -136,7 +136,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt = $this->pdo->prepare("
             SELECT
               id, slug, title, frontend_title, subtitle, status, content_json,
-              is_home, nav_visible, nav_label, nav_area, nav_order
+              is_home, nav_visible, nav_label, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE slug = :s
               AND is_deleted = 0
@@ -153,7 +153,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt = $this->pdo->query("
             SELECT
               id, slug, title, frontend_title, subtitle, status, content_json,
-              is_home, nav_visible, nav_label, nav_area, nav_order
+              is_home, nav_visible, nav_label, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE is_home = 1
               AND is_deleted = 0
@@ -172,6 +172,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
             SELECT
               slug,
               nav_label,
+              page_icon_media_id,
               title,
               frontend_title,
               nav_area,
@@ -194,7 +195,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
         // $area: 'header' oder 'footer'
         $stmt = $this->pdo->prepare("
             SELECT
-              id, slug, title, nav_label, nav_area, nav_order
+              id, slug, title, nav_label, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE is_deleted = 0
               AND status = 'live'
@@ -299,6 +300,14 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $this->pdo->exec("UPDATE pages SET is_home = 0 WHERE is_deleted = 0");
         $stmt = $this->pdo->prepare("UPDATE pages SET is_home = 1 WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $id]);
+    }
+
+    public function setIconMediaId(int $id, ?int $mediaId): void
+    {
+        $stmt = $this->pdo->prepare("UPDATE pages SET page_icon_media_id = :media_id WHERE id = :id LIMIT 1");
+        $stmt->bindValue(':media_id', $mediaId !== null && $mediaId > 0 ? $mediaId : null, $mediaId !== null && $mediaId > 0 ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
     }
 
     public function softDelete(int $id): void

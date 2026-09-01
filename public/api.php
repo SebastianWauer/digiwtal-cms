@@ -255,6 +255,69 @@ function api_db_column_exists(PDO $pdo, string $table, string $column): bool
     }
 }
 
+/**
+ * Fuegt Seiten-Karussells die aktuelle Icon-URL der jeweils verlinkten Seite hinzu.
+ * Die URL wird nicht im PageBuilder dupliziert und bleibt dadurch bei Icon-Wechseln aktuell.
+ */
+function api_enrich_page_carousel_icons(PDO $pdo, array $content): array
+{
+    if (!api_db_column_exists($pdo, 'pages', 'page_icon_media_id')) {
+        return $content;
+    }
+
+    $isWrapper = isset($content['blocks']) && is_array($content['blocks']);
+    $blocks = $isWrapper ? $content['blocks'] : (array_is_list($content) ? $content : []);
+    if ($blocks === []) return $content;
+
+    $stmt = $pdo->query("SELECT id, slug, page_icon_media_id FROM pages WHERE is_deleted = 0");
+    $rows = $stmt ? $stmt->fetchAll() : [];
+    $byId = [];
+    $bySlug = [];
+    foreach (is_array($rows) ? $rows : [] as $row) {
+        if (!is_array($row)) continue;
+        $mediaId = (int)($row['page_icon_media_id'] ?? 0);
+        if ($mediaId <= 0) continue;
+        $pageId = (int)($row['id'] ?? 0);
+        $pageSlug = '/' . trim((string)($row['slug'] ?? ''), '/');
+        if ($pageId > 0) $byId[$pageId] = $mediaId;
+        $bySlug[$pageSlug] = $mediaId;
+    }
+
+    $enrichItems = static function (array $items) use ($byId, $bySlug): array {
+        foreach ($items as $index => $item) {
+            if (!is_array($item)) continue;
+            $pageId = (int)($item['page_id'] ?? 0);
+            $pageSlug = '/' . trim((string)($item['page_slug'] ?? ''), '/');
+            $mediaId = $byId[$pageId] ?? $bySlug[$pageSlug] ?? 0;
+            if ($mediaId > 0) {
+                $item['page_icon_url'] = api_cms_path('/media/file?id=' . $mediaId);
+            } else {
+                unset($item['page_icon_url']);
+            }
+            $items[$index] = $item;
+        }
+        return $items;
+    };
+
+    foreach ($blocks as $index => $block) {
+        if (!is_array($block) || (string)($block['type'] ?? '') !== 'page_carousel') continue;
+        if (isset($block['data']['items']) && is_array($block['data']['items'])) {
+            $block['data']['items'] = $enrichItems($block['data']['items']);
+        } elseif (isset($block['payload']['items']) && is_array($block['payload']['items'])) {
+            $block['payload']['items'] = $enrichItems($block['payload']['items']);
+        } elseif (isset($block['items']) && is_array($block['items'])) {
+            $block['items'] = $enrichItems($block['items']);
+        }
+        $blocks[$index] = $block;
+    }
+
+    if ($isWrapper) {
+        $content['blocks'] = $blocks;
+        return $content;
+    }
+    return $blocks;
+}
+
 // --------------------------------------------------
 // Response Helper
 // --------------------------------------------------
@@ -925,8 +988,11 @@ if ($sub === '/pages' && !isset($_GET['slug'])) {
     if ($method !== 'GET') {
         json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
     }
+    $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
+        ? 'page_icon_media_id'
+        : 'NULL AS page_icon_media_id';
     $stmt = $pdo->query("
-        SELECT id, slug, title, nav_label, nav_visible, nav_order, is_home, updated_at
+        SELECT id, slug, title, nav_label, {$pageIconSelect}, nav_visible, nav_order, is_home, updated_at
         FROM pages
         WHERE is_deleted = 0 AND status = 'live'
         ORDER BY nav_order ASC, title ASC
@@ -948,6 +1014,9 @@ if ($sub === '/pages' && !isset($_GET['slug'])) {
             'url'        => $isHome ? '/' : ('/' . $slugRaw),
             'in_nav'     => (bool)($r['nav_visible'] ?? false),
             'nav_order'  => (int)($r['nav_order'] ?? 0),
+            'page_icon_url' => (int)($r['page_icon_media_id'] ?? 0) > 0
+                ? api_cms_path('/media/file?id=' . (int)$r['page_icon_media_id'])
+                : null,
             'updated_at' => $updAt !== '' ? gmdate('c', (int)strtotime($updAt)) : null,
         ];
     }
@@ -958,6 +1027,9 @@ if ($sub === '/pages' && !isset($_GET['slug'])) {
 if ($method === 'GET' && $sub === '/pages') {
     $slug = normalize_slug((string)($_GET['slug'] ?? '/'));
 
+    $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
+        ? 'p.page_icon_media_id'
+        : 'NULL AS page_icon_media_id';
     $stmt = $pdo->prepare("
         SELECT
             p.id,
@@ -965,6 +1037,7 @@ if ($method === 'GET' && $sub === '/pages') {
             p.title,
             p.frontend_title,
             p.subtitle,
+            {$pageIconSelect},
             p.status,
             sm.meta_title,
             sm.meta_description,
@@ -989,6 +1062,9 @@ if ($method === 'GET' && $sub === '/pages') {
         $decoded = json_decode($row['content_json'], true);
         $content = is_array($decoded) ? $decoded : null;
     }
+    if (is_array($content)) {
+        $content = api_enrich_page_carousel_icons($pdo, $content);
+    }
 
     json_response([
         'page' => [
@@ -997,6 +1073,9 @@ if ($method === 'GET' && $sub === '/pages') {
             'title' => (string)($row['title'] ?? ''),
             'frontend_title' => (string)($row['frontend_title'] ?? ''),
             'subtitle' => (string)($row['subtitle'] ?? ''),
+            'page_icon_url' => (int)($row['page_icon_media_id'] ?? 0) > 0
+                ? api_cms_path('/media/file?id=' . (int)$row['page_icon_media_id'])
+                : null,
             'status' => (string)($row['status'] ?? ''),
             'meta_title' => (string)($row['meta_title'] ?? ''),
             'meta_description' => (string)($row['meta_description'] ?? ''),
@@ -1007,8 +1086,11 @@ if ($method === 'GET' && $sub === '/pages') {
 
 // --- /navigation ---
 if ($method === 'GET' && $sub === '/navigation') {
+    $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
+        ? 'page_icon_media_id'
+        : 'NULL AS page_icon_media_id';
     $stmt = $pdo->query("
-        SELECT id, nav_label, slug, nav_area, nav_order
+        SELECT id, nav_label, slug, {$pageIconSelect}, nav_area, nav_order
         FROM pages
         WHERE is_deleted = 0 AND status = 'live' AND nav_visible = 1
         ORDER BY nav_order ASC, id ASC
@@ -1023,6 +1105,9 @@ if ($method === 'GET' && $sub === '/navigation') {
             'id'         => (int)($r['id'] ?? 0),
             'title'      => (string)($r['nav_label'] ?? ''),
             'url'        => (string)($r['slug'] ?? ''),
+            'icon_url'   => (int)($r['page_icon_media_id'] ?? 0) > 0
+                ? api_cms_path('/media/file?id=' . (int)$r['page_icon_media_id'])
+                : null,
             'area'       => (string)($r['nav_area'] ?? ''),
             'sort_order' => (int)($r['nav_order'] ?? 0),
         ];
@@ -1515,6 +1600,9 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
     }
     $slugDb = normalize_slug($slugRaw);
 
+    $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
+        ? 'p.page_icon_media_id'
+        : 'NULL AS page_icon_media_id';
     $stmt = $pdo->prepare("
         SELECT
             p.id,
@@ -1522,6 +1610,7 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
             p.title,
             p.frontend_title,
             p.subtitle,
+            {$pageIconSelect},
             sm.meta_title,
             sm.meta_description,
             p.content_json,
@@ -1543,7 +1632,7 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
     if (!is_array($row) && strtolower($slugRaw) === 'home') {
         $stmtHome = $pdo->prepare("
             SELECT
-                p.id, p.slug, p.title, p.frontend_title, p.subtitle,
+                p.id, p.slug, p.title, p.frontend_title, p.subtitle, {$pageIconSelect},
                 sm.meta_title, sm.meta_description, p.content_json, p.updated_at
             FROM pages p
             LEFT JOIN seo_meta sm
@@ -1569,6 +1658,7 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
             $blocks = is_array($b) ? $b : [];
         }
     }
+    $blocks = api_enrich_page_carousel_icons($pdo, $blocks);
 
     $updAt = (string)($row['updated_at'] ?? '');
     json_response([
@@ -1577,6 +1667,9 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
         'title'      => (string)($row['title'] ?? ''),
         'frontend_title' => (string)($row['frontend_title'] ?? ''),
         'subtitle'   => (string)($row['subtitle'] ?? ''),
+        'page_icon_url' => (int)($row['page_icon_media_id'] ?? 0) > 0
+            ? api_cms_path('/media/file?id=' . (int)$row['page_icon_media_id'])
+            : null,
         'seo'        => [
             'title'       => (string)($row['meta_title'] ?? ''),
             'description' => (string)($row['meta_description'] ?? ''),

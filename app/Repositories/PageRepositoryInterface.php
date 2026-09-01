@@ -43,6 +43,7 @@ interface PageRepositoryInterface
         string $navArea,
         int $navOrder
     ): void;
+    public function setIconMediaId(int $id, ?int $mediaId): void;
     public function setHome(int $id): void;
     public function softDelete(int $id): void;
     public function restore(int $id): void;

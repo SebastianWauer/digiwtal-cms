@@ -23,6 +23,7 @@ $deleted = !empty($page['is_deleted']);
 $isHome     = !empty($page['is_home']);
 $navVisible = !empty($page['nav_visible']);
 $navLabel   = (string)($page['nav_label'] ?? '');
+$pageIconMediaId = (int)($page['page_icon_media_id'] ?? 0);
 $navArea    = (string)($page['nav_area'] ?? 'header');
 $navOrder   = (int)($page['nav_order'] ?? 0);
 $navPlaceMode = (string)($page['_nav_place_mode'] ?? 'after');
@@ -337,6 +338,20 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
               <div class="pages-edit-field-hint">Pflicht, wenn „In Navigation anzeigen“ aktiv ist.</div>
             </div>
 
+            <div class="pages-edit-field pages-edit-page-icon">
+              <?php if ($canSave): ?>
+                <?php media_picker_render('Seiten-Icon', 'page_icon_media_id', $pageIconMediaId > 0 ? $pageIconMediaId : '', ['showPreview' => true]); ?>
+                <button type="button" class="btn btn--ghost btn--sm" data-page-icon-clear>Icon entfernen</button>
+              <?php else: ?>
+                <div class="pages-edit-field-label">Seiten-Icon</div>
+                <input type="hidden" name="page_icon_media_id" value="<?= $pageIconMediaId > 0 ? $pageIconMediaId : '' ?>">
+                <?php if ($pageIconMediaId > 0): ?>
+                  <div class="mp__preview"><img src="<?= cms_base_path() ?>/media/thumb?id=<?= $pageIconMediaId ?>" alt=""></div>
+                <?php endif; ?>
+              <?php endif; ?>
+              <div class="pages-edit-field-hint">Optional. Leer bedeutet: Das globale Favicon wird verwendet. Am besten ein transparentes, einfarbiges PNG oder SVG hochladen.</div>
+            </div>
+
             <div class="pages-edit-field">
               <div class="pages-edit-field-label">Unterseite</div>
               <select class="pages-edit-input" disabled>
@@ -553,6 +568,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   const statusToggle = document.querySelector('input[name="status_toggle"]');
   const statusHidden = document.getElementById('pageStatusHidden');
   const homeToggle = document.querySelector('input[name="is_home"]');
+  const pageIconInput = document.querySelector('input[name="page_icon_media_id"]');
+  const pageIconClearBtn = document.querySelector('[data-page-icon-clear]');
   let previewDebounceTimer = null;
   let previewRequestId = 0;
 
@@ -648,6 +665,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     });
     updateSwitchLabel(homeToggle);
   }
+
+  pageIconClearBtn?.addEventListener('click', () => {
+    if (!CAN_EDIT || !pageIconInput) return;
+    pageIconInput.value = '';
+    const preview = pageIconClearBtn.closest('.pages-edit-page-icon')?.querySelector('.mp__preview');
+    if (preview) preview.innerHTML = '';
+    pageIconInput.dispatchEvent(new Event('input', { bubbles: true }));
+  });
 
   let model = ensureModel(
     safeParseJson(contentInput.value) ||
@@ -874,6 +899,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       is_home: valueOf('is_home') !== '',
       nav_visible: valueOf('nav_visible') !== '',
       nav_label: valueOf('nav_label'),
+      page_icon_media_id: valueOf('page_icon_media_id'),
       nav_area: valueOf('nav_area'),
       nav_place_mode: valueOf('nav_place_mode'),
       nav_place_ref: valueOf('nav_place_ref'),
