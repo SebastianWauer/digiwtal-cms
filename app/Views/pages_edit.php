@@ -1517,6 +1517,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
   function renderBlockEditorContent(block) {
     if (block.type === 'hero') return renderHeroBlockFields(block);
+    if (block.type === 'dual_hero') return renderDualHeroBlockFields(block);
     if (block.type === 'text') return renderTextBlockFields(block);
     if (block.type === 'columns') return renderColumnsBlockFields(block);
     if (block.type === 'three_columns_layout') return renderThreeColumnsLayoutFields(block);
@@ -1640,6 +1641,149 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
     wrapper.appendChild(settingsWrap);
     wrapper.appendChild(columnsGrid);
+    return wrapper;
+  }
+
+  function renderDualHeroBlockFields(block) {
+    const fields = (defs.dual_hero && defs.dual_hero.fields && typeof defs.dual_hero.fields === 'object')
+      ? defs.dual_hero.fields
+      : {};
+    const wrapper = el('div', {class: 'pages-edit-block-tabs pages-edit-dual-hero-editor'});
+    const preview = el('div', {class: 'pages-edit-dual-hero-preview'});
+    const tabBar = el('div', {class: 'pages-edit-block-tabs__bar'});
+    const panelWrap = el('div', {class: 'pages-edit-block-tabs__panels'});
+    const buttons = [];
+    const panels = [];
+    const previewSides = {};
+
+    const valueFrom = (key) => {
+      const raw = block && block.data ? block.data[key] : '';
+      return raw === null || raw === undefined ? '' : String(raw).trim();
+    };
+
+    const makePreviewSide = (side) => {
+      const panel = el('section', {class: `pages-edit-dual-hero-preview__panel is-${side}`});
+      const background = el('img', {class: 'pages-edit-dual-hero-preview__background', alt: ''});
+      const overlay = el('div', {class: 'pages-edit-dual-hero-preview__overlay'});
+      const body = el('div', {class: 'pages-edit-dual-hero-preview__body'});
+      const foreground = el('img', {class: 'pages-edit-dual-hero-preview__foreground', alt: ''});
+      const topline = el('div', {class: 'pages-edit-dual-hero-preview__topline'});
+      const title = el('div', {class: 'pages-edit-dual-hero-preview__title'});
+      const subtitle = el('div', {class: 'pages-edit-dual-hero-preview__subtitle'});
+      const actions = el('div', {class: 'pages-edit-dual-hero-preview__actions'});
+      const primaryButton = el('span', {class: 'pages-edit-dual-hero-preview__button'});
+      const secondaryButton = el('span', {class: 'pages-edit-dual-hero-preview__button pages-edit-dual-hero-preview__button--secondary'});
+
+      actions.appendChild(primaryButton);
+      actions.appendChild(secondaryButton);
+      body.appendChild(foreground);
+      body.appendChild(topline);
+      body.appendChild(title);
+      body.appendChild(subtitle);
+      body.appendChild(actions);
+      panel.appendChild(background);
+      panel.appendChild(overlay);
+      panel.appendChild(body);
+      preview.appendChild(panel);
+
+      previewSides[side] = {panel, background, foreground, topline, title, subtitle, actions, primaryButton, secondaryButton};
+    };
+
+    const updatePreviewImage = (image, rawUrl) => {
+      const source = resolvePreviewImageSource(rawUrl, 0);
+      if (source.primary === '') {
+        image.onerror = null;
+        image.removeAttribute('src');
+        image.style.display = 'none';
+        return;
+      }
+      image.onerror = source.fallback !== ''
+        ? () => {
+            if (image.dataset.fallbackApplied === '1') return;
+            image.dataset.fallbackApplied = '1';
+            image.src = source.fallback;
+          }
+        : null;
+      image.dataset.fallbackApplied = '0';
+      image.src = source.primary;
+      image.style.display = '';
+    };
+
+    const updateDualHeroPreview = () => {
+      ['left', 'right'].forEach((side) => {
+        const refs = previewSides[side];
+        if (!refs) return;
+
+        const backgroundUrl = valueFrom(`${side}_background_image_url`);
+        const foregroundUrl = valueFrom(`${side}_foreground_image_url`);
+        const topline = valueFrom(`${side}_topline`);
+        const headline = valueFrom(`${side}_headline`) || (side === 'left' ? 'Hero 1' : 'Hero 2');
+        const subtitle = valueFrom(`${side}_subtitle`);
+        const primaryLabel = valueFrom(`${side}_button_text`);
+        const secondaryLabel = valueFrom(`${side}_button_secondary_text`);
+
+        updatePreviewImage(refs.background, backgroundUrl);
+        updatePreviewImage(refs.foreground, foregroundUrl);
+        refs.panel.classList.toggle('has-background', backgroundUrl !== '');
+        refs.topline.textContent = topline;
+        refs.topline.style.display = topline !== '' ? '' : 'none';
+        refs.title.textContent = headline;
+        refs.subtitle.textContent = subtitle;
+        refs.subtitle.style.display = subtitle !== '' ? '' : 'none';
+        refs.primaryButton.textContent = primaryLabel;
+        refs.primaryButton.style.display = primaryLabel !== '' ? '' : 'none';
+        refs.secondaryButton.textContent = secondaryLabel;
+        refs.secondaryButton.style.display = secondaryLabel !== '' ? '' : 'none';
+        refs.actions.style.display = primaryLabel !== '' || secondaryLabel !== '' ? '' : 'none';
+      });
+    };
+
+    const activateTab = (side) => {
+      buttons.forEach((button) => {
+        const active = button.dataset.tab === side;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      panels.forEach((panel) => {
+        const active = panel.dataset.tab === side;
+        panel.classList.toggle('is-active', active);
+        panel.hidden = !active;
+      });
+    };
+
+    makePreviewSide('left');
+    makePreviewSide('right');
+
+    [
+      {side: 'left', label: 'Hero 1'},
+      {side: 'right', label: 'Hero 2'},
+    ].forEach(({side, label}) => {
+      const button = el('button', {type: 'button', class: 'pages-edit-block-tabbtn', html: label});
+      button.dataset.tab = side;
+      button.setAttribute('role', 'tab');
+      button.addEventListener('click', () => activateTab(side));
+      buttons.push(button);
+      tabBar.appendChild(button);
+
+      const panel = el('section', {class: 'pages-edit-block-tabpanel'});
+      panel.dataset.tab = side;
+      panel.setAttribute('role', 'tabpanel');
+      const panelFields = el('div', {class: 'pages-edit-fields'});
+      Object.keys(fields)
+        .filter((key) => key.startsWith(`${side}_`))
+        .forEach((key) => panelFields.appendChild(renderField(block, key, fields[key])));
+      panel.appendChild(panelFields);
+      panels.push(panel);
+      panelWrap.appendChild(panel);
+    });
+
+    wrapper.appendChild(preview);
+    wrapper.appendChild(tabBar);
+    wrapper.appendChild(panelWrap);
+    wrapper.addEventListener('input', updateDualHeroPreview);
+    wrapper.addEventListener('change', updateDualHeroPreview);
+    activateTab('left');
+    updateDualHeroPreview();
     return wrapper;
   }
 

@@ -7,6 +7,7 @@ use App\PageBuilder\Blocks\BlockTypeInterface;
 use App\PageBuilder\Blocks\TextBlock;
 use App\PageBuilder\Blocks\ImageBlock;
 use App\PageBuilder\Blocks\HeroBlock;
+use App\PageBuilder\Blocks\DualHeroBlock;
 use App\PageBuilder\Blocks\ColumnsBlock;
 use App\PageBuilder\Blocks\CtaBlock;
 use App\PageBuilder\Blocks\FaqBlock;
@@ -41,6 +42,7 @@ final class BlockRegistry
             new TextBlock(),
             new ImageBlock(),
             new HeroBlock(),
+            new DualHeroBlock(),
             new ColumnsBlock(),
             new CtaBlock(),
             new FaqBlock(),
@@ -121,4 +123,3 @@ final class BlockRegistry
         self::$defsCache = null;
     }
 }
-

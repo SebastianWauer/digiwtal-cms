@@ -659,6 +659,116 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   background: #101216;
 }
 
+.pages-edit-dual-hero-preview{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border-radius: 12px;
+}
+
+.pages-edit-dual-hero-preview__panel{
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 260px;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(145deg, #313947, #161a21);
+}
+
+.pages-edit-dual-hero-preview__panel.is-right{
+  background: linear-gradient(145deg, #242933, #0f1217);
+}
+
+.pages-edit-dual-hero-preview__background,
+.pages-edit-dual-hero-preview__overlay{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pages-edit-dual-hero-preview__background{
+  object-fit: cover;
+}
+
+.pages-edit-dual-hero-preview__overlay{
+  background: rgba(0,0,0,.46);
+}
+
+.pages-edit-dual-hero-preview__body{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  max-width: 360px;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 20px;
+  color: #fff;
+  text-align: center;
+}
+
+.pages-edit-dual-hero-preview__foreground{
+  width: auto;
+  max-width: min(150px, 70%);
+  max-height: 76px;
+  object-fit: contain;
+}
+
+.pages-edit-dual-hero-preview__topline{
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.pages-edit-dual-hero-preview__title{
+  font-size: clamp(18px, 2.2vw, 27px);
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.pages-edit-dual-hero-preview__subtitle{
+  color: rgba(255,255,255,.88);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pages-edit-dual-hero-preview__actions{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.pages-edit-dual-hero-preview__button{
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 999px;
+  background: rgba(255,255,255,.16);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.pages-edit-dual-hero-preview__button--secondary{
+  background: transparent;
+}
+
+@media (max-width: 680px){
+  .pages-edit-dual-hero-preview{
+    grid-template-columns: 1fr;
+  }
+
+  .pages-edit-dual-hero-preview__panel{
+    min-height: 220px;
+  }
+}
+
 .pages-edit-modal.is-open{
   display: block;
 }
