@@ -1445,13 +1445,15 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     return wrapper;
   }
 
-  function renderColumnsBlockFields(block) {
+  function renderColumnsBlockFields(block, initialTab = 'settings') {
     const fields = (defs.columns && defs.columns.fields && typeof defs.columns.fields === 'object') ? defs.columns.fields : {};
+    if (!block.data || typeof block.data !== 'object') block.data = {};
     const wrapper = el('div', {class: 'pages-edit-block-tabs'});
     const tabBar = el('div', {class: 'pages-edit-block-tabs__bar'});
     const panelWrap = el('div', {class: 'pages-edit-block-tabs__panels'});
     const buttons = [];
     const panels = [];
+    const moveButtons = [];
 
     const activateTab = (id) => {
       buttons.forEach((btn) => {
@@ -1463,6 +1465,45 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         const show = panel.dataset.tab === id && !panel.hidden;
         panel.classList.toggle('is-active', show);
       });
+    };
+
+    const getColCount = () => {
+      const raw = String(block.data.col_count ?? '2');
+      let count = Number.parseInt(raw, 10);
+      if (!Number.isFinite(count)) count = 2;
+      if (count < 1) count = 1;
+      if (count > 5) count = 5;
+      return count;
+    };
+
+    const columnValue = (key) => {
+      if (Object.prototype.hasOwnProperty.call(block.data, key)) return block.data[key];
+      const defaults = defs.columns && defs.columns.defaults && typeof defs.columns.defaults === 'object'
+        ? defs.columns.defaults
+        : {};
+      return Object.prototype.hasOwnProperty.call(defaults, key) ? defaults[key] : '';
+    };
+
+    const moveColumn = (from, to) => {
+      const count = getColCount();
+      if (!CAN_EDIT || from < 1 || from > count || to < 1 || to > count || from === to) return;
+
+      const suffixes = new Set();
+      [...Object.keys(fields), ...Object.keys(block.data)].forEach((key) => {
+        const match = key.match(/^col_\d+_(.+)$/);
+        if (match) suffixes.add(match[1]);
+      });
+      suffixes.forEach((suffix) => {
+        const fromKey = `col_${from}_${suffix}`;
+        const toKey = `col_${to}_${suffix}`;
+        const fromValue = columnValue(fromKey);
+        const toValue = columnValue(toKey);
+        block.data[fromKey] = toValue;
+        block.data[toKey] = fromValue;
+      });
+
+      serialize();
+      wrapper.replaceWith(renderColumnsBlockFields(block, `tile-${to}`));
     };
 
     const settingsBtn = el('button', {
@@ -1514,6 +1555,29 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       panel.dataset.tab = `tile-${i}`;
       panel.dataset.colIndex = String(i);
       panel.setAttribute('role', 'tabpanel');
+
+      const orderWrap = el('div', {class: 'pages-edit-pb-actions'});
+      const previousBtn = el('button', {
+        type: 'button',
+        class: 'btn btn--ghost btn--sm',
+        html: '&larr; Nach vorne',
+      });
+      previousBtn.dataset.colIndex = String(i);
+      previousBtn.dataset.moveDirection = 'previous';
+      previousBtn.addEventListener('click', () => moveColumn(i, i - 1));
+      const nextBtn = el('button', {
+        type: 'button',
+        class: 'btn btn--ghost btn--sm',
+        html: 'Nach hinten &rarr;',
+      });
+      nextBtn.dataset.colIndex = String(i);
+      nextBtn.dataset.moveDirection = 'next';
+      nextBtn.addEventListener('click', () => moveColumn(i, i + 1));
+      moveButtons.push(previousBtn, nextBtn);
+      orderWrap.appendChild(previousBtn);
+      orderWrap.appendChild(nextBtn);
+      panel.appendChild(orderWrap);
+
       const panelFields = el('div', {class: 'pages-edit-fields'});
       if (fields[titleKey]) panelFields.appendChild(renderField(block, titleKey, fields[titleKey]));
       if (fields[imageKey]) panelFields.appendChild(renderField(block, imageKey, fields[imageKey]));
@@ -1522,15 +1586,6 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       panels.push(panel);
       panelWrap.appendChild(panel);
     }
-
-    const getColCount = () => {
-      const raw = String(block && block.data ? (block.data.col_count ?? '2') : '2');
-      let count = Number.parseInt(raw, 10);
-      if (!Number.isFinite(count)) count = 2;
-      if (count < 1) count = 1;
-      if (count > 5) count = 5;
-      return count;
-    };
 
     const updateColumnsTabs = () => {
       const count = getColCount();
@@ -1544,6 +1599,15 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         if (!Number.isFinite(idx)) return;
         panel.hidden = idx > count;
       });
+      moveButtons.forEach((btn) => {
+        const idx = Number.parseInt(btn.dataset.colIndex || '', 10);
+        const direction = btn.dataset.moveDirection || '';
+        btn.disabled = !CAN_EDIT
+          || !Number.isFinite(idx)
+          || idx > count
+          || (direction === 'previous' && idx <= 1)
+          || (direction === 'next' && idx >= count);
+      });
 
       const activeBtn = buttons.find((b) => b.classList.contains('is-active') && !b.hidden);
       if (!activeBtn) {
@@ -1556,7 +1620,9 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     wrapper.addEventListener('input', updateColumnsTabs);
     wrapper.addEventListener('change', updateColumnsTabs);
     updateColumnsTabs();
-    activateTab('settings');
+    const initialMatch = String(initialTab).match(/^tile-(\d+)$/);
+    const initialIndex = initialMatch ? Number.parseInt(initialMatch[1], 10) : 0;
+    activateTab(initialIndex >= 1 && initialIndex <= getColCount() ? `tile-${initialIndex}` : 'settings');
     return wrapper;
   }
 
