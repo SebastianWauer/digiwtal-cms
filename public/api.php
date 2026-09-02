@@ -318,6 +318,54 @@ function api_enrich_page_carousel_icons(PDO $pdo, array $content): array
     return $blocks;
 }
 
+function api_enrich_catalog_blocks(PDO $pdo, array $content): array
+{
+    $isWrapper = isset($content['blocks']) && is_array($content['blocks']);
+    $blocks = $isWrapper ? $content['blocks'] : (array_is_list($content) ? $content : []);
+    if ($blocks === []) return $content;
+
+    $catalogs = new \App\Services\CatalogService($pdo);
+    foreach ($blocks as $index => $block) {
+        if (!is_array($block) || (string)($block['type'] ?? '') !== 'catalog') continue;
+
+        $location = 'flat';
+        $data = $block;
+        if (isset($block['data']) && is_array($block['data'])) {
+            $location = 'data';
+            $data = $block['data'];
+        } elseif (isset($block['payload']) && is_array($block['payload'])) {
+            $location = 'payload';
+            $data = $block['payload'];
+        }
+
+        $mediaId = (int)($data['pdf_media_id'] ?? 0);
+        $metadata = $mediaId > 0 ? $catalogs->publicMetadata($mediaId) : null;
+        if (is_array($metadata)) {
+            $data['catalog_status'] = (string)($metadata['status'] ?? '');
+            $data['page_count'] = (string)((int)($metadata['page_count'] ?? 0));
+            $data['pdf_url'] = api_cms_path((string)($metadata['pdf_url'] ?? ''));
+            $data['page_url_template'] = api_cms_path((string)($metadata['page_url_template'] ?? ''));
+            $data['catalog_ready'] = !empty($metadata['ready']);
+        } else {
+            $data['catalog_status'] = 'missing';
+            $data['page_count'] = '0';
+            $data['catalog_ready'] = false;
+            unset($data['page_url_template']);
+        }
+
+        if ($location === 'data') $block['data'] = $data;
+        elseif ($location === 'payload') $block['payload'] = $data;
+        else $block = $data;
+        $blocks[$index] = $block;
+    }
+
+    if ($isWrapper) {
+        $content['blocks'] = $blocks;
+        return $content;
+    }
+    return $blocks;
+}
+
 // --------------------------------------------------
 // Response Helper
 // --------------------------------------------------
@@ -1064,6 +1112,7 @@ if ($method === 'GET' && $sub === '/pages') {
     }
     if (is_array($content)) {
         $content = api_enrich_page_carousel_icons($pdo, $content);
+        $content = api_enrich_catalog_blocks($pdo, $content);
     }
 
     json_response([
@@ -1659,6 +1708,7 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
         }
     }
     $blocks = api_enrich_page_carousel_icons($pdo, $blocks);
+    $blocks = api_enrich_catalog_blocks($pdo, $blocks);
 
     $updAt = (string)($row['updated_at'] ?? '');
     json_response([

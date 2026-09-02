@@ -5,6 +5,11 @@
 # Kein Verzeichnis-Listing, falls irgendwo ein DirectoryIndex fehlt.
 Options -Indexes
 
+<IfModule mod_mime.c>
+  AddType application/javascript .mjs
+  AddType application/wasm .wasm
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 

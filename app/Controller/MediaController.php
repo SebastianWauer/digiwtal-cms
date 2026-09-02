@@ -7,6 +7,7 @@ use App\Repositories\MediaRepositoryDb;
 use App\Repositories\MediaFolderRepositoryDb;
 use App\Repositories\MediaUsageRepositoryDb;
 use App\Services\MediaService;
+use App\Services\CatalogService;
 
 final class MediaController
 {
@@ -280,6 +281,157 @@ final class MediaController
 
         header('Location: ' . cms_base_path() . '/media?folder=' . $folderId);
         exit;
+    }
+
+    public function catalogUploadStart(): void
+    {
+        $user = \admin_require_perm('media.upload');
+        [, , $pdo] = $this->deps($user);
+        $this->requireCatalogPost();
+        try {
+            $result = (new CatalogService($pdo))->startUpload(
+                (string)($_POST['filename'] ?? ''),
+                (int)($_POST['size_bytes'] ?? 0),
+                (int)($_POST['folder_id'] ?? 1),
+                (int)($user['id'] ?? 0)
+            );
+            $this->json(200, ['ok' => true] + $result);
+        } catch (\Throwable $e) {
+            $this->json(422, ['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function catalogUploadChunk(): void
+    {
+        $user = \admin_require_perm('media.upload');
+        [, , $pdo] = $this->deps($user);
+        $this->requireCatalogPost();
+        try {
+            $file = is_array($_FILES['chunk'] ?? null) ? $_FILES['chunk'] : [];
+            $result = (new CatalogService($pdo))->storeChunk(
+                trim((string)($_POST['token'] ?? '')),
+                (int)($_POST['index'] ?? -1),
+                $file,
+                (int)($user['id'] ?? 0)
+            );
+            $this->json(200, ['ok' => true] + $result);
+        } catch (\Throwable $e) {
+            $this->json(422, ['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function catalogUploadFinish(): void
+    {
+        $user = \admin_require_perm('media.upload');
+        [, , $pdo] = $this->deps($user);
+        $this->requireCatalogPost();
+        try {
+            $result = (new CatalogService($pdo))->finishUpload(
+                trim((string)($_POST['token'] ?? '')),
+                (int)($user['id'] ?? 0)
+            );
+            $this->json(200, ['ok' => true] + $result);
+        } catch (\Throwable $e) {
+            $this->json(422, ['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function catalogPagesStart(): void
+    {
+        $user = \admin_require_perm('media.upload');
+        [, , $pdo] = $this->deps($user);
+        $this->requireCatalogPost();
+        try {
+            $result = (new CatalogService($pdo))->beginPageUpload(
+                (int)($_POST['media_id'] ?? 0),
+                (int)($_POST['page_count'] ?? 0)
+            );
+            $this->json(200, ['ok' => true, 'catalog' => $result]);
+        } catch (\Throwable $e) {
+            $this->json(422, ['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function catalogPageUpload(): void
+    {
+        $user = \admin_require_perm('media.upload');
+        [, , $pdo] = $this->deps($user);
+        $this->requireCatalogPost();
+        try {
+            $file = is_array($_FILES['page_image'] ?? null) ? $_FILES['page_image'] : [];
+            $result = (new CatalogService($pdo))->storePage(
+                (int)($_POST['media_id'] ?? 0),
+                (int)($_POST['page'] ?? 0),
+                $file
+            );
+            $this->json(200, ['ok' => true] + $result);
+        } catch (\Throwable $e) {
+            $this->json(422, ['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function catalogPagesComplete(): void
+    {
+        $user = \admin_require_perm('media.upload');
+        [, , $pdo] = $this->deps($user);
+        $this->requireCatalogPost();
+        try {
+            $result = (new CatalogService($pdo))->completePageUpload((int)($_POST['media_id'] ?? 0));
+            $this->json(200, ['ok' => true, 'catalog' => $result]);
+        } catch (\Throwable $e) {
+            $this->json(422, ['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function catalogManifest(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+            $this->json(405, ['ok' => false, 'error' => 'method_not_allowed']);
+            return;
+        }
+        $pdo = \admin_pdo();
+        $metadata = (new CatalogService($pdo))->publicMetadata((int)($_GET['id'] ?? 0));
+        if (!$metadata) {
+            $this->json(404, ['ok' => false, 'error' => 'not_found']);
+            return;
+        }
+        header('Cache-Control: no-store');
+        $this->json(200, ['ok' => true, 'catalog' => $metadata]);
+    }
+
+    public function catalogPage(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+            http_response_code(405);
+            echo 'Method Not Allowed';
+            return;
+        }
+        $pdo = \admin_pdo();
+        $mediaId = (int)($_GET['id'] ?? 0);
+        $page = (int)($_GET['page'] ?? 0);
+        $path = (new CatalogService($pdo))->publicPagePath($mediaId, $page);
+        if ($path === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $this->streamFileResponse(
+            $path,
+            'image/webp',
+            'inline',
+            'catalog-' . $mediaId . '-page-' . $page . '.webp',
+            'public, max-age=31536000, immutable',
+            false
+        );
+    }
+
+    private function requireCatalogPost(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            $this->json(405, ['ok' => false, 'error' => 'method_not_allowed']);
+            exit;
+        }
+        \admin_verify_csrf();
     }
 
     public function folderCreate(): void
@@ -749,12 +901,17 @@ final class MediaController
             header('Content-Type: ' . $mime);
         }
 
-        header('Content-Length: ' . (string)filesize($path));
-        $disposition = ($ext === 'svg') ? 'attachment' : 'inline';
-        header('Content-Disposition: ' . $disposition . '; filename="' . $this->safeHeaderFilename((string)($row['original_filename'] ?? 'file')) . '"');
-
-        readfile($path);
-        exit;
+        $download = (string)($_GET['download'] ?? '') === '1';
+        $disposition = ($ext === 'svg' || $download) ? 'attachment' : 'inline';
+        $cacheControl = $ext === 'pdf' ? 'public, max-age=3600' : 'public, max-age=86400';
+        $this->streamFileResponse(
+            $path,
+            $ext === 'svg' ? 'image/svg+xml; charset=UTF-8' : $mime,
+            $disposition,
+            (string)($row['original_filename'] ?? 'file'),
+            $cacheControl,
+            $ext === 'pdf'
+        );
     }
 
     public function thumb(): void
@@ -872,6 +1029,11 @@ final class MediaController
             }
         }
 
+        $catalogService = new CatalogService($_pdo);
+        foreach ($ids as $mediaId) {
+            $catalogService->deleteAssets((int)$mediaId);
+        }
+
         $_SESSION['flash'] = ($n > 0)
             ? ['type' => 'success', 'msg' => 'Papierkorb geleert (' . $n . ').']
             : ['type' => 'success', 'msg' => 'Papierkorb ist bereits leer.'];
@@ -886,6 +1048,105 @@ final class MediaController
         if ($name === '') $name = 'file';
         $name = str_replace(["\r", "\n", '"'], ['', '', ''], $name);
         return $name;
+    }
+
+    private function streamFileResponse(
+        string $path,
+        string $mime,
+        string $disposition,
+        string $filename,
+        string $cacheControl,
+        bool $allowRanges
+    ): never {
+        $size = (int)@filesize($path);
+        if ($size <= 0) {
+            http_response_code(404);
+            echo 'Not Found';
+            exit;
+        }
+
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        @ini_set('zlib.output_compression', '0');
+        @set_time_limit(0);
+
+        $mtime = (int)@filemtime($path);
+        $etag = '"' . sha1($path . '|' . $size . '|' . $mtime) . '"';
+        header('X-Content-Type-Options: nosniff');
+        header('Referrer-Policy: no-referrer');
+        header('Content-Type: ' . $mime);
+        header('Cache-Control: ' . $cacheControl);
+        header('ETag: ' . $etag);
+        header('Content-Disposition: ' . $disposition . '; filename="' . $this->safeHeaderFilename($filename) . '"');
+        if ($allowRanges) header('Accept-Ranges: bytes');
+
+        $rangeHeader = $allowRanges ? trim((string)($_SERVER['HTTP_RANGE'] ?? '')) : '';
+        if ($rangeHeader === '' && trim((string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+
+        $start = 0;
+        $end = $size - 1;
+        $partial = false;
+        if ($rangeHeader !== '') {
+            if (preg_match('/^bytes=(\d*)-(\d*)$/', $rangeHeader, $match) !== 1) {
+                header('Content-Range: bytes */' . $size);
+                http_response_code(416);
+                exit;
+            }
+            $rawStart = $match[1];
+            $rawEnd = $match[2];
+            if ($rawStart === '' && $rawEnd === '') {
+                header('Content-Range: bytes */' . $size);
+                http_response_code(416);
+                exit;
+            }
+            if ($rawStart === '') {
+                $suffix = (int)$rawEnd;
+                if ($suffix <= 0) {
+                    header('Content-Range: bytes */' . $size);
+                    http_response_code(416);
+                    exit;
+                }
+                $start = max(0, $size - $suffix);
+            } else {
+                $start = (int)$rawStart;
+                if ($rawEnd !== '') $end = min($end, (int)$rawEnd);
+            }
+            if ($start >= $size || $start > $end) {
+                header('Content-Range: bytes */' . $size);
+                http_response_code(416);
+                exit;
+            }
+            $partial = true;
+        }
+
+        $length = $end - $start + 1;
+        if ($partial) {
+            http_response_code(206);
+            header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
+        }
+        header('Content-Length: ' . $length);
+
+        $handle = @fopen($path, 'rb');
+        if (!is_resource($handle)) {
+            http_response_code(500);
+            exit;
+        }
+        if ($start > 0) fseek($handle, $start);
+        $remaining = $length;
+        while ($remaining > 0 && !feof($handle)) {
+            if (connection_aborted()) break;
+            $chunk = fread($handle, min(1024 * 1024, $remaining));
+            if ($chunk === false || $chunk === '') break;
+            echo $chunk;
+            $remaining -= strlen($chunk);
+            flush();
+        }
+        fclose($handle);
+        exit;
     }
 
     private function folderIsDescendantOf(int $folderId, int $ancestorId, MediaFolderRepositoryDb $folderRepo): bool

@@ -242,6 +242,70 @@ final class MediaService
         return $created;
     }
 
+    public function importPdfFromPath(string $sourcePath, string $originalFilename, int $folderId, int $maxBytes): int
+    {
+        if (!is_file($sourcePath) || !is_readable($sourcePath)) {
+            throw new \RuntimeException('Die Katalog-PDF wurde nicht gefunden.');
+        }
+        $size = (int)@filesize($sourcePath);
+        if ($size <= 0 || $size > $maxBytes) {
+            throw new \RuntimeException('Die Katalog-PDF hat eine ungültige Größe.');
+        }
+        if (strtolower(pathinfo($originalFilename, PATHINFO_EXTENSION)) !== 'pdf') {
+            $originalFilename .= '.pdf';
+        }
+        if ((string)@file_get_contents($sourcePath, false, null, 0, 5) !== '%PDF-') {
+            throw new \RuntimeException('Die Katalog-Datei ist keine gültige PDF.');
+        }
+
+        $folderId = $this->normalizeFolderId($folderId);
+        if (!$this->folders->findById($folderId)) $folderId = 1;
+        if (!$this->folders->findById($folderId)) {
+            throw new \RuntimeException('Der Medienordner wurde nicht gefunden.');
+        }
+        $this->ensureStorageDir();
+
+        $dest = '';
+        $this->pdo->beginTransaction();
+        try {
+            $id = $this->media->insertItem([
+                'folder_id' => $folderId,
+                'original_filename' => $originalFilename,
+                'display_filename' => $this->sanitizeDisplayBaseName($originalFilename),
+                'storage_filename' => 'pending.pdf',
+                'ext' => 'pdf',
+                'mime' => 'application/pdf',
+                'size_bytes' => $size,
+                'width' => null,
+                'height' => null,
+                'title' => null,
+                'alt_text' => null,
+                'description' => null,
+                'focus_x' => null,
+                'focus_y' => null,
+                'usage_count' => 0,
+            ]);
+            if ($id <= 0) throw new \RuntimeException('Der Katalog konnte nicht in der Mediathek angelegt werden.');
+
+            $storageFilename = $id . '.pdf';
+            $dest = $this->mediaStorageDir() . '/' . $storageFilename;
+            if (!@rename($sourcePath, $dest)) {
+                if (!@copy($sourcePath, $dest)) {
+                    throw new \RuntimeException('Die Katalog-PDF konnte nicht gespeichert werden.');
+                }
+                @unlink($sourcePath);
+            }
+            @chmod($dest, 0644);
+            $this->finalizeStorageFields($id, $storageFilename, null, null, (int)@filesize($dest));
+            $this->pdo->commit();
+            return $id;
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            if ($dest !== '' && is_file($dest)) @unlink($dest);
+            throw $e;
+        }
+    }
+
     /**
      * @return array<int,array<string,mixed>>
      */

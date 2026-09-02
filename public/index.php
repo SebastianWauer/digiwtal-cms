@@ -110,6 +110,14 @@ $router->get('/media/deleted', \App\Controller\MediaController::class, 'deleted'
 $router->get('/media/edit', \App\Controller\MediaController::class, 'edit');
 $router->post('/media/save', \App\Controller\MediaController::class, 'save');
 $router->post('/media/upload', \App\Controller\MediaController::class, 'upload');
+$router->post('/media/catalog/upload/start', \App\Controller\MediaController::class, 'catalogUploadStart');
+$router->post('/media/catalog/upload/chunk', \App\Controller\MediaController::class, 'catalogUploadChunk');
+$router->post('/media/catalog/upload/finish', \App\Controller\MediaController::class, 'catalogUploadFinish');
+$router->post('/media/catalog/pages/start', \App\Controller\MediaController::class, 'catalogPagesStart');
+$router->post('/media/catalog/pages/upload', \App\Controller\MediaController::class, 'catalogPageUpload');
+$router->post('/media/catalog/pages/complete', \App\Controller\MediaController::class, 'catalogPagesComplete');
+$router->get('/media/catalog/manifest', \App\Controller\MediaController::class, 'catalogManifest');
+$router->get('/media/catalog/page', \App\Controller\MediaController::class, 'catalogPage');
 $router->post('/media/folder/create', \App\Controller\MediaController::class, 'folderCreate');
 $router->post('/media/folder/move', \App\Controller\MediaController::class, 'folderMove');
 $router->post('/media/folder/delete', \App\Controller\MediaController::class, 'folderDelete');
@@ -171,6 +179,5 @@ if (!headers_sent()) {
 }
 
 ob_end_flush();
-
 
 

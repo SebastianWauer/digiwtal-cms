@@ -1447,3 +1447,72 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
     width: 100%;
   }
 }
+
+.pages-edit-catalog {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.pages-edit-catalog__upload {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--line, #d9dee7);
+  border-radius: 14px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--panel, #fff) 92%, var(--accent, #c41e3a) 8%);
+}
+
+.pages-edit-catalog__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.pages-edit-catalog__current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.pages-edit-catalog__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  color: #475569;
+  background: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.pages-edit-catalog__status.is-ready {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.pages-edit-catalog__status.is-processing,
+.pages-edit-catalog__status.is-uploaded {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.pages-edit-catalog__current-text {
+  color: var(--muted, #64748b);
+  font-size: 0.85rem;
+}
+
+.pages-edit-catalog__progress {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.pages-edit-catalog__progress[hidden] {
+  display: none;
+}
+
+.pages-edit-catalog__progress progress {
+  width: 100%;
+  height: 0.75rem;
+  accent-color: var(--accent, #c41e3a);
+}

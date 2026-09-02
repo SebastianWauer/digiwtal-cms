@@ -4,6 +4,10 @@
 # Runtime data
 storage/
 vendor/
+!public/assets/vendor/
+public/assets/vendor/*
+!public/assets/vendor/pdfjs/
+!public/assets/vendor/pdfjs/**
 .phpunit.result.cache
 
 # Local tools and editors

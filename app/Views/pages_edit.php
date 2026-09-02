@@ -67,6 +67,7 @@ $preferredBlockLabels = [
     'hero' => 'Herobanner',
     'dual_hero' => 'Doppel-Hero',
     'page_carousel' => 'Seiten-Karussell',
+    'catalog' => 'Blätterkatalog',
     'columns' => 'Kacheln',
     'three_columns_layout' => '3-Spalten Layout',
     'cta' => 'Call-to-Action',
@@ -529,6 +530,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   let sortableInstance = null;
   const historyStack = [];
   let historyIndex = -1;
+  let catalogProcessingCount = 0;
+  let pdfJsModulePromise = null;
 
   function safeParseJson(s) { try { return JSON.parse(s); } catch { return null; } }
   function cloneData(value) {
@@ -1840,6 +1843,243 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     return wrapper;
   }
 
+  function renderCatalogBlockFields(block) {
+    const fields = (defs.catalog && defs.catalog.fields && typeof defs.catalog.fields === 'object')
+      ? defs.catalog.fields
+      : {};
+    const wrapper = el('div', {class: 'pages-edit-catalog'});
+    const contentFields = el('div', {class: 'pages-edit-fields'});
+    ['title', 'subtitle', 'download_label', 'back_label', 'back_url'].forEach((key) => {
+      if (fields[key]) contentFields.appendChild(renderField(block, key, fields[key]));
+    });
+
+    const uploadCard = el('section', {class: 'pages-edit-catalog__upload'});
+    uploadCard.appendChild(el('h3', {class: 'pages-edit-catalog__title', html: 'Katalog-PDF und Blätteransicht'}));
+    uploadCard.appendChild(el('p', {
+      class: 'pages-edit-field-hint',
+      html: 'PDFs bis 100 MB werden stückweise übertragen. Anschließend erzeugt dieser Browser einmalig optimierte WebP-Seiten. Bitte den Tab während der Verarbeitung geöffnet lassen.'
+    }));
+
+    const current = el('div', {class: 'pages-edit-catalog__current'});
+    const statusBadge = el('span', {class: 'pages-edit-catalog__status'});
+    const currentText = el('span', {class: 'pages-edit-catalog__current-text'});
+    current.appendChild(statusBadge);
+    current.appendChild(currentText);
+
+    const fileInput = el('input', {
+      class: 'pages-edit-input pages-edit-catalog__file',
+      type: 'file',
+      accept: 'application/pdf,.pdf'
+    });
+    fileInput.disabled = !CAN_EDIT;
+    const uploadButton = el('button', {
+      type: 'button',
+      class: 'btn btn--primary',
+      html: 'PDF hochladen und verarbeiten'
+    });
+    uploadButton.disabled = !CAN_EDIT;
+    const actions = el('div', {class: 'pages-edit-pb-actions'});
+    actions.appendChild(uploadButton);
+
+    const progressWrap = el('div', {class: 'pages-edit-catalog__progress', hidden: 'hidden'});
+    const progress = el('progress', {max: '100', value: '0'});
+    const progressText = el('div', {class: 'pages-edit-field-hint'});
+    progressWrap.appendChild(progress);
+    progressWrap.appendChild(progressText);
+
+    const updateCurrent = (overrideText = '') => {
+      const mediaId = Number.parseInt(String(block.data.pdf_media_id || '0'), 10) || 0;
+      const pageCount = Number.parseInt(String(block.data.page_count || '0'), 10) || 0;
+      const status = String(block.data.catalog_status || '').trim();
+      statusBadge.className = `pages-edit-catalog__status is-${status || 'empty'}`;
+      statusBadge.textContent = status === 'ready'
+        ? 'Bereit'
+        : (status === 'processing' ? 'Verarbeitung läuft' : (status === 'uploaded' ? 'PDF hochgeladen' : 'Noch kein Katalog'));
+      currentText.textContent = overrideText || (mediaId > 0
+        ? `Media-ID ${mediaId}${pageCount > 0 ? ` · ${pageCount} Seiten` : ''}`
+        : 'Bitte eine PDF auswählen.');
+    };
+
+    const setProgress = (percent, message) => {
+      progressWrap.hidden = false;
+      progress.value = String(Math.max(0, Math.min(100, Math.round(percent))));
+      progressText.textContent = message;
+    };
+
+    const catalogPost = async (path, values = {}, file = null, fileField = '') => {
+      const body = new FormData();
+      Object.entries(values).forEach(([key, value]) => body.append(key, String(value)));
+      if (file && fileField) body.append(fileField, file, file.name || 'upload.bin');
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      if (csrf) body.append('_token', csrf);
+      const response = await fetch(window.cmsAdminUrl(path), {
+        method: 'POST',
+        body,
+        credentials: 'same-origin',
+        headers: {'Accept': 'application/json', 'X-CSRF-Token': csrf}
+      });
+      let payload = null;
+      try { payload = await response.json(); } catch (_error) {}
+      if (!response.ok || !payload || payload.ok !== true) {
+        throw new Error(payload && payload.error ? String(payload.error) : `HTTP ${response.status}`);
+      }
+      return payload;
+    };
+
+    const loadPdfJs = async () => {
+      if (typeof Promise.withResolvers !== 'function') {
+        Object.defineProperty(Promise, 'withResolvers', {
+          configurable: true,
+          value() {
+            let resolve;
+            let reject;
+            const promise = new Promise((promiseResolve, promiseReject) => {
+              resolve = promiseResolve;
+              reject = promiseReject;
+            });
+            return {promise, resolve, reject};
+          }
+        });
+      }
+      if (!pdfJsModulePromise) {
+        pdfJsModulePromise = import(window.cmsAdminUrl('/assets/vendor/pdfjs/pdf.mjs'));
+      }
+      const pdfjs = await pdfJsModulePromise;
+      pdfjs.GlobalWorkerOptions.workerSrc = window.cmsAdminUrl('/assets/vendor/pdfjs/pdf.worker.compat.mjs');
+      return pdfjs;
+    };
+
+    const canvasToWebp = (canvas, quality) => new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob && blob.type === 'image/webp') resolve(blob);
+        else reject(new Error('Dieser Browser kann keine WebP-Katalogseiten erzeugen. Bitte einen aktuellen Browser verwenden.'));
+      }, 'image/webp', quality);
+    });
+
+    uploadButton.addEventListener('click', async () => {
+      if (!CAN_EDIT || catalogProcessingCount > 0) return;
+      const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+      if (!file) {
+        window.alert('Bitte zuerst eine PDF-Datei auswählen.');
+        return;
+      }
+      if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) {
+        window.alert('Bitte eine gültige PDF-Datei auswählen.');
+        return;
+      }
+      if (file.size <= 0 || file.size > 100 * 1024 * 1024) {
+        window.alert('Die Katalog-PDF darf maximal 100 MB groß sein.');
+        return;
+      }
+
+      catalogProcessingCount++;
+      uploadButton.disabled = true;
+      fileInput.disabled = true;
+      try {
+        setProgress(1, 'PDF-Upload wird vorbereitet …');
+        const start = await catalogPost('/media/catalog/upload/start', {
+          filename: file.name,
+          size_bytes: file.size,
+          folder_id: 1
+        });
+        const chunkSize = Number(start.chunk_size || (2 * 1024 * 1024));
+        const chunkCount = Number(start.chunk_count || Math.ceil(file.size / chunkSize));
+        for (let index = 0; index < chunkCount; index++) {
+          const from = index * chunkSize;
+          const to = Math.min(file.size, from + chunkSize);
+          const blob = file.slice(from, to, 'application/octet-stream');
+          const chunk = new File([blob], `catalog-part-${index}.bin`, {type: 'application/octet-stream'});
+          await catalogPost('/media/catalog/upload/chunk', {token: start.token, index}, chunk, 'chunk');
+          setProgress(2 + ((index + 1) / chunkCount) * 16, `PDF wird hochgeladen: Abschnitt ${index + 1} von ${chunkCount}`);
+        }
+
+        const finished = await catalogPost('/media/catalog/upload/finish', {token: start.token});
+        const mediaId = Number(finished.media_id || 0);
+        if (mediaId <= 0) throw new Error('Das CMS hat keine Media-ID zurückgegeben.');
+        block.data.pdf_media_id = String(mediaId);
+        block.data.pdf_url = `/media/file?id=${mediaId}&download=1`;
+        block.data.catalog_status = 'uploaded';
+        block.data.page_count = '0';
+        serialize();
+        updateCurrent('PDF gespeichert. Seiten werden jetzt erzeugt …');
+
+        setProgress(20, 'PDF wird im Browser geöffnet …');
+        const pdfjs = await loadPdfJs();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const assetBase = window.cmsAdminUrl('/assets/vendor/pdfjs/');
+        const loadingTask = pdfjs.getDocument({
+          data: bytes,
+          cMapUrl: assetBase + 'cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: assetBase + 'standard_fonts/',
+          wasmUrl: assetBase + 'wasm/'
+        });
+        const pdf = await loadingTask.promise;
+        const pageCount = Number(pdf.numPages || 0);
+        if (pageCount <= 0 || pageCount > 600) throw new Error('Die PDF hat eine ungültige Seitenanzahl.');
+
+        await catalogPost('/media/catalog/pages/start', {media_id: mediaId, page_count: pageCount});
+        block.data.catalog_status = 'processing';
+        block.data.page_count = String(pageCount);
+        serialize();
+        updateCurrent();
+
+        for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+          setProgress(20 + ((pageNumber - 1) / pageCount) * 78, `Seite ${pageNumber} von ${pageCount} wird optimiert …`);
+          const page = await pdf.getPage(pageNumber);
+          const baseViewport = page.getViewport({scale: 1});
+          let scale = 1400 / Math.max(1, baseViewport.width);
+          if (baseViewport.height * scale > 2800) scale = 2800 / baseViewport.height;
+          const viewport = page.getViewport({scale});
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(viewport.width));
+          canvas.height = Math.max(1, Math.round(viewport.height));
+          const context = canvas.getContext('2d', {alpha: false});
+          if (!context) throw new Error('Der Browser kann keine Katalogseiten rendern.');
+          context.fillStyle = '#ffffff';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          await page.render({canvas, canvasContext: context, viewport, background: '#ffffff'}).promise;
+          let pageBlob = await canvasToWebp(canvas, 0.8);
+          if (pageBlob.size > 4 * 1024 * 1024) pageBlob = await canvasToWebp(canvas, 0.65);
+          const pageFile = new File([pageBlob], `page-${String(pageNumber).padStart(4, '0')}.webp`, {type: 'image/webp'});
+          await catalogPost('/media/catalog/pages/upload', {media_id: mediaId, page: pageNumber}, pageFile, 'page_image');
+          page.cleanup();
+          canvas.width = 1;
+          canvas.height = 1;
+        }
+
+        const complete = await catalogPost('/media/catalog/pages/complete', {media_id: mediaId});
+        block.data.catalog_status = 'ready';
+        block.data.page_count = String(pageCount);
+        if (complete.catalog && complete.catalog.pdf_url) block.data.pdf_url = String(complete.catalog.pdf_url);
+        serialize();
+        updateCurrent();
+        setProgress(100, `Katalog ist bereit: ${pageCount} Seiten. Bitte die Seite jetzt speichern.`);
+        fileInput.value = '';
+        if (typeof pdf.cleanup === 'function') await pdf.cleanup();
+        if (typeof pdf.destroy === 'function') await pdf.destroy();
+      } catch (error) {
+        console.error('Catalog processing failed:', error);
+        setProgress(Number(progress.value || 0), `Fehler: ${error && error.message ? error.message : 'Katalog konnte nicht verarbeitet werden.'}`);
+        updateCurrent();
+        window.alert(`Katalog konnte nicht vollständig verarbeitet werden: ${error && error.message ? error.message : 'Unbekannter Fehler'}`);
+      } finally {
+        catalogProcessingCount = Math.max(0, catalogProcessingCount - 1);
+        uploadButton.disabled = !CAN_EDIT;
+        fileInput.disabled = !CAN_EDIT;
+      }
+    });
+
+    uploadCard.appendChild(current);
+    uploadCard.appendChild(fileInput);
+    uploadCard.appendChild(actions);
+    uploadCard.appendChild(progressWrap);
+    wrapper.appendChild(uploadCard);
+    wrapper.appendChild(contentFields);
+    updateCurrent();
+    return wrapper;
+  }
+
   function normalizeNestedBuilderBlock(rawBlock) {
     if (!rawBlock || typeof rawBlock !== 'object') return null;
     const type = String(rawBlock.type || '').trim();
@@ -1874,6 +2114,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     if (block.type === 'hero') return renderHeroBlockFields(block);
     if (block.type === 'dual_hero') return renderDualHeroBlockFields(block);
     if (block.type === 'page_carousel') return renderPageCarouselBlockFields(block);
+    if (block.type === 'catalog') return renderCatalogBlockFields(block);
     if (block.type === 'text') return renderTextBlockFields(block);
     if (block.type === 'columns') return renderColumnsBlockFields(block);
     if (block.type === 'three_columns_layout') return renderThreeColumnsLayoutFields(block);
@@ -2365,6 +2606,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         blockModalSub.textContent = 'Kachel-Block: Anzahl und Inhalte der Kacheln';
       } else if (block.type === 'page_carousel') {
         blockModalSub.textContent = 'Seiten-Karussell: Seiten auswählen und mit Bild sowie Beschreibung hervorheben';
+      } else if (block.type === 'catalog') {
+        blockModalSub.textContent = 'Blätterkatalog: große PDF hochladen, Seiten optimieren und Download anbieten';
       } else if (block.type === 'three_columns_layout') {
         blockModalSub.textContent = '3-Spalten Layout: Jede Spalte kann eigene PageBuilder-Module enthalten';
       } else {
@@ -2528,7 +2771,19 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     form.addEventListener('change', () => schedulePreviewUpdate());
   }
 
-  form.addEventListener('submit', () => serialize());
+  form.addEventListener('submit', (event) => {
+    if (catalogProcessingCount > 0) {
+      event.preventDefault();
+      window.alert('Der Katalog wird noch verarbeitet. Bitte warte, bis alle Seiten fertig sind.');
+      return;
+    }
+    serialize();
+  });
+  window.addEventListener('beforeunload', (event) => {
+    if (catalogProcessingCount <= 0) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
   render();
   pushHistory();
   updateHistoryButtons();

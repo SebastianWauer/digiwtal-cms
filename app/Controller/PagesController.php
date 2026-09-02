@@ -14,6 +14,7 @@ use App\Repositories\NewsCategoryRepositoryDb;
 use App\Services\PageService;
 use App\Services\MediaUsageService;
 use App\Services\SeoService;
+use App\Services\CatalogService;
 use App\Setup\EnsureDefaultPages;
 
 final class PagesController
@@ -78,6 +79,7 @@ final class PagesController
         try {
             $blocks = $this->enrichBlocksWithFocusFromDb($_pdo, $blocks);
             $blocks = $this->enrichBlocksWithPageIconsFromDb($_pdo, $blocks);
+            $blocks = $this->enrichBlocksWithCatalogs($_pdo, $blocks);
             $blocks = $this->enrichBlocksWithEventsFromDb($_pdo, $blocks);
         } catch (\Throwable $e) {
             // Preview darf nie komplett ausfallen: bei Fehlern ohne Focus-Enrichment weiter rendern.
@@ -448,6 +450,44 @@ final class PagesController
             $blocks[$index] = $block;
         }
 
+        return $blocks;
+    }
+
+    private function enrichBlocksWithCatalogs(\PDO $pdo, array $blocks): array
+    {
+        $catalogs = new CatalogService($pdo);
+        $cmsBaseUrl = $this->cmsBaseUrlFromRequest();
+        $cmsPath = rtrim((string)\cms_base_path(), '/');
+
+        foreach ($blocks as $index => $block) {
+            if (!is_array($block) || (string)($block['type'] ?? '') !== 'catalog') continue;
+            $location = 'flat';
+            $data = $block;
+            if (isset($block['data']) && is_array($block['data'])) {
+                $location = 'data';
+                $data = $block['data'];
+            } elseif (isset($block['payload']) && is_array($block['payload'])) {
+                $location = 'payload';
+                $data = $block['payload'];
+            }
+
+            $metadata = $catalogs->publicMetadata((int)($data['pdf_media_id'] ?? 0));
+            if (is_array($metadata)) {
+                $toAbsolute = static function (string $url) use ($cmsBaseUrl, $cmsPath): string {
+                    return rtrim($cmsBaseUrl, '/') . $cmsPath . '/' . ltrim($url, '/');
+                };
+                $data['catalog_status'] = (string)($metadata['status'] ?? '');
+                $data['catalog_ready'] = !empty($metadata['ready']);
+                $data['page_count'] = (string)((int)($metadata['page_count'] ?? 0));
+                $data['pdf_url'] = $toAbsolute((string)($metadata['pdf_url'] ?? ''));
+                $data['page_url_template'] = $toAbsolute((string)($metadata['page_url_template'] ?? ''));
+            }
+
+            if ($location === 'data') $block['data'] = $data;
+            elseif ($location === 'payload') $block['payload'] = $data;
+            else $block = $data;
+            $blocks[$index] = $block;
+        }
         return $blocks;
     }
 
