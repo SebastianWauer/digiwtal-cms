@@ -10,13 +10,8 @@ final class PageRepositoryDb implements PageRepositoryInterface
     public function __construct(private PDO $pdo) {}
 
     /**
-     * pages_list Sortierung:
-     * 1) Live vor Draft
-     * 2) Innerhalb Live: Header -> Footer -> keine Zuordnung
-     *    - beides ('both') zählt als Header
-     *    - keine Zuordnung: nav_visible = 0 (oder nav_area leer)
-     * 3) Position (nav_order) innerhalb Header/Footer
-     * 4) Stabil: is_home DESC, slug ASC
+     * Seitenuebersicht: Startseite, Header, Footer, ohne Navigation, Entwuerfe.
+     * "Header & Footer" wird ausschliesslich in der Header-Gruppe einsortiert.
      */
     public function listActive(): array
     {
@@ -29,24 +24,17 @@ final class PageRepositoryDb implements PageRepositoryInterface
             FROM pages
             WHERE is_deleted = 0
             ORDER BY
-              CASE WHEN status = 'live' THEN 0 ELSE 1 END ASC,
-
               CASE
-                WHEN status = 'live' THEN
-                  CASE
-                    WHEN nav_visible = 1 AND (nav_area = 'header' OR nav_area = 'both') THEN 0
-                    WHEN nav_visible = 1 AND nav_area = 'footer' THEN 1
-                    ELSE 2
-                  END
+                WHEN is_home = 1 THEN 0
+                WHEN status = 'draft' THEN 4
+                WHEN nav_visible = 1 AND (nav_area = 'header' OR nav_area = 'both') THEN 1
+                WHEN nav_visible = 1 AND nav_area = 'footer' THEN 2
                 ELSE 3
               END ASC,
-
               CASE
-                WHEN status = 'live' AND nav_visible = 1 AND nav_order > 0 THEN nav_order
+                WHEN nav_visible = 1 AND nav_order > 0 THEN nav_order
                 ELSE 999999
               END ASC,
-
-              is_home DESC,
               slug ASC
         ");
         $rows = $stmt->fetchAll();
@@ -54,18 +42,22 @@ final class PageRepositoryDb implements PageRepositoryInterface
     }
 
     /**
-     * Globale Reihenfolge aller Seiten, die in einer Navigation erscheinen.
-     * Der Bereich wird absichtlich nicht gruppiert: nav_order ist ein globales Feld
-     * und bestimmt damit die relative Reihenfolge in Header, Footer und API.
+     * Reihenfolge eines Navigationsbereichs. "both" gehoert beim Sortieren zum
+     * Header und wird bewusst nicht ein zweites Mal im Footer angeboten.
      */
-    public function listNavigationOrder(): array
+    public function listNavigationOrder(string $area): array
     {
+        $area = $area === 'footer' ? 'footer' : 'header';
+        $areaSql = $area === 'footer'
+            ? "nav_area = 'footer'"
+            : "nav_area IN ('header', 'both')";
         $stmt = $this->pdo->query("
             SELECT
               id, slug, title, nav_label, nav_area, nav_order, status
             FROM pages
             WHERE is_deleted = 0
               AND nav_visible = 1
+              AND {$areaSql}
             ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, id ASC
         ");
         $rows = $stmt->fetchAll();

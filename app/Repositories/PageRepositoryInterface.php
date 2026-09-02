@@ -6,7 +6,7 @@ namespace App\Repositories;
 interface PageRepositoryInterface
 {
     public function listActive(): array;
-    public function listNavigationOrder(): array;
+    public function listNavigationOrder(string $area): array;
     public function listDeleted(): array;
     public function countDeleted(): int;
     public function listAll(): array;

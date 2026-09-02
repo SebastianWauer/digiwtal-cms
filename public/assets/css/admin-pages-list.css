@@ -14,34 +14,82 @@
   overflow: hidden;
 }
 
-.pages-order-card{
-  margin-bottom: 18px;
-  padding: 18px;
+.pages-order-modal[hidden]{ display: none; }
+
+.pages-order-modal{
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+.pages-order-modal__backdrop{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(0,0,0,.68);
+  cursor: default;
+}
+
+.pages-order-modal__dialog{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: min(82vh, 820px);
+  padding: 20px;
   border: 1px solid var(--card-border);
-  border-radius: 16px;
+  border-radius: 18px;
   background: var(--card);
+  box-shadow: 0 24px 80px rgba(0,0,0,.45);
 }
 
-.pages-order-head h2{
-  margin: 0;
-  font-size: 18px;
+.pages-order-modal__head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 15px;
 }
 
-.pages-order-head p{
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
+.pages-order-modal__head h2{ margin: 0; font-size: 20px; }
+.pages-order-modal__head p{ margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+
+.pages-order-modal__close{
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 22px;
+  cursor: pointer;
 }
 
-.pages-order-form{ margin-top: 14px; }
+.pages-order-modal__close:hover{ background: var(--btn-hover); }
+body.pages-order-modal-open{ overflow: hidden; }
+
+.pages-order-form{
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
 
 .pages-order-list{
   display: grid;
   gap: 8px;
+  min-height: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-y: auto;
 }
 
 .pages-order-item{
@@ -59,7 +107,6 @@
 
 .pages-order-item[draggable="true"]{ cursor: grab; }
 .pages-order-item[draggable="true"]:active{ cursor: grabbing; }
-.pages-order-item.is-readonly{ grid-template-columns: 34px minmax(0, 1fr); }
 .pages-order-item.is-dragging{
   opacity: .45;
   border-color: var(--accent, #c41e3a);
@@ -147,11 +194,12 @@
   align-items: center;
   justify-content: flex-end;
   gap: 14px;
-  margin-top: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--card-border);
 }
 
 .pages-order-empty{
-  margin-top: 14px;
   padding: 14px;
   border: 1px dashed var(--card-border);
   border-radius: 12px;
@@ -196,6 +244,7 @@
 
 /* Spalten */
 .pages-col-start{ width: 110px; text-align:center; }
+.pages-col-navigation{ width: 155px; text-align:center; }
 .pages-col-status{ width: 110px; text-align:center; }
 .pages-col-actions{ width: 190px; text-align:center; }
 .pages-col-updated{ width: 190px; }
@@ -219,6 +268,24 @@
 }
 
 .pages-nowrap{ white-space: nowrap; }
+
+.pages-nav-badge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  padding: 5px 9px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.pages-nav-badge--header{ color: #60a5fa; border-color: rgba(96,165,250,.4); }
+.pages-nav-badge--footer{ color: #a78bfa; border-color: rgba(167,139,250,.4); }
+.pages-nav-badge--both{ color: #34d399; border-color: rgba(52,211,153,.4); }
+.pages-nav-badge--none{ color: var(--muted); }
 
 
 
@@ -297,6 +364,12 @@ html[data-theme="light"] .pages-badge--deleted{
   gap: 10px;
 }
 
+.pages-actions-left{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
 .pages-hint{
   color: var(--muted);
   font-size: 13px;
@@ -305,6 +378,11 @@ html[data-theme="light"] .pages-badge--deleted{
 .pages-col-start,
 .pages-table thead th.pages-col-start{
   width: 110px;
+  text-align: center;
+}
+
+.pages-table thead th.pages-col-navigation,
+.pages-table tbody td.pages-col-navigation{
   text-align: center;
 }
 
@@ -331,11 +409,12 @@ html[data-theme="light"] .pages-badge--deleted{
   }
 
   .pages-table{
-    min-width: 760px;
+    min-width: 920px;
   }
 
-  .pages-order-card{ padding: 14px; }
+  .pages-order-modal{ padding: 10px; }
+  .pages-order-modal__dialog{ max-height: 92vh; padding: 15px; }
   .pages-order-item{ grid-template-columns: 32px minmax(0, 1fr) auto; }
   .pages-order-handle{ display: none; }
-  .pages-order-save{ align-items: stretch; flex-direction: column; }
+  .pages-order-save{ align-items: stretch; flex-direction: column-reverse; }
 }

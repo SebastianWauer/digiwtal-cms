@@ -307,7 +307,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
               <div class="pages-edit-field">
                 <div class="pages-edit-field-label">Reihenfolge</div>
                 <div class="pages-edit-field-hint">
-                  Die gesamte Reihenfolge wird zentral in der Seitenübersicht sortiert. Neue Navigationseinträge werden automatisch am Ende ergänzt.
+                  Header und Footer werden getrennt über die Sortier-Popups in der Seitenübersicht angeordnet. „Header & Footer“ wird dabei nur im Header sortiert.
                 </div>
               </div>
             </div>

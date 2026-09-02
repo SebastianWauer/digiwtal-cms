@@ -937,7 +937,8 @@ final class PagesController
         [$user, $theme, $_pdo, $repo] = $this->deps($user);
 
         $rows = $repo->listActive();
-        $navigationRows = $repo->listNavigationOrder();
+        $headerNavigationRows = $repo->listNavigationOrder('header');
+        $footerNavigationRows = $repo->listNavigationOrder('footer');
         $deletedCount = $repo->countDeleted();
         $flash = $_SESSION['flash'] ?? null;
         unset($_SESSION['flash']);
@@ -1142,9 +1143,12 @@ final class PagesController
         $navArea    = (string)($_POST['nav_area'] ?? 'header');
         $navOrder = is_array($existing) ? max(0, (int)($existing['nav_order'] ?? 0)) : 0;
         $wasNavigationItem = is_array($existing) && (int)($existing['nav_visible'] ?? 0) === 1;
-        if ($navVisible && (!$wasNavigationItem || $navOrder <= 0)) {
-            // Neue Navigationseintraege immer eindeutig hinten anhaengen.
-            $navOrder = $this->nextNavigationOrder($_pdo);
+        $oldNavArea = is_array($existing) ? (string)($existing['nav_area'] ?? 'header') : 'header';
+        $oldSortArea = $oldNavArea === 'footer' ? 'footer' : 'header';
+        $newSortArea = $navArea === 'footer' ? 'footer' : 'header';
+        if ($navVisible && (!$wasNavigationItem || $navOrder <= 0 || $oldSortArea !== $newSortArea)) {
+            // Neue oder in den anderen Bereich verschobene Eintraege hinten anhaengen.
+            $navOrder = $this->nextNavigationOrder($_pdo, $navArea);
         }
 
         $res = $svc->save(
@@ -1245,9 +1249,14 @@ final class PagesController
         \admin_layout_end();
     }
 
-    private function nextNavigationOrder(\PDO $pdo): int
+    private function nextNavigationOrder(\PDO $pdo, string $area): int
     {
-        $max = (int)$pdo->query("SELECT COALESCE(MAX(nav_order), 0) FROM pages WHERE is_deleted = 0 AND nav_visible = 1")->fetchColumn();
+        $areaSql = $area === 'footer'
+            ? "nav_area = 'footer'"
+            : "nav_area IN ('header', 'both')";
+        $max = (int)$pdo->query(
+            "SELECT COALESCE(MAX(nav_order), 0) FROM pages WHERE is_deleted = 0 AND nav_visible = 1 AND {$areaSql}"
+        )->fetchColumn();
         return max(0, $max) + 10;
     }
 
@@ -1263,6 +1272,13 @@ final class PagesController
         }
 
         \admin_verify_csrf();
+
+        $area = (string)($_POST['navigation_area'] ?? '');
+        if (!in_array($area, ['header', 'footer'], true)) {
+            $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Unbekannter Navigationsbereich.'];
+            header('Location: ' . cms_base_path() . '/pages');
+            exit;
+        }
 
         $decoded = json_decode((string)($_POST['navigation_order'] ?? ''), true);
         $orderedIds = [];
@@ -1283,7 +1299,7 @@ final class PagesController
 
         $expectedIds = array_values(array_map(
             static fn(array $row): int => (int)($row['id'] ?? 0),
-            $repo->listNavigationOrder()
+            $repo->listNavigationOrder($area)
         ));
         $submittedSet = $orderedIds;
         $expectedSet = $expectedIds;
@@ -1311,7 +1327,10 @@ final class PagesController
                 $position += 10;
             }
             $pdo->commit();
-            $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Navigationsreihenfolge gespeichert.'];
+            $_SESSION['flash'] = [
+                'type' => 'ok',
+                'msg' => ($area === 'header' ? 'Header' : 'Footer') . '-Reihenfolge gespeichert.',
+            ];
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Navigationsreihenfolge konnte nicht gespeichert werden.'];
