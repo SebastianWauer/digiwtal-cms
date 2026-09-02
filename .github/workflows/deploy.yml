@@ -174,7 +174,7 @@ jobs:
           # und storage/ auf dem Zielserver loeschen.
           COMMON="--archive --compress --delete --human-readable
             --exclude=.git/ --exclude=.github/ --exclude=.env --exclude=.claude/
-            --exclude=storage/ --exclude=vendor/ --exclude=node_modules/
+            --exclude=storage/ --exclude=/vendor/ --exclude=node_modules/
             --exclude=secrets/ --exclude=keys/ --exclude=*.zip --exclude=upload.sh"
 
           echo "::group::CMS"
