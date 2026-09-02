@@ -404,25 +404,35 @@ final class PagesController
     private function enrichBlocksWithPageIconsFromDb(\PDO $pdo, array $blocks): array
     {
         $stmt = $pdo->query("
-            SELECT id, slug, page_icon_media_id
+            SELECT id, slug, page_icon_media_id, nav_visible, nav_order
             FROM pages
             WHERE is_deleted = 0
         ");
         $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
         $byId = [];
         $bySlug = [];
+        $orderById = [];
+        $orderBySlug = [];
         foreach (is_array($rows) ? $rows : [] as $row) {
             if (!is_array($row)) continue;
             $mediaId = (int)($row['page_icon_media_id'] ?? 0);
-            if ($mediaId <= 0) continue;
             $pageId = (int)($row['id'] ?? 0);
             $pageSlug = '/' . trim((string)($row['slug'] ?? ''), '/');
-            if ($pageId > 0) $byId[$pageId] = $mediaId;
-            $bySlug[$pageSlug] = $mediaId;
+            if ($mediaId > 0) {
+                if ($pageId > 0) $byId[$pageId] = $mediaId;
+                $bySlug[$pageSlug] = $mediaId;
+            }
+            if ((int)($row['nav_visible'] ?? 0) === 1) {
+                $navOrder = max(0, (int)($row['nav_order'] ?? 0));
+                if ($navOrder <= 0) $navOrder = PHP_INT_MAX;
+                if ($pageId > 0) $orderById[$pageId] = $navOrder;
+                $orderBySlug[$pageSlug] = $navOrder;
+            }
         }
 
         $cmsBaseUrl = $this->cmsBaseUrlFromRequest();
-        $enrichItems = function (array $items) use ($byId, $bySlug, $cmsBaseUrl): array {
+        $enrichItems = function (array $items) use ($byId, $bySlug, $orderById, $orderBySlug, $cmsBaseUrl): array {
+            $items = array_values(array_filter($items, 'is_array'));
             foreach ($items as $index => $item) {
                 if (!is_array($item)) continue;
                 $pageId = (int)($item['page_id'] ?? 0);
@@ -433,9 +443,20 @@ final class PagesController
                 } else {
                     unset($item['page_icon_url']);
                 }
+                $item['_cms_nav_order'] = $orderById[$pageId] ?? $orderBySlug[$pageSlug] ?? PHP_INT_MAX;
+                $item['_cms_original_index'] = (int)$index;
                 $items[$index] = $item;
             }
-            return $items;
+            usort($items, static function (array $a, array $b): int {
+                $orderCompare = ((int)($a['_cms_nav_order'] ?? PHP_INT_MAX)) <=> ((int)($b['_cms_nav_order'] ?? PHP_INT_MAX));
+                return $orderCompare !== 0
+                    ? $orderCompare
+                    : ((int)($a['_cms_original_index'] ?? 0) <=> (int)($b['_cms_original_index'] ?? 0));
+            });
+            return array_map(static function (array $item): array {
+                unset($item['_cms_nav_order'], $item['_cms_original_index']);
+                return $item;
+            }, $items);
         };
 
         foreach ($blocks as $index => $block) {
@@ -497,7 +518,7 @@ final class PagesController
             SELECT id, nav_label, slug, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE is_deleted = 0 AND status = 'live' AND nav_visible = 1
-            ORDER BY nav_order ASC, id ASC
+            ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, id ASC
         ");
         $rows = $stmt ? $stmt->fetchAll() : [];
         if (!is_array($rows)) {
@@ -916,8 +937,10 @@ final class PagesController
         [$user, $theme, $_pdo, $repo] = $this->deps($user);
 
         $rows = $repo->listActive();
+        $navigationRows = $repo->listNavigationOrder();
         $deletedCount = $repo->countDeleted();
-        $flash = null;
+        $flash = $_SESSION['flash'] ?? null;
+        unset($_SESSION['flash']);
 
         \admin_layout_begin([
             'title'    => 'Seiten',
@@ -1081,6 +1104,7 @@ final class PagesController
         $postedStatus = (string)($_POST['status'] ?? 'live');
         if (!in_array($postedStatus, ['live', 'draft'], true)) $postedStatus = 'live';
 
+        $existing = null;
         if ($id > 0) {
             $existing = $repo->findById($id);
             $oldStatus = is_array($existing) ? (string)($existing['status'] ?? 'live') : 'live';
@@ -1116,12 +1140,12 @@ final class PagesController
         $navLabel   = (string)($_POST['nav_label'] ?? '');
         $pageIconMediaId = max(0, (int)($_POST['page_icon_media_id'] ?? 0));
         $navArea    = (string)($_POST['nav_area'] ?? 'header');
-        $navOrder   = (int)($_POST['nav_order'] ?? 0);
-        $navPlaceMode = (string)($_POST['nav_place_mode'] ?? 'after');
-        if (!in_array($navPlaceMode, ['before', 'after'], true)) {
-            $navPlaceMode = 'after';
+        $navOrder = is_array($existing) ? max(0, (int)($existing['nav_order'] ?? 0)) : 0;
+        $wasNavigationItem = is_array($existing) && (int)($existing['nav_visible'] ?? 0) === 1;
+        if ($navVisible && (!$wasNavigationItem || $navOrder <= 0)) {
+            // Neue Navigationseintraege immer eindeutig hinten anhaengen.
+            $navOrder = $this->nextNavigationOrder($_pdo);
         }
-        $navPlaceRef = (int)($_POST['nav_place_ref'] ?? 0);
 
         $res = $svc->save(
             $id > 0 ? $id : null,
@@ -1142,11 +1166,6 @@ final class PagesController
         $id2   = (int)($res['id'] ?? 0);
         $flash = $res['flash'] ?? null;
 
-        if (!empty($_POST['save_return']) && $id2 > 0) {
-            header('Location: ' . cms_base_path() . '/pages');
-            exit;
-        }
-        
         $seoSvc = new SeoService(new SeoRepositoryDb($_pdo), new SiteSettingsRepositoryDb($_pdo));
 
         if (($res['ok'] ?? false) && $id2 > 0) {
@@ -1164,10 +1183,12 @@ final class PagesController
                 'og_description'   => $_POST['seo_og_description']   ?? '',
                 'og_image_url'     => $_POST['seo_og_image_url']     ?? '',
             ]);
+        }
 
-            if ($navVisible && $navPlaceRef > 0) {
-                $this->reorderNavigation($_pdo, $repo, $id2, $navArea, $navPlaceRef, $navPlaceMode);
-            }
+        if (!empty($_POST['save_return']) && ($res['ok'] ?? false) && $id2 > 0) {
+            $_SESSION['flash'] = is_array($flash) ? $flash : ['type' => 'ok', 'msg' => 'Seite gespeichert.'];
+            header('Location: ' . cms_base_path() . '/pages');
+            exit;
         }
 
         $page = $id2 > 0 ? $repo->findById($id2) : null;
@@ -1203,8 +1224,6 @@ final class PagesController
                 'page_icon_media_id' => $pageIconMediaId,
                 'nav_area'       => $navArea,
                 'nav_order'      => $navOrder,
-                '_nav_place_mode'=> $navPlaceMode,
-                '_nav_place_ref' => $navPlaceRef,
             ];
         }
 
@@ -1226,54 +1245,80 @@ final class PagesController
         \admin_layout_end();
     }
 
-    private function navAppearsInArea(array $row, string $area): bool
+    private function nextNavigationOrder(\PDO $pdo): int
     {
-        if ((int)($row['is_deleted'] ?? 0) !== 0) return false;
-        if ((int)($row['nav_visible'] ?? 0) !== 1) return false;
-        $a = (string)($row['nav_area'] ?? 'header');
-        return $a === $area || $a === 'both';
+        $max = (int)$pdo->query("SELECT COALESCE(MAX(nav_order), 0) FROM pages WHERE is_deleted = 0 AND nav_visible = 1")->fetchColumn();
+        return max(0, $max) + 10;
     }
 
-    private function reorderNavigation(
-        \PDO $pdo,
-        PageRepositoryDb $repo,
-        int $pageId,
-        string $navArea,
-        int $refId,
-        string $mode
-    ): void {
-        $baseArea = in_array($navArea, ['header', 'footer'], true) ? $navArea : 'header';
-        $rows = $repo->listActive();
+    public function saveNavigationOrder(): void
+    {
+        $user = \admin_require_perm('pages.edit');
+        [$user, $_theme, $pdo, $repo] = $this->deps($user);
 
-        $ordered = [];
-        foreach ($rows as $row) {
-            if (!is_array($row)) continue;
-            if (!$this->navAppearsInArea($row, $baseArea)) continue;
-            $rid = (int)($row['id'] ?? 0);
-            if ($rid > 0) $ordered[] = $rid;
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            http_response_code(405);
+            echo 'Method Not Allowed';
+            return;
         }
 
-        $ordered = array_values(array_filter($ordered, static fn(int $id): bool => $id !== $pageId));
-        if (!in_array($pageId, $ordered, true)) {
-            $ordered[] = $pageId;
+        \admin_verify_csrf();
+
+        $decoded = json_decode((string)($_POST['navigation_order'] ?? ''), true);
+        $orderedIds = [];
+        if (is_array($decoded)) {
+            foreach ($decoded as $value) {
+                if (!is_int($value) && !(is_string($value) && ctype_digit($value))) {
+                    $orderedIds = [];
+                    break;
+                }
+                $id = (int)$value;
+                if ($id <= 0 || in_array($id, $orderedIds, true)) {
+                    $orderedIds = [];
+                    break;
+                }
+                $orderedIds[] = $id;
+            }
         }
 
-        $refPos = array_search($refId, $ordered, true);
-        if ($refPos !== false) {
-            $ordered = array_values(array_filter($ordered, static fn(int $id): bool => $id !== $pageId));
-            $insertPos = ($mode === 'before') ? (int)$refPos : ((int)$refPos + 1);
-            array_splice($ordered, $insertPos, 0, [$pageId]);
+        $expectedIds = array_values(array_map(
+            static fn(array $row): int => (int)($row['id'] ?? 0),
+            $repo->listNavigationOrder()
+        ));
+        $submittedSet = $orderedIds;
+        $expectedSet = $expectedIds;
+        sort($submittedSet);
+        sort($expectedSet);
+
+        if ($submittedSet !== $expectedSet) {
+            $_SESSION['flash'] = [
+                'type' => 'error',
+                'msg' => 'Die Navigationsseiten haben sich geaendert. Bitte Reihenfolge neu laden und erneut speichern.',
+            ];
+            header('Location: ' . cms_base_path() . '/pages');
+            exit;
         }
 
-        $upd = $pdo->prepare('UPDATE pages SET nav_order = :nav_order WHERE id = :id LIMIT 1');
-        $n = 10;
-        foreach ($ordered as $rid) {
-            $upd->execute([
-                ':nav_order' => $n,
-                ':id' => $rid,
-            ]);
-            $n += 10;
+        try {
+            $pdo->beginTransaction();
+            $update = $pdo->prepare('UPDATE pages SET nav_order = :nav_order WHERE id = :id AND is_deleted = 0 AND nav_visible = 1 LIMIT 1');
+            $position = 10;
+            foreach ($orderedIds as $pageId) {
+                $update->execute([':nav_order' => $position, ':id' => $pageId]);
+                if ($update->rowCount() > 1) {
+                    throw new \RuntimeException('Unerwartete Anzahl aktualisierter Seiten.');
+                }
+                $position += 10;
+            }
+            $pdo->commit();
+            $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Navigationsreihenfolge gespeichert.'];
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $_SESSION['flash'] = ['type' => 'error', 'msg' => 'Navigationsreihenfolge konnte nicht gespeichert werden.'];
         }
+
+        header('Location: ' . cms_base_path() . '/pages');
+        exit;
     }
 
     public function delete(): void

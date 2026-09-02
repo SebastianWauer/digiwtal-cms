@@ -25,10 +25,6 @@ $navVisible = !empty($page['nav_visible']);
 $navLabel   = (string)($page['nav_label'] ?? '');
 $pageIconMediaId = (int)($page['page_icon_media_id'] ?? 0);
 $navArea    = (string)($page['nav_area'] ?? 'header');
-$navOrder   = (int)($page['nav_order'] ?? 0);
-$navPlaceMode = (string)($page['_nav_place_mode'] ?? 'after');
-if (!in_array($navPlaceMode, ['before', 'after'], true)) $navPlaceMode = 'after';
-$navPlaceRef = (int)($page['_nav_place_ref'] ?? 0);
 
 // Meta (008_pages_meta.sql)
 $frontendTitle = (string)($page['frontend_title'] ?? '');
@@ -123,6 +119,8 @@ foreach ($navCandidates as $candidate) {
         'slug' => $candidateSlug,
         'title' => $candidateTitle,
         'status' => (string)($candidate['status'] ?? 'live'),
+        'nav_visible' => (int)($candidate['nav_visible'] ?? 0) === 1,
+        'nav_order' => max(0, (int)($candidate['nav_order'] ?? 0)),
     ];
 }
 $pagePickerOptionsJson = json_encode(
@@ -281,9 +279,9 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         <details class="pages-edit-collapsible" open>
           <summary class="pages-edit-collapsible__summary">
             <span class="pages-edit-card-title">Navigation</span>
-            <span class="pages-edit-collapsible__meta">Sichtbarkeit & Reihenfolge</span>
+            <span class="pages-edit-collapsible__meta">Sichtbarkeit & Bereich</span>
           </summary>
-          <div class="pages-edit-card-sub">Sichtbarkeit, Bereich, Label und Position dieser Seite.</div>
+          <div class="pages-edit-card-sub">Sichtbarkeit, Bereich und Label dieser Seite.</div>
           <div class="pages-edit-fields">
             <label class="pages-edit-check">
               <input type="checkbox" name="nav_visible" value="1" <?= $navVisible ? 'checked' : '' ?> <?= $canSave ? '' : 'disabled' ?>>
@@ -307,31 +305,12 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
               </div>
 
               <div class="pages-edit-field">
-                <div class="pages-edit-field-label">Einordnen</div>
-                <div class="pages-edit-grid2 pages-edit-grid2--compact">
-                  <select class="pages-edit-input" name="nav_place_mode" <?= $canSave ? '' : 'disabled' ?>>
-                    <option value="before" <?= $navPlaceMode === 'before' ? 'selected' : '' ?>>vor</option>
-                    <option value="after" <?= $navPlaceMode === 'after' ? 'selected' : '' ?>>hinter</option>
-                  </select>
-                  <select class="pages-edit-input" name="nav_place_ref" <?= $canSave ? '' : 'disabled' ?>>
-                    <option value="0">am Ende</option>
-                    <?php foreach ($navCandidates as $cand): ?>
-                      <?php
-                        if (!is_array($cand)) continue;
-                        $cid = (int)($cand['id'] ?? 0);
-                        if ($cid <= 0 || $cid === (int)$id) continue;
-                        if ((int)($cand['nav_visible'] ?? 0) !== 1) continue;
-                        $clabel = (string)($cand['nav_label'] ?? '');
-                        if ($clabel === '') $clabel = (string)($cand['title'] ?? ('Seite #' . $cid));
-                      ?>
-                      <option value="<?= $cid ?>" <?= $navPlaceRef === $cid ? 'selected' : '' ?>><?= h($clabel) ?></option>
-                    <?php endforeach; ?>
-                  </select>
+                <div class="pages-edit-field-label">Reihenfolge</div>
+                <div class="pages-edit-field-hint">
+                  Die gesamte Reihenfolge wird zentral in der Seitenübersicht sortiert. Neue Navigationseinträge werden automatisch am Ende ergänzt.
                 </div>
-                <div class="pages-edit-field-hint">Reihenfolge ohne Zahlenfeld: vor/hinter vorhandene Navigation setzen.</div>
               </div>
             </div>
-            <input type="hidden" name="nav_order" value="<?= (int)$navOrder ?>">
 
             <div class="pages-edit-field">
               <div class="pages-edit-field-label">Label</div>
@@ -907,8 +886,6 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       nav_label: valueOf('nav_label'),
       page_icon_media_id: valueOf('page_icon_media_id'),
       nav_area: valueOf('nav_area'),
-      nav_place_mode: valueOf('nav_place_mode'),
-      nav_place_ref: valueOf('nav_place_ref'),
       content_json: contentInput ? contentInput.value : '{"blocks":[]}',
       seo_meta_title: valueOf('seo_meta_title'),
       seo_meta_description: valueOf('seo_meta_description'),
@@ -1644,12 +1621,28 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       text: String(item && item.text ? item.text : ''),
     }));
 
+    const carouselOrder = (item) => {
+      const page = PAGE_OPTIONS.find((option) =>
+        (Number(item.page_id || 0) > 0 && Number(option.id || 0) === Number(item.page_id || 0))
+        || (String(item.page_slug || '') !== '' && String(option.slug || '') === String(item.page_slug || ''))
+      );
+      const order = page && page.nav_visible ? Number(page.nav_order || 0) : 0;
+      return order > 0 ? order : Number.MAX_SAFE_INTEGER;
+    };
+    const sortByNavigation = () => {
+      block.data.items = block.data.items
+        .map((item, index) => ({item, index}))
+        .sort((a, b) => carouselOrder(a.item) - carouselOrder(b.item) || a.index - b.index)
+        .map((entry) => entry.item);
+    };
+    sortByNavigation();
+
     const wrapper = el('div', {class: 'pages-edit-carousel-editor'});
     const settings = el('div', {class: 'pages-edit-fields'});
     if (fields.headline) settings.appendChild(renderField(block, 'headline', fields.headline));
     settings.appendChild(el('div', {
       class: 'pages-edit-field-hint',
-      html: 'Jede Folie verlinkt eine CMS-Seite und erhält ein eigenes Bild sowie einen eigenen Beschreibungstext.'
+      html: 'Jede Folie verlinkt eine CMS-Seite und erhält ein eigenes Bild sowie einen eigenen Beschreibungstext. Die Reihenfolge folgt automatisch der Navigationsreihenfolge in der Seitenübersicht.'
     }));
     wrapper.appendChild(settings);
 
@@ -1676,32 +1669,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         head.appendChild(el('strong', {html: `Folie ${index + 1}`}));
 
         const itemActions = el('div', {class: 'pages-edit-pb-actions'});
-        const upBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '↑'});
-        const downBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '↓'});
         const removeBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--danger btn--sm', html: 'Entfernen'});
-        upBtn.disabled = !CAN_EDIT || index === 0;
-        downBtn.disabled = !CAN_EDIT || index === items.length - 1;
         removeBtn.disabled = !CAN_EDIT;
-        upBtn.addEventListener('click', () => {
-          if (!CAN_EDIT || index === 0) return;
-          [items[index - 1], items[index]] = [items[index], items[index - 1]];
-          renderItems();
-          commit();
-        });
-        downBtn.addEventListener('click', () => {
-          if (!CAN_EDIT || index >= items.length - 1) return;
-          [items[index + 1], items[index]] = [items[index], items[index + 1]];
-          renderItems();
-          commit();
-        });
         removeBtn.addEventListener('click', () => {
           if (!CAN_EDIT) return;
           items.splice(index, 1);
           renderItems();
           commit();
         });
-        itemActions.appendChild(upBtn);
-        itemActions.appendChild(downBtn);
         itemActions.appendChild(removeBtn);
         head.appendChild(itemActions);
         card.appendChild(head);
@@ -1743,6 +1718,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
             item.page_slug = '';
             item.page_title = '';
           }
+          sortByNavigation();
+          renderItems();
           commit();
         });
         pageField.appendChild(pageSelect);

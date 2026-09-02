@@ -59,6 +59,7 @@ $router->get('/pages', \App\Controller\PagesController::class, 'index');
 $router->get('/pages/edit', \App\Controller\PagesController::class, 'edit');
 $router->post('/pages/preview', \App\Controller\PagesController::class, 'preview');
 $router->post('/pages/save', \App\Controller\PagesController::class, 'save');
+$router->post('/pages/navigation-order', \App\Controller\PagesController::class, 'saveNavigationOrder');
 $router->post('/pages/delete', \App\Controller\PagesController::class, 'delete');
 $router->post('/pages/restore', \App\Controller\PagesController::class, 'restore');
 $router->get('/pages/deleted', \App\Controller\PagesController::class, 'deleted');
@@ -179,5 +180,4 @@ if (!headers_sent()) {
 }
 
 ob_end_flush();
-
 

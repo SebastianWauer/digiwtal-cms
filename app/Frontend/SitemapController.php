@@ -25,7 +25,7 @@ final class SitemapController
         $stmt  = $pdo->query(
             "SELECT slug, is_home, updated_at FROM pages
              WHERE is_deleted = 0 AND status = 'live'
-             ORDER BY nav_order ASC, id ASC"
+             ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, id ASC"
         );
         $pages = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
 

@@ -256,8 +256,8 @@ function api_db_column_exists(PDO $pdo, string $table, string $column): bool
 }
 
 /**
- * Fuegt Seiten-Karussells die aktuelle Icon-URL der jeweils verlinkten Seite hinzu.
- * Die URL wird nicht im PageBuilder dupliziert und bleibt dadurch bei Icon-Wechseln aktuell.
+ * Fuegt Seiten-Karussells die aktuelle Icon-URL der jeweils verlinkten Seite hinzu
+ * und sortiert ausgewaehlte Navigationsseiten nach ihrer zentralen Reihenfolge.
  */
 function api_enrich_page_carousel_icons(PDO $pdo, array $content): array
 {
@@ -269,21 +269,31 @@ function api_enrich_page_carousel_icons(PDO $pdo, array $content): array
     $blocks = $isWrapper ? $content['blocks'] : (array_is_list($content) ? $content : []);
     if ($blocks === []) return $content;
 
-    $stmt = $pdo->query("SELECT id, slug, page_icon_media_id FROM pages WHERE is_deleted = 0");
+    $stmt = $pdo->query("SELECT id, slug, page_icon_media_id, nav_visible, nav_order FROM pages WHERE is_deleted = 0");
     $rows = $stmt ? $stmt->fetchAll() : [];
     $byId = [];
     $bySlug = [];
+    $orderById = [];
+    $orderBySlug = [];
     foreach (is_array($rows) ? $rows : [] as $row) {
         if (!is_array($row)) continue;
         $mediaId = (int)($row['page_icon_media_id'] ?? 0);
-        if ($mediaId <= 0) continue;
         $pageId = (int)($row['id'] ?? 0);
         $pageSlug = '/' . trim((string)($row['slug'] ?? ''), '/');
-        if ($pageId > 0) $byId[$pageId] = $mediaId;
-        $bySlug[$pageSlug] = $mediaId;
+        if ($mediaId > 0) {
+            if ($pageId > 0) $byId[$pageId] = $mediaId;
+            $bySlug[$pageSlug] = $mediaId;
+        }
+        if ((int)($row['nav_visible'] ?? 0) === 1) {
+            $navOrder = max(0, (int)($row['nav_order'] ?? 0));
+            if ($navOrder <= 0) $navOrder = PHP_INT_MAX;
+            if ($pageId > 0) $orderById[$pageId] = $navOrder;
+            $orderBySlug[$pageSlug] = $navOrder;
+        }
     }
 
-    $enrichItems = static function (array $items) use ($byId, $bySlug): array {
+    $enrichItems = static function (array $items) use ($byId, $bySlug, $orderById, $orderBySlug): array {
+        $items = array_values(array_filter($items, 'is_array'));
         foreach ($items as $index => $item) {
             if (!is_array($item)) continue;
             $pageId = (int)($item['page_id'] ?? 0);
@@ -294,9 +304,20 @@ function api_enrich_page_carousel_icons(PDO $pdo, array $content): array
             } else {
                 unset($item['page_icon_url']);
             }
+            $item['_cms_nav_order'] = $orderById[$pageId] ?? $orderBySlug[$pageSlug] ?? PHP_INT_MAX;
+            $item['_cms_original_index'] = (int)$index;
             $items[$index] = $item;
         }
-        return $items;
+        usort($items, static function (array $a, array $b): int {
+            $orderCompare = ((int)($a['_cms_nav_order'] ?? PHP_INT_MAX)) <=> ((int)($b['_cms_nav_order'] ?? PHP_INT_MAX));
+            return $orderCompare !== 0
+                ? $orderCompare
+                : ((int)($a['_cms_original_index'] ?? 0) <=> (int)($b['_cms_original_index'] ?? 0));
+        });
+        return array_map(static function (array $item): array {
+            unset($item['_cms_nav_order'], $item['_cms_original_index']);
+            return $item;
+        }, $items);
     };
 
     foreach ($blocks as $index => $block) {
@@ -1043,7 +1064,7 @@ if ($sub === '/pages' && !isset($_GET['slug'])) {
         SELECT id, slug, title, nav_label, {$pageIconSelect}, nav_visible, nav_order, is_home, updated_at
         FROM pages
         WHERE is_deleted = 0 AND status = 'live'
-        ORDER BY nav_order ASC, title ASC
+        ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, title ASC
     ");
     $rows = $stmt ? $stmt->fetchAll() : [];
     if (!is_array($rows)) $rows = [];
@@ -1142,7 +1163,7 @@ if ($method === 'GET' && $sub === '/navigation') {
         SELECT id, nav_label, slug, {$pageIconSelect}, nav_area, nav_order
         FROM pages
         WHERE is_deleted = 0 AND status = 'live' AND nav_visible = 1
-        ORDER BY nav_order ASC, id ASC
+        ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, id ASC
     ");
     $rows = $stmt ? $stmt->fetchAll() : [];
     if (!is_array($rows)) $rows = [];

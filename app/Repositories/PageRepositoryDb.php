@@ -42,12 +42,31 @@ final class PageRepositoryDb implements PageRepositoryInterface
               END ASC,
 
               CASE
-                WHEN status = 'live' AND nav_visible = 1 THEN nav_order
+                WHEN status = 'live' AND nav_visible = 1 AND nav_order > 0 THEN nav_order
                 ELSE 999999
               END ASC,
 
               is_home DESC,
               slug ASC
+        ");
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Globale Reihenfolge aller Seiten, die in einer Navigation erscheinen.
+     * Der Bereich wird absichtlich nicht gruppiert: nav_order ist ein globales Feld
+     * und bestimmt damit die relative Reihenfolge in Header, Footer und API.
+     */
+    public function listNavigationOrder(): array
+    {
+        $stmt = $this->pdo->query("
+            SELECT
+              id, slug, title, nav_label, nav_area, nav_order, status
+            FROM pages
+            WHERE is_deleted = 0
+              AND nav_visible = 1
+            ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, id ASC
         ");
         $rows = $stmt->fetchAll();
         return is_array($rows) ? $rows : [];
@@ -183,7 +202,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
               AND status = 'live'
               AND nav_visible = 1
               AND (nav_area = :a OR nav_area = 'both')
-            ORDER BY nav_order ASC, slug ASC
+            ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, slug ASC
         ");
         $stmt->execute([':a' => $area]);
         $rows = $stmt->fetchAll();
@@ -201,7 +220,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
               AND status = 'live'
               AND nav_visible = 1
               AND (nav_area = :a OR nav_area = 'both')
-            ORDER BY nav_order ASC, slug ASC
+            ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, slug ASC
         ");
         $stmt->execute([':a' => $area]);
         $rows = $stmt->fetchAll();
