@@ -1516,7 +1516,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       const titleKey = `col_${i}_title`;
       const imageKey = `col_${i}_image_url`;
       const textKey = `col_${i}_text`;
-      if (!fields[titleKey] && !fields[imageKey] && !fields[textKey]) continue;
+      const linkKey = `col_${i}_link_url`;
+      if (!fields[titleKey] && !fields[imageKey] && !fields[textKey] && !fields[linkKey]) continue;
 
       const btn = el('button', {
         type: 'button',
@@ -1562,6 +1563,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       if (fields[titleKey]) panelFields.appendChild(renderField(block, titleKey, fields[titleKey]));
       if (fields[imageKey]) panelFields.appendChild(renderField(block, imageKey, fields[imageKey]));
       if (fields[textKey]) panelFields.appendChild(renderField(block, textKey, fields[textKey]));
+      if (fields[linkKey]) panelFields.appendChild(renderField(block, linkKey, fields[linkKey]));
       panel.appendChild(panelFields);
       panels.push(panel);
       panelWrap.appendChild(panel);
