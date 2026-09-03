@@ -1103,6 +1103,34 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
   font-weight: 800;
 }
 
+.pages-edit-multicol__panel.is-active{
+  display: grid;
+  gap: 12px;
+}
+
+.pages-edit-multicol__head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+}
+
+.pages-edit-multicol__add{
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
+}
+
+.pages-edit-multicol__empty{
+  padding: 18px;
+  border: 1px dashed color-mix(in srgb, var(--card-border) 78%, transparent);
+  border-radius: 12px;
+  text-align: center;
+}
+
 .pages-edit-blockcard--nested{
   margin: 0;
 }

@@ -8,15 +8,16 @@ use App\PageBuilder\BlockRegistry;
 final class ThreeColumnsLayoutBlock extends AbstractBlockType
 {
     public function type(): string { return 'three_columns_layout'; }
-    public function label(): string { return '3-Spalten Layout'; }
+    public function label(): string { return 'Mehrspalten-Layout'; }
 
     public function defaults(): array
     {
         return [
             'title' => '',
-            'left_blocks' => [],
-            'center_blocks' => [],
-            'right_blocks' => [],
+            'columns' => [
+                ['id' => 'column-1', 'blocks' => []],
+                ['id' => 'column-2', 'blocks' => []],
+            ],
         ];
     }
 
@@ -30,9 +31,37 @@ final class ThreeColumnsLayoutBlock extends AbstractBlockType
     public function validate(array $data): array
     {
         $clean = parent::validate($data);
-        $clean['left_blocks'] = $this->normalizeNestedBlocks($data['left_blocks'] ?? []);
-        $clean['center_blocks'] = $this->normalizeNestedBlocks($data['center_blocks'] ?? []);
-        $clean['right_blocks'] = $this->normalizeNestedBlocks($data['right_blocks'] ?? []);
+        $rawColumns = $data['columns'] ?? null;
+
+        // Bestehende 3-Spalten-Bloecke ohne Inhaltsverlust uebernehmen.
+        if (!is_array($rawColumns)) {
+            $rawColumns = [
+                ['id' => 'legacy-left', 'blocks' => $data['left_blocks'] ?? []],
+                ['id' => 'legacy-center', 'blocks' => $data['center_blocks'] ?? []],
+                ['id' => 'legacy-right', 'blocks' => $data['right_blocks'] ?? []],
+            ];
+        }
+
+        $columns = [];
+        foreach (array_slice($rawColumns, 0, 12) as $index => $column) {
+            if (!is_array($column)) {
+                continue;
+            }
+            $id = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($column['id'] ?? '')) ?: ('column-' . ($index + 1));
+            $columns[] = [
+                'id' => substr($id, 0, 80),
+                'blocks' => $this->normalizeNestedBlocks($column['blocks'] ?? []),
+            ];
+        }
+        if ($columns === []) {
+            $columns[] = ['id' => 'column-1', 'blocks' => []];
+        }
+
+        $clean['columns'] = $columns;
+        // Alte Frontends koennen die ersten drei Spalten weiterhin darstellen.
+        $clean['left_blocks'] = $columns[0]['blocks'] ?? [];
+        $clean['center_blocks'] = $columns[1]['blocks'] ?? [];
+        $clean['right_blocks'] = $columns[2]['blocks'] ?? [];
         return $clean;
     }
 

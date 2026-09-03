@@ -65,7 +65,7 @@ $preferredBlockLabels = [
     'page_carousel' => 'Seiten-Karussell',
     'catalog' => 'Blätterkatalog',
     'columns' => 'Kacheln',
-    'three_columns_layout' => '3-Spalten Layout',
+    'three_columns_layout' => 'Mehrspalten-Layout',
     'cta' => 'Call-to-Action',
     'faq' => 'FAQ',
     'video' => 'Video',
@@ -1350,7 +1350,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const panelWrap = el('div', {class: 'pages-edit-block-tabs__panels'});
 
     const contentKeys = ['title', 'subtitle', 'intro', 'text'];
-    const imageKeys = ['image_url', 'image_size', 'image_position', 'image_caption', 'image_credit', 'media_id', 'focus_x', 'focus_y'];
+    const imageKeys = ['image_url', 'image_position', 'image_caption', 'image_credit', 'media_id', 'focus_x', 'focus_y'];
 
     const known = new Set([...contentKeys, ...imageKeys]);
     const remaining = Object.keys(fields).filter((k) => !known.has(k));
@@ -2098,95 +2098,154 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     return renderBlockFields(block);
   }
 
-  function renderThreeColumnsLayoutFields(block) {
-    const wrapper = el('div', {class: 'pages-edit-block-tabs'});
-    const settingsWrap = el('div', {class: 'pages-edit-fields'});
+  function renderThreeColumnsLayoutFields(block, initialTab = 'settings') {
+    if (!block.data || typeof block.data !== 'object') block.data = {};
+
+    if (!Array.isArray(block.data.columns)) {
+      block.data.columns = [
+        {id: 'legacy-left', blocks: Array.isArray(block.data.left_blocks) ? block.data.left_blocks : []},
+        {id: 'legacy-center', blocks: Array.isArray(block.data.center_blocks) ? block.data.center_blocks : []},
+        {id: 'legacy-right', blocks: Array.isArray(block.data.right_blocks) ? block.data.right_blocks : []},
+      ];
+      delete block.data.left_blocks;
+      delete block.data.center_blocks;
+      delete block.data.right_blocks;
+    }
+
+    block.data.columns = block.data.columns.slice(0, 12).map((column, index) => {
+      const source = column && typeof column === 'object' ? column : {};
+      const id = String(source.id || `column-${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `column-${index + 1}`;
+      const holder = {data: {blocks: Array.isArray(source.blocks) ? source.blocks : []}};
+      return {id, blocks: ensureNestedBuilderBlocks(holder, 'blocks')};
+    });
+    if (block.data.columns.length === 0) {
+      block.data.columns.push({id: uuid(), blocks: []});
+    }
+
+    const syncLegacyColumns = () => {
+      block.data.left_blocks = block.data.columns[0] ? block.data.columns[0].blocks : [];
+      block.data.center_blocks = block.data.columns[1] ? block.data.columns[1].blocks : [];
+      block.data.right_blocks = block.data.columns[2] ? block.data.columns[2].blocks : [];
+    };
+    syncLegacyColumns();
+
+    const wrapper = el('div', {class: 'pages-edit-block-tabs pages-edit-multicol'});
     const fields = (defs.three_columns_layout && defs.three_columns_layout.fields && typeof defs.three_columns_layout.fields === 'object')
       ? defs.three_columns_layout.fields
       : {};
-
-    if (fields.title) {
-      settingsWrap.appendChild(renderField(block, 'title', fields.title));
-    }
-
     const childTypes = Object.keys(defs).filter((type) => type !== 'three_columns_layout');
-    const columns = [
-      { key: 'left_blocks', label: 'Linke Spalte' },
-      { key: 'center_blocks', label: 'Mittlere Spalte' },
-      { key: 'right_blocks', label: 'Rechte Spalte' },
-    ];
+    const tabBar = el('div', {class: 'pages-edit-block-tabs__bar'});
+    const panelWrap = el('div', {class: 'pages-edit-block-tabs__panels'});
+    const buttons = [];
+    const panels = [];
 
-    const columnsGrid = el('div', {class: 'pages-edit-threecols'});
+    const refresh = (tab = 'settings') => {
+      syncLegacyColumns();
+      serialize();
+      wrapper.replaceWith(renderThreeColumnsLayoutFields(block, tab));
+    };
 
-    const makeAddButtons = (targetList) => {
-      const actions = el('div', {class: 'pages-edit-pb-actions'});
+    const activateTab = (tab) => {
+      let matched = false;
+      buttons.forEach((button) => {
+        const active = button.dataset.tab === tab;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+        matched = matched || active;
+      });
+      panels.forEach((panel) => {
+        const active = panel.dataset.tab === tab;
+        panel.classList.toggle('is-active', active);
+        panel.hidden = !active;
+      });
+      if (!matched && tab !== 'settings') activateTab('settings');
+    };
+
+    const addTab = (id, label, panel) => {
+      const button = el('button', {type: 'button', class: 'pages-edit-block-tabbtn', html: label});
+      button.dataset.tab = id;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', 'false');
+      button.addEventListener('click', () => activateTab(id));
+      panel.dataset.tab = id;
+      panel.setAttribute('role', 'tabpanel');
+      panel.hidden = true;
+      buttons.push(button);
+      panels.push(panel);
+      tabBar.appendChild(button);
+      panelWrap.appendChild(panel);
+    };
+
+    const settingsPanel = el('section', {class: 'pages-edit-block-tabpanel'});
+    const settingsFields = el('div', {class: 'pages-edit-fields'});
+    if (fields.title) settingsFields.appendChild(renderField(block, 'title', fields.title));
+    settingsFields.appendChild(el('div', {
+      class: 'pages-edit-field-hint',
+      html: 'Spalten werden im Frontend automatisch gleichmäßig verteilt und auf kleineren Bildschirmen passend umgebrochen.'
+    }));
+    const addColumnButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '+ Spalte hinzufügen'});
+    addColumnButton.disabled = !CAN_EDIT || block.data.columns.length >= 12;
+    addColumnButton.addEventListener('click', () => {
+      if (!CAN_EDIT || block.data.columns.length >= 12) return;
+      const column = {id: uuid(), blocks: []};
+      block.data.columns.push(column);
+      refresh(`column-${column.id}`);
+    });
+    settingsFields.appendChild(addColumnButton);
+    settingsPanel.appendChild(settingsFields);
+    addTab('settings', 'Einstellungen', settingsPanel);
+
+    const makeAddButtons = (column) => {
+      const actions = el('div', {class: 'pages-edit-pb-actions pages-edit-multicol__add'});
       childTypes.forEach((type) => {
-        const btn = el('button', {
-          type: 'button',
-          class: 'btn btn--ghost btn--sm',
-          html: `+ ${blockLabel(type)}`,
-        });
-        btn.disabled = !CAN_EDIT;
-        btn.addEventListener('click', () => {
+        const button = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: `+ ${blockLabel(type)}`});
+        button.disabled = !CAN_EDIT;
+        button.addEventListener('click', () => {
           if (!CAN_EDIT) return;
-          targetList.push({
+          column.blocks.push({
             id: uuid(),
             type,
             data: cloneData(defs[type] && defs[type].defaults ? defs[type].defaults : {}),
           });
-          render();
-          serialize();
-          openBlockEditor(block);
+          refresh(`column-${column.id}`);
         });
-        actions.appendChild(btn);
+        actions.appendChild(button);
       });
       return actions;
     };
 
-    const makeChildCard = (targetList, nestedBlock, childIndex) => {
+    const makeChildCard = (column, nestedBlock, childIndex) => {
+      const targetList = column.blocks;
       const card = el('div', {class: 'pages-edit-card pages-edit-blockcard pages-edit-blockcard--nested'});
       const head = el('div', {class: 'pages-edit-card-head'});
       const left = el('div', {class: 'pages-edit-blockhead-left'});
       left.appendChild(el('strong', {class: 'pages-edit-blockhead-title', html: blockLabel(nestedBlock.type)}));
       left.appendChild(el('span', {class: 'pages-edit-blockhead-meta', html: `(${nestedBlock.type})`}));
-
       const right = el('div', {class: 'pages-edit-blockhead-actions'});
-      const upBtn  = el('button', {type:'button', class:'btn btn--ghost btn--sm pages-edit-blockbtn', html:'↑'});
-      const dnBtn  = el('button', {type:'button', class:'btn btn--ghost btn--sm pages-edit-blockbtn', html:'↓'});
-      const delBtn = el('button', {type:'button', class:'btn btn--ghost btn--danger btn--sm pages-edit-blockbtn pages-edit-blockbtn--delete', html:'Löschen'});
-      upBtn.disabled = !CAN_EDIT || childIndex <= 0;
-      dnBtn.disabled = !CAN_EDIT || childIndex >= targetList.length - 1;
-      delBtn.disabled = !CAN_EDIT;
-
-      upBtn.addEventListener('click', () => {
-        if (!CAN_EDIT || childIndex <= 0) return;
-        const tmp = targetList[childIndex - 1];
-        targetList[childIndex - 1] = targetList[childIndex];
-        targetList[childIndex] = tmp;
-        render();
-        serialize();
-        openBlockEditor(block);
+      const upButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm pages-edit-blockbtn', html: '↑'});
+      const downButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm pages-edit-blockbtn', html: '↓'});
+      const deleteButton = el('button', {type: 'button', class: 'btn btn--ghost btn--danger btn--sm pages-edit-blockbtn pages-edit-blockbtn--delete', html: 'Löschen'});
+      upButton.disabled = !CAN_EDIT || childIndex === 0;
+      downButton.disabled = !CAN_EDIT || childIndex === targetList.length - 1;
+      deleteButton.disabled = !CAN_EDIT;
+      upButton.addEventListener('click', () => {
+        if (!CAN_EDIT || childIndex === 0) return;
+        [targetList[childIndex - 1], targetList[childIndex]] = [targetList[childIndex], targetList[childIndex - 1]];
+        refresh(`column-${column.id}`);
       });
-      dnBtn.addEventListener('click', () => {
-        if (!CAN_EDIT || childIndex >= targetList.length - 1) return;
-        const tmp = targetList[childIndex + 1];
-        targetList[childIndex + 1] = targetList[childIndex];
-        targetList[childIndex] = tmp;
-        render();
-        serialize();
-        openBlockEditor(block);
+      downButton.addEventListener('click', () => {
+        if (!CAN_EDIT || childIndex === targetList.length - 1) return;
+        [targetList[childIndex + 1], targetList[childIndex]] = [targetList[childIndex], targetList[childIndex + 1]];
+        refresh(`column-${column.id}`);
       });
-      delBtn.addEventListener('click', () => {
+      deleteButton.addEventListener('click', () => {
         if (!CAN_EDIT) return;
         targetList.splice(childIndex, 1);
-        render();
-        serialize();
-        openBlockEditor(block);
+        refresh(`column-${column.id}`);
       });
-
-      right.appendChild(upBtn);
-      right.appendChild(dnBtn);
-      right.appendChild(delBtn);
+      right.appendChild(upButton);
+      right.appendChild(downButton);
+      right.appendChild(deleteButton);
       head.appendChild(left);
       head.appendChild(right);
       card.appendChild(head);
@@ -2194,27 +2253,50 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       return card;
     };
 
-    columns.forEach((column) => {
-      const col = el('section', {class: 'pages-edit-threecols__column'});
-      const title = el('div', {class: 'pages-edit-threecols__title', html: column.label});
-      col.appendChild(title);
-
-      const targetList = ensureNestedBuilderBlocks(block, column.key);
-      col.appendChild(makeAddButtons(targetList));
-
-      if (targetList.length === 0) {
-        col.appendChild(el('div', {class: 'pages-edit-field-hint', html: 'Noch keine Module in dieser Spalte.'}));
+    block.data.columns.forEach((column, columnIndex) => {
+      const tabId = `column-${column.id}`;
+      const panel = el('section', {class: 'pages-edit-block-tabpanel pages-edit-multicol__panel'});
+      const columnHead = el('div', {class: 'pages-edit-multicol__head'});
+      columnHead.appendChild(el('strong', {html: `Spalte ${columnIndex + 1}`}));
+      const columnActions = el('div', {class: 'pages-edit-pb-actions'});
+      const previousButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '←'});
+      const nextButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: '→'});
+      const removeButton = el('button', {type: 'button', class: 'btn btn--ghost btn--danger btn--sm', html: 'Spalte entfernen'});
+      previousButton.disabled = !CAN_EDIT || columnIndex === 0;
+      nextButton.disabled = !CAN_EDIT || columnIndex === block.data.columns.length - 1;
+      removeButton.disabled = !CAN_EDIT || block.data.columns.length <= 1;
+      previousButton.addEventListener('click', () => {
+        if (previousButton.disabled) return;
+        [block.data.columns[columnIndex - 1], block.data.columns[columnIndex]] = [block.data.columns[columnIndex], block.data.columns[columnIndex - 1]];
+        refresh(tabId);
+      });
+      nextButton.addEventListener('click', () => {
+        if (nextButton.disabled) return;
+        [block.data.columns[columnIndex + 1], block.data.columns[columnIndex]] = [block.data.columns[columnIndex], block.data.columns[columnIndex + 1]];
+        refresh(tabId);
+      });
+      removeButton.addEventListener('click', () => {
+        if (removeButton.disabled) return;
+        block.data.columns.splice(columnIndex, 1);
+        refresh('settings');
+      });
+      columnActions.appendChild(previousButton);
+      columnActions.appendChild(nextButton);
+      columnActions.appendChild(removeButton);
+      columnHead.appendChild(columnActions);
+      panel.appendChild(columnHead);
+      panel.appendChild(makeAddButtons(column));
+      if (column.blocks.length === 0) {
+        panel.appendChild(el('div', {class: 'pages-edit-field-hint pages-edit-multicol__empty', html: 'Noch keine Module in dieser Spalte.'}));
       } else {
-        targetList.forEach((nestedBlock, childIndex) => {
-          col.appendChild(makeChildCard(targetList, nestedBlock, childIndex));
-        });
+        column.blocks.forEach((nestedBlock, childIndex) => panel.appendChild(makeChildCard(column, nestedBlock, childIndex)));
       }
-
-      columnsGrid.appendChild(col);
+      addTab(tabId, `Spalte ${columnIndex + 1}`, panel);
     });
 
-    wrapper.appendChild(settingsWrap);
-    wrapper.appendChild(columnsGrid);
+    wrapper.appendChild(tabBar);
+    wrapper.appendChild(panelWrap);
+    activateTab(initialTab);
     return wrapper;
   }
 
@@ -2586,7 +2668,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       } else if (block.type === 'catalog') {
         blockModalSub.textContent = 'Blätterkatalog: große PDF hochladen, Seiten optimieren und Download anbieten';
       } else if (block.type === 'three_columns_layout') {
-        blockModalSub.textContent = '3-Spalten Layout: Jede Spalte kann eigene PageBuilder-Module enthalten';
+        blockModalSub.textContent = 'Mehrspalten-Layout: Spalten frei hinzufügen, sortieren und mit Modulen befüllen';
       } else {
         blockModalSub.textContent = `Typ: ${block.type}`;
       }

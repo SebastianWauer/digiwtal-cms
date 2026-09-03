@@ -15,7 +15,6 @@ final class TextBlock extends AbstractBlockType
             'subtitle'       => '',
             'intro'          => '',
             'image_url'      => '',
-            'image_size'     => 'm',
             'image_position' => 'right',
             'image_caption'  => '',
             'image_credit'   => '',
@@ -43,11 +42,6 @@ final class TextBlock extends AbstractBlockType
                 'type' => 'string', 'max' => 2000,
                 'label' => 'Bild (URL)', 'control' => 'input',
                 'hint' => 'Optional. Später: Media-Picker.',
-            ],
-            'image_size' => [
-                'type' => 'string', 'max' => 10,
-                'label' => 'Bildgröße', 'control' => 'select',
-                'enum' => ['s','m','l','xl','full'],
             ],
             'image_position' => [
                 'type' => 'string', 'max' => 10,
