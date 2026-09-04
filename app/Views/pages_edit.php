@@ -1245,6 +1245,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
           o.textContent = 'Alle Events';
         } else if (block && block.type === 'events' && key === 'include_past') {
           o.textContent = String(opt) === '1' ? 'Ja' : 'Nein';
+        } else if (block && block.type === 'columns' && /_button_show$/.test(key)) {
+          o.textContent = String(opt) === '1' ? 'Ja' : 'Nein';
         } else {
           o.textContent = String(opt);
         }
