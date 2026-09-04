@@ -1245,8 +1245,6 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
           o.textContent = 'Alle Events';
         } else if (block && block.type === 'events' && key === 'include_past') {
           o.textContent = String(opt) === '1' ? 'Ja' : 'Nein';
-        } else if (block && block.type === 'columns' && /_button_show$/.test(key)) {
-          o.textContent = String(opt) === '1' ? 'Ja' : 'Nein';
         } else {
           o.textContent = String(opt);
         }
@@ -1319,6 +1317,15 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       rangeWrap.appendChild(number);
       rangeWrap.appendChild(display);
       input = rangeWrap;
+    } else if (control === 'checkbox') {
+      input = el('input', {class: 'pages-edit-checkbox', type: 'checkbox'});
+      input.checked = String(val) === '1';
+      input.disabled = !CAN_EDIT;
+      input.addEventListener('change', () => {
+        if (!CAN_EDIT) return;
+        block.data[key] = input.checked ? '1' : '0';
+        serialize();
+      });
     } else {
       input = el('input', {class: 'pages-edit-input', type: 'text'});
       input.value = val;
@@ -1568,8 +1575,28 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       if (fields[imageKey]) panelFields.appendChild(renderField(block, imageKey, fields[imageKey]));
       if (fields[textKey]) panelFields.appendChild(renderField(block, textKey, fields[textKey]));
       if (fields[linkKey]) panelFields.appendChild(renderField(block, linkKey, fields[linkKey]));
-      if (fields[buttonShowKey]) panelFields.appendChild(renderField(block, buttonShowKey, fields[buttonShowKey]));
-      if (fields[buttonTextKey]) panelFields.appendChild(renderField(block, buttonTextKey, fields[buttonTextKey]));
+
+      const buttonShowField = fields[buttonShowKey] ? renderField(block, buttonShowKey, fields[buttonShowKey]) : null;
+      const buttonTextField = fields[buttonTextKey] ? renderField(block, buttonTextKey, fields[buttonTextKey]) : null;
+      if (buttonShowField) panelFields.appendChild(buttonShowField);
+      if (buttonTextField) panelFields.appendChild(buttonTextField);
+
+      if (buttonShowField && buttonTextField) {
+        const showInput = buttonShowField.querySelector('input[type="checkbox"]');
+        const textInput = buttonTextField.querySelector('input, textarea');
+        if (showInput && textInput) {
+          let hadText = String(columnValue(buttonTextKey) ?? '').trim() !== '';
+          textInput.addEventListener('input', () => {
+            const nowHasText = textInput.value.trim() !== '';
+            if (!hadText && nowHasText && !showInput.checked) {
+              showInput.checked = true;
+              showInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            hadText = nowHasText;
+          });
+        }
+      }
+
       panel.appendChild(panelFields);
       panels.push(panel);
       panelWrap.appendChild(panel);

@@ -1544,3 +1544,10 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   height: 0.75rem;
   accent-color: var(--accent, #c41e3a);
 }
+
+.pages-edit-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent, #c41e3a);
+  cursor: pointer;
+}
