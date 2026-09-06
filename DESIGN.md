@@ -263,9 +263,22 @@ je Durchgang**, damit ein Fehler am Server einer Farbe zuzuordnen ist.
 | Durchgang | Semantik | Deklarationen | Stand |
 |---|---|---|---|
 | 1 | Blau | 2 von 6 | **erledigt** |
-| 2 | Grün | 18 | offen |
+| 2 | Grün | 14 von 18 | **erledigt** |
 | 3 | Gelb | 23 | offen |
 | 4 | Rot | 30 | offen |
+
+**Werte, die die Leiter nicht kennt, werden der nächstgelegenen Stufe
+zugeordnet — die Leiter wird nicht erweitert.** Der Bestand benutzte
+Deckkräfte zwischen 8 % und 50 %, oft für dieselbe Rolle. Die Angleichung
+macht Rahmen sichtbar schwächer, wo sie vorher über 28 % lagen; das ist der
+Preis dafür, dass vier Stufen genügen. Bisher zugeordnet: 35 %, 40 %, 45 %
+und 50 % auf `-border-strong` (28 %), 20 % als Fläche auf `-surface-strong`
+(14 %).
+
+Zwei Konstruktionen sind dabei ganz entfallen, weil die zweite Themespalte
+sie überflüssig macht: der Weißanteil, mit dem die Statusschalter ihren Ton
+aufhellten (`color-mix(… 78%, #ffffff 22%)`), und die deckende blasse Fläche
+des Katalogstatus (`#dcfce7`), die im Dunkeln eine helle Insel war.
 
 **TODO: ungeklärt** — fünf Fundstellen bleiben bewusst außerhalb dieser
 Migration und sind je eine eigene Entscheidung: `--accent` / `#c41e3a`

@@ -280,11 +280,11 @@
 }
 
 .pages-edit-switch--status input:checked + .pages-edit-switch__slider{
-  background: color-mix(in srgb, #1d9f6f 78%, #ffffff 22%);
+  background: var(--success);
 }
 
 .pages-edit-switch--home input:checked + .pages-edit-switch__slider{
-  background: color-mix(in srgb, #1d9f6f 78%, #ffffff 22%);
+  background: var(--success);
 }
 
 /* Der Input ist visuell verborgen (0x0, opacity 0). Ein Ring auf ihm waere
@@ -338,8 +338,8 @@
 }
 
 .pages-edit-iconbtn--save{
-  background: color-mix(in srgb, #1d9f6f 20%, var(--panel));
-  border-color: color-mix(in srgb, #1d9f6f 50%, var(--btn-border));
+  background: var(--success-surface-strong);
+  border-color: var(--success-border-strong);
 }
 
 .pages-edit-iconbtn--cancel{
@@ -1513,8 +1513,8 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
 }
 
 .pages-edit-catalog__status.is-ready {
-  color: #166534;
-  background: #dcfce7;
+  color: var(--success);
+  background: var(--success-surface);
 }
 
 .pages-edit-catalog__status.is-processing,

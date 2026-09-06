@@ -423,8 +423,8 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 700;
-  background: rgba(30,160,80,0.20);
-  border: 1px solid rgba(30,160,80,0.45);
+  background: var(--success-surface-strong);
+  border: 1px solid var(--success-border-strong);
 }
 
 /* Table */

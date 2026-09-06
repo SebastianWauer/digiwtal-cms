@@ -284,7 +284,7 @@ body.pages-order-modal-open{ overflow: hidden; }
 
 .pages-nav-badge--header{ color: var(--info); border-color: var(--info-border-strong); }
 .pages-nav-badge--footer{ color: #a78bfa; border-color: rgba(167,139,250,.4); }
-.pages-nav-badge--both{ color: #34d399; border-color: rgba(52,211,153,.4); }
+.pages-nav-badge--both{ color: var(--success); border-color: var(--success-border-strong); }
 .pages-nav-badge--none{ color: var(--muted); }
 
 

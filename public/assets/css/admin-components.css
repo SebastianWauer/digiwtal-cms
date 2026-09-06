@@ -33,9 +33,9 @@
 }
 
 .pages-badge--live{
-  color: #32d583;
-  border-color: rgba(50,213,131,0.35);
-  background: rgba(50,213,131,0.08);
+  color: var(--success);
+  border-color: var(--success-border-strong);
+  background: var(--success-surface);
 }
 
 .pages-badge--deleted{
@@ -229,7 +229,7 @@ html[data-theme="light"] .btn.btn--ghost.btn--danger:not(:disabled,[aria-disable
   font-weight: 800;
   font-size: 16px;
   line-height: 1;
-  color: #32d583;
+  color: var(--success);
 }
 
 /* Das + als Button */
