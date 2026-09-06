@@ -108,7 +108,7 @@ body.pages-order-modal-open{ overflow: hidden; }
 .pages-order-item[draggable="true"]{ cursor: grab; }
 .pages-order-item[draggable="true"]:active{ cursor: grabbing; }
 .pages-order-item.is-dragging{
-  opacity: .45;
+  background: var(--active);
   border-color: var(--accent, #c41e3a);
 }
 
@@ -302,6 +302,10 @@ html[data-theme="light"] .pages-card{
 
 html[data-theme="light"] .pages-order-item{
   background: #f8f9fb;
+}
+
+html[data-theme="light"] .pages-order-item.is-dragging{
+  background: var(--active);
 }
 
 html[data-theme="light"] .pages-order-position{

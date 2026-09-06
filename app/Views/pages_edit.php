@@ -452,22 +452,20 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
   <div class="pages-edit-floating-actions" aria-label="Seitenaktionen">
     <?php if ($canSave): ?>
-      <button type="submit" class="pages-edit-iconbtn pages-edit-iconbtn--save" title="Speichern" aria-label="Speichern">💾</button>
+      <button type="submit" class="btn btn--primary">Speichern</button>
     <?php endif; ?>
 
-    <a class="pages-edit-iconbtn pages-edit-iconbtn--cancel" href="<?= cms_base_path() ?>/pages" title="Abbrechen" aria-label="Abbrechen">✕</a>
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/pages">Abbrechen</a>
 
     <?php if ($id > 0 && !$deleted && $canDelete): ?>
       <button
         type="submit"
-        class="pages-edit-iconbtn pages-edit-iconbtn--delete"
+        class="btn btn--ghost btn--danger btn--sm"
         formaction="<?= cms_base_path() ?>/pages/delete"
         formmethod="post"
         name="id"
         value="<?= (int)$id ?>"
-        title="Löschen"
-        aria-label="Löschen"
-      >🗑</button>
+      >Löschen</button>
     <?php endif; ?>
 
     <?php if ($id > 0 && $deleted && $canRestore): ?>

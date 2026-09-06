@@ -42,7 +42,7 @@ $publishedAtInput = $publishedAt !== '' ? date('Y-m-d\TH:i', (int)strtotime($pub
     <div class="pages-edit-field"><div class="pages-edit-field-label">Veroeffentlicht am</div><input class="pages-edit-input" type="datetime-local" name="published_at" value="<?= h($publishedAtInput) ?>"></div>
   </div>
   <div class="pages-actions-inline" style="margin-top:1rem;">
-    <button class="btn" type="submit">Speichern</button>
-    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/news">Zurueck</a>
+    <button class="btn btn--primary" type="submit">Speichern</button>
+    <a class="btn btn--ghost" href="<?= cms_base_path() ?>/news">Zurück</a>
   </div>
 </form>

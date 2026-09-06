@@ -66,7 +66,7 @@ $renderOrderModal = static function (string $area, string $title, array $navigat
 
             <div class="pages-order-save">
               <button type="button" class="btn btn--ghost" data-order-close>Abbrechen</button>
-              <button type="submit" class="btn">Reihenfolge speichern</button>
+              <button type="submit" class="btn btn--primary">Reihenfolge speichern</button>
             </div>
           </form>
         <?php endif; ?>

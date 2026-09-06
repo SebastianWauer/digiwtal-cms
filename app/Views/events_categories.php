@@ -75,7 +75,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
             <?= $csrfField ?>
             <input type="hidden" name="id" value="<?= $id ?>">
             <?php if ($canEdit): ?>
-              <button type="submit" class="btn btn--ghost">Speichern</button>
+              <button type="submit" class="btn btn--primary">Speichern</button>
             <?php endif; ?>
           </form>
         </td>

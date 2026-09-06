@@ -91,7 +91,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
       </div>
 
       <div class="pages-edit-actionsbar">
-        <button type="submit" class="btn">Speichern</button>
+        <button type="submit" class="btn btn--primary">Speichern</button>
         <a class="btn btn--ghost" href="<?= cms_base_path() ?>/users">Zurück</a>
 
         <div class="pages-edit-actionsbar-spacer"></div>

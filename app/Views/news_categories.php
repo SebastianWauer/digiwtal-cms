@@ -15,7 +15,7 @@ $csrfField = function_exists('admin_csrf_field') ? admin_csrf_field() : '';
           <form method="post" action="<?= cms_base_path() ?>/news/categories/save" class="form-reset" style="display:flex;gap:.5rem;align-items:center;">
             <?= $csrfField ?><input type="hidden" name="id" value="<?= $id ?>">
             <input class="pages-edit-input" type="text" name="name" value="<?= h((string)($r['name'] ?? '')) ?>" style="min-width:280px;">
-            <button class="btn btn--ghost btn--badge" type="submit">Speichern</button>
+            <button class="btn btn--primary" type="submit">Speichern</button>
           </form>
         </td>
         <td><?= h((string)($r['slug'] ?? '')) ?></td>
