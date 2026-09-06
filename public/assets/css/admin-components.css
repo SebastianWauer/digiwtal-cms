@@ -6,7 +6,7 @@
     width: 80%;                  /* Breite auf 80% des Panel-Bereichs */
     max-width: 500px;            /* Maximale Breite festlegen */
     padding: 10px 12px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background-color: var(--flash-ok-bg); /* Je nach Typ (ok/error) ändern */
     border: 1px solid transparent;
     border-color: var(--flash-ok-border);
@@ -26,7 +26,7 @@
   align-items:center;
   justify-content:center;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid rgba(255,255,255,0.14);
   font-weight: 750;
   font-size: 12px;
@@ -69,7 +69,7 @@ html[data-theme="light"] .pages-badge--expired{
 .btn{
   border: 1px solid transparent;
   padding: 7px 12px;        /* vorher: 10px 14px */
-  border-radius: 10px;      /* vorher: 12px */
+  border-radius: var(--radius-sm);
   background: var(--primary);
   color: var(--bg);
   cursor: pointer;
@@ -156,13 +156,13 @@ html[data-theme="light"] .btn:not(.btn--ghost){
 .btn--sm{
   padding: 6px 10px;
   font-size: 13px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   line-height: 1.2;
 }
 .btn--xs{
   padding: 5px 9px;
   font-size: 12.5px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   line-height: 1.2;
 }
 html[data-theme="light"] .btn.btn--ghost.btn--warn{
@@ -217,7 +217,7 @@ html[data-theme="light"] .btn.btn--ghost.btn--danger:not(:disabled,[aria-disable
   padding: 4px 10px;     /* identisch zur Badge-Höhe */
   font-size: 12px;
   line-height: 1;
-  border-radius: 999px;  /* gleiche Pill-Form */
+  border-radius: var(--radius-pill);
 }
 /* Startseite: grüner Haken */
 .pages-check{

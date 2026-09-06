@@ -30,7 +30,7 @@
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--btn-border);
   background: var(--panel);
   color: var(--text);
@@ -52,7 +52,7 @@
 .pages-edit-card{
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   padding: 16px;
   box-shadow: 0 1px 0 rgba(0,0,0,.06);
 }
@@ -63,7 +63,7 @@
 
 .pages-edit-card--compact{
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .pages-edit-card--compact .pages-edit-card-sub{
@@ -77,7 +77,7 @@
 
 .pages-edit-card--compact .pages-edit-input{
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .pages-edit-card--compact .pages-edit-check{
@@ -164,14 +164,14 @@
   border: 1px solid var(--btn-border);
   background: var(--panel);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
 
 .pages-edit-page-icon .mp__input{
   width: min(100%, 12rem);
   border: 1px solid var(--btn-border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   color: var(--text);
   background: var(--panel);
@@ -257,7 +257,7 @@
   position: relative;
   width: 40px;
   height: 22px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--muted) 35%, transparent);
   transition: background .2s ease;
 }
@@ -321,7 +321,7 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--btn-border);
   background: var(--panel);
   color: var(--text);
@@ -369,7 +369,7 @@
   gap: 8px;
   align-items: center;
   padding: 6px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--card-border);
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   box-shadow: 0 10px 26px rgba(0,0,0,.2);
@@ -414,13 +414,13 @@
   z-index: 9;
   padding: 8px;
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   backdrop-filter: blur(4px);
 }
 
 .pages-edit-builder .pages-edit-pb-actions .btn{
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding-inline: 12px;
   font-weight: 700;
 }
@@ -450,7 +450,7 @@
 /* Block-Karten im Builder */
 .pages-edit-blockcard{
   margin-top: 12px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent);
   background: color-mix(in srgb, var(--panel) 58%, var(--card) 42%);
   box-shadow: 0 1px 0 rgba(0,0,0,.03);
@@ -490,7 +490,7 @@
   opacity: .6;
   letter-spacing: -0.5px;
   border: 1px dashed color-mix(in srgb, var(--btn-border) 75%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 2px 8px;
 }
 
@@ -516,7 +516,7 @@
 
 .pages-edit-blockbtn{
   min-width: 34px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .pages-edit-blockbtn--toggle{
@@ -531,13 +531,13 @@
   width: 100%;
   min-height: 520px;
   border: 1px solid var(--card-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: #fff;
 }
 
 .pages-edit-richtext{
   border: 1px solid color-mix(in srgb, var(--btn-border) 80%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: color-mix(in srgb, var(--panel) 68%, var(--card) 32%);
 }
@@ -570,7 +570,7 @@
   min-width: 30px;
   height: 30px;
   border: 1px solid color-mix(in srgb, var(--btn-border) 88%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   color: var(--text);
   cursor: pointer;
@@ -593,7 +593,7 @@
   width: auto;
   min-width: 130px;
   padding: 6px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .pages-edit-rt-color{
@@ -601,7 +601,7 @@
   height: 30px;
   padding: 0;
   border: 1px solid var(--btn-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--panel);
 }
 
@@ -952,7 +952,7 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   gap: 6px;
   padding: 4px;
   border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--panel) 88%, transparent);
   width: fit-content;
 }
@@ -964,7 +964,7 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   font-weight: 700;
   font-size: 12px;
   padding: 7px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
 }
 
@@ -975,7 +975,7 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
 
 .pages-edit-hero-tabs__panels{
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
   padding: 12px;
   flex: 1;
@@ -1036,7 +1036,7 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
   gap: 6px;
   padding: 4px;
   border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--panel) 88%, transparent);
   width: fit-content;
 }
@@ -1048,7 +1048,7 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
   font-weight: 700;
   font-size: 12px;
   padding: 7px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
 }
 
@@ -1059,7 +1059,7 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
 
 .pages-edit-block-tabs__panels{
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
   padding: 12px;
   flex: 1;
@@ -1092,7 +1092,7 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
   align-content: start;
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
   min-width: 0;
 }
@@ -1118,14 +1118,14 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
 .pages-edit-multicol__add{
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
 }
 
 .pages-edit-multicol__empty{
   padding: 18px;
   border: 1px dashed color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   text-align: center;
 }
 
@@ -1148,7 +1148,7 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
   gap: 12px;
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
 }
 
@@ -1177,7 +1177,7 @@ html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
   min-height: 140px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--panel) 88%, var(--card) 12%);
 }
 
@@ -1319,7 +1319,7 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
     z-index: 20;
     background: color-mix(in srgb, var(--panel) 92%, transparent);
     border: 1px solid var(--card-border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 6px;
     backdrop-filter: blur(3px);
   }
@@ -1378,7 +1378,7 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--btn-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 92%, var(--card) 8%);
   transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
@@ -1411,7 +1411,7 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   display: grid;
   gap: 8px;
   border: 1px solid color-mix(in srgb, var(--btn-border) 70%, transparent);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 8px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
 }
@@ -1483,7 +1483,7 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   display: grid;
   gap: 0.85rem;
   border: 1px solid var(--line, #d9dee7);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   background: color-mix(in srgb, var(--panel, #fff) 92%, var(--accent, #c41e3a) 8%);
 }
@@ -1504,7 +1504,7 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   display: inline-flex;
   align-items: center;
   min-height: 1.75rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.65rem;
   color: #475569;
   background: #e2e8f0;

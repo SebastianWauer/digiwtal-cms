@@ -14,7 +14,7 @@
 .ss-card{
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   padding: 14px;
 }
 
@@ -82,7 +82,7 @@
   background: var(--panel);
   border: 1px solid var(--panel-border);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
 
@@ -102,7 +102,7 @@
 .ss-preview{
   background: rgba(255,255,255,0.02);
   border: 1px dashed rgba(255,255,255,0.10);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   height: 230px;
   display:flex;
   align-items:center;
@@ -151,7 +151,7 @@
   border: 1px solid rgba(255,255,255,0.10);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 10px;
 }
 

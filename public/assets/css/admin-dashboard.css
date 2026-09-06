@@ -8,7 +8,7 @@
 .stat{
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-md, 14px);
+  border-radius: var(--radius-md);
   padding: 14px 14px;
   min-height: 74px;
 }

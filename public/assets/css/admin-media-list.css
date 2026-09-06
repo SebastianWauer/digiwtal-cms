@@ -4,7 +4,7 @@
 
 .media-upload {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 14px;
   margin-bottom: 14px;
   background: rgba(255,255,255,0.02);
@@ -29,7 +29,7 @@
 /* ✅ Größer + Preview reserviert Platz => kein Layout-Shift */
 .media-dropzone {
   border: 1px dashed rgba(255,255,255,0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 14px;
   min-height: 140px;
   background: rgba(0,0,0,0.15);
@@ -65,7 +65,7 @@
 .media-upload-preview__item {
   width: 96px;
   height: 64px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.03);
@@ -89,7 +89,7 @@
 .media-upload-preview__more {
   width: 72px;
   height: 64px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,7 +101,7 @@
 /* Filters */
 .media-filters {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   background: rgba(255,255,255,0.02);
   margin-bottom: 14px;
@@ -121,7 +121,7 @@
 .media-input, .media-select {
   width: 100%;
   min-height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(0,0,0,0.20);
   color: inherit;
@@ -150,7 +150,7 @@
 
 .media-folders {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 12px;
   background: rgba(255,255,255,0.02);
 }
@@ -192,7 +192,7 @@
 .media-folder-toggle {
   width: 22px;
   height: 22px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(0,0,0,0.16);
   display: inline-flex;
@@ -221,7 +221,7 @@
   gap: 10px;
   align-items: center;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   text-decoration: none;
   border: 1px solid rgba(255,255,255,0.06);
   background: rgba(0,0,0,0.12);
@@ -301,7 +301,7 @@
   max-width: 90vw;
   max-height: 90vh;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: #111;
   border: 1px solid rgba(255,255,255,0.16);
 }
@@ -315,7 +315,7 @@
 /* Content bar */
 .media-content__bar {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   background: rgba(255,255,255,0.02);
   margin-bottom: 12px;
@@ -349,7 +349,7 @@
 
 .media-card {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: rgba(255,255,255,0.02);
 }
@@ -382,7 +382,7 @@
   right: 10px;
   width: 28px;
   height: 28px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -417,7 +417,7 @@
   min-width: 28px;
   height: 22px;
   padding: 0 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -430,7 +430,7 @@
 /* Table */
 .media-table-wrap {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: rgba(255,255,255,0.02);
 }
@@ -460,7 +460,7 @@
   width: 56px;
   height: 40px;
   object-fit: scale-down;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: block;
   background: var(--card-border);
 }
@@ -468,7 +468,7 @@
 .media-preview-embed--table {
   width: 56px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background: #fff;
 }

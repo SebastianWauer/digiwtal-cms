@@ -19,7 +19,7 @@
 
 .card {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 14px;
   background: rgba(255,255,255,0.02);
 }
@@ -27,7 +27,7 @@
 .media-edit__preview {
   position: relative;
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: rgba(0,0,0,0.18);
   aspect-ratio: 16 / 10;
   display: grid;
@@ -139,7 +139,7 @@
 .input, .select, .textarea {
   width: 100%;
   min-height: 38px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(0,0,0,0.20);
   color: inherit;
@@ -196,7 +196,7 @@
 
 .usage-table-wrap {
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: rgba(255,255,255,0.02);
 }
