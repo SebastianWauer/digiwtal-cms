@@ -183,36 +183,97 @@ derselben Grundlage ist auch `:has()` zulässig (Abschnitt 6.4).
 `rgba()`-Literale und rund 60 verschiedene Hex-Werte. Eine Umstellung würde
 jede Ansicht anfassen. Die Regel gilt ab jetzt, nicht rückwirkend.
 
-### 2.6 Zustandsfarben
+### 2.6 Zustandsfarben **[V]** — Töne entschieden, Migration läuft
 
-**TODO: ungeklärt.** Das ist die größte offene Baustelle des Projekts.
+Vier Semantiken, je **ein Token mit zwei Werten**: einer für Dunkel, einer
+für Hell. Die Leiter darüber ist themeunabhängig, weil sie aus dem jeweils
+aktiven Grundton abgeleitet wird.
 
-Die Verwaltung hat vier Zustandstöne, jeden genau einmal, mit einer
-`color-mix()`-Leiter (`-surface` 8 %, `-surface-strong` 14 %, `-border` 20 %,
-`-border-strong` 28 %, `-text` 50 % auf Weiß). Das CMS hat pro Bedeutung
-eine Farbfamilie:
+| Semantik | Dunkel | Hell | Kontrast dunkel / hell (auf `--panel`) |
+|---|---|---|---|
+| `--success` | `#32d583` | `#166534` | 9,64 / 7,13 |
+| `--warning` | `#ffba49` | `#92400e` | 10,86 / 7,09 |
+| `--danger` | `#ff6b6b` | `#b42318` | 6,64 / 6,57 |
+| `--info` | `#6aa9ff` | `#1d4ed8` | 7,66 / 6,70 |
 
-| Bedeutung | Verwaltung | CMS heute |
+**Warum zwei Werte je Semantik:** Die Töne der Verwaltung sind für dunklen
+Grund gebaut. Als Schrift auf `#ffffff` erreichen sie 1,70:1 (Gelb), 1,91:1
+(Grün), 2,40:1 (Blau) und 2,78:1 (Rot) — allesamt unlesbar. Auch `#1d9f6f`,
+der beste vorgefundene Grünton, kommt dort nur auf 3,36:1. Ein einziger Ton
+je Semantik kann in diesem Projekt nicht funktionieren, solange es zwei
+Themes gibt.
+
+Die Dunkel-Spalte ist **wertgleich mit der Verwaltung**. Die Hell-Spalte ist
+**[CMS]** — dieselbe Konstruktion wie bei den Grundflächen in 2.2.
+
+#### Die Tönungsleiter
+
+| Stufe | Anteil | Wofür |
 |---|---|---|
-| Erfolg | `#32d583` | `#32d583`, `#1d9f6f` (5×), `#34d399`, `#166534`, `#dcfce7`, `rgba(30,160,80,…)`, `rgba(16,185,129,…)`, `rgba(0,255,140,…)` |
-| Warnung | `#ffba49` | `#ffba49`, `#f59e0b`, `#f2c94c`, `#fef3c7`, `#92400e`, `#b26a00`, `#b25a00` |
-| Gefahr | `#ff6b6b` | `#c41e3a`, `#b4232e` (6×), `#e74c3c`, `#b42318`, `#b22525`, `rgba(255,80,80)`, `rgba(255,90,90)`, `rgba(255,120,120)`, `rgba(239,68,68)` |
-| Info | `#6aa9ff` | `#60a5fa`, `rgba(96,165,250,.4)`, `#a78bfa` (violett) |
+| `-surface` | 8 % | Plaketten, Meldungen, Hinweiskarten |
+| `-surface-strong` | 14 % | Getönte Buttons |
+| `-border` | 20 % | Rahmen der Meldungsflächen |
+| `-border-strong` | 28 % | Rahmen getönter Buttons und Plaketten |
 
-Zu entscheiden ist mehr als nur „welcher Ton":
+**Gemischt wird gegen `transparent`, nicht gegen `var(--panel)`.** Getönte
+Flächen sitzen im CMS nicht immer auf dem Panel: `.pages-badge` steht in
+Tabellenzeilen innerhalb `.pages-card`, das selbst `--card` über `--panel`
+ist. Gegen `var(--panel)` gemischt wird die Panelfarbe in ein Element
+eingebacken, das auf einer Karte liegt — gemessen verliert die Tönung dort
+im Dunkeln ein Drittel ihrer Wirkung (Delta 1,107 gegen 1,032) und bekommt
+eine sichtbare Kante. Alpha-Komposition passt sich dem tatsächlichen
+Untergrund an.
 
-1. **Werden die Töne der Verwaltung übernommen?** `#1d9f6f` und `#b4232e`
-   sind keine Varianten davon, sondern eine eigene, dunklere Palette.
-   **TODO: ungeklärt** — ob dahinter ein Grund steht (Lesbarkeit im
-   Hell-Theme?) oder eine unabhängige Wahl.
-2. **Braucht jeder Zustandston zwei Werte, einen je Theme?** Die Verwaltung
-   kennt die Frage nicht. Das CMS hat für Warnung und Gefahr bereits
-   getrennte Hell-Werte (`#b25a00`, `#b42318`) — bisher unsystematisch.
-3. **Wie sieht die `color-mix()`-Leiter hier aus?** Die Prozentsätze der
-   Verwaltung sind auf dunklen Grund abgestimmt. Ob dieselben Werte auf
-   `#f5f7fb` tragen, ist nicht geprüft.
+Dass dieselbe Prozentzahl auf hellem und dunklem Grund unterschiedlich
+wirkt, löst sich durch die zwei Grundtöne von selbst: heller Ton auf dunklem
+Grund und dunkler Ton auf hellem ergeben bei 8 % nahezu gleiche
+Tönungsstärke (1,10–1,15 dunkel gegen 1,11–1,14 hell).
 
-Bis dahin gilt nur: **keine neue Zustandsfarbe ohne Token.**
+#### Es gibt hier kein `-text`-Token — und das ist Absicht
+
+Die Verwaltung führt `--info-text: color-mix(in srgb, var(--info) 50%,
+white)`, weil ihr einziger Ton auf dunklem Grund als Schrift aufgehellt
+werden muss. **Das CMS braucht das nicht:** weil der Grundton je Theme
+gewählt ist, trägt er selbst als Schrift. Auf der eigenen 8-%-Tönung
+gemessen 4,68:1 im schlechtesten Fall, auf der 20-%-Tönung 4,68–7,02:1 —
+durchgehend über der Schwelle.
+
+Ein `-text`-Token wäre hier ein fünftes, das nichts löst. Beim späteren
+Extrahieren des gemeinsamen Systems ist dieser Unterschied deshalb **ein
+bewusster, kein Versehen**: die Verwaltung braucht das Token, weil sie
+einfarbig dunkel ist; das CMS löst dasselbe Problem über die zweite
+Themespalte.
+
+#### Die Rahmenstufen bleiben bewusst unter 3:1
+
+`-border` und `-border-strong` erreichen gegen ihren Untergrund 1,31 bis
+1,92:1. Das ist **kein Versäumnis**: Es sind dekorative Begrenzungen
+getönter Flächen, keine Grenzen interaktiver Bedienelemente. Für die gilt
+der Fokusring aus 6.4, der als deckende Kontur mit `--focus` den
+höchstmöglichen Kontrast trägt.
+
+Wer hier 3:1 verlangte, müsste die Rahmen auf rund 55 % heben — das macht
+jede getönte Fläche deutlich lauter und widerspricht Abschnitt 1.
+
+#### Stand der Migration
+
+Betroffen sind 77 Deklarationen in 8 Dateien. Migriert wird **eine Semantik
+je Durchgang**, damit ein Fehler am Server einer Farbe zuzuordnen ist.
+
+| Durchgang | Semantik | Deklarationen | Stand |
+|---|---|---|---|
+| 1 | Blau | 2 von 6 | **erledigt** |
+| 2 | Grün | 18 | offen |
+| 3 | Gelb | 23 | offen |
+| 4 | Rot | 30 | offen |
+
+**TODO: ungeklärt** — fünf Fundstellen bleiben bewusst außerhalb dieser
+Migration und sind je eine eigene Entscheidung: `--accent` / `#c41e3a`
+(siehe 2.4), das Violett `#a78bfa` als unbenannte fünfte Semantik
+(„Footer"), die Graublautöne `#475569` und `#64748b` (gehören vermutlich zu
+`--muted`), die vier `--flash-*`-Tokens (hängen an 2.7 zusammen mit dem fest
+verdrahteten `color: #fff`) und die `.hc-badge`-Farben `#10b981` / `#ef4444`
+in der System-Health-Datei (siehe Abschnitt 10).
 
 ### 2.7 Meldungsflächen
 
