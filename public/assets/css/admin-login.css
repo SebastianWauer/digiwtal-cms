@@ -72,13 +72,13 @@ body.login-auth{
 }
 
 .login-alert--ok{
-  background: var(--flash-ok-bg);
-  border-color: var(--flash-ok-border);
+  background: var(--success-surface);
+  border-color: var(--success-border);
 }
 
 .login-alert--error{
-  background: var(--flash-err-bg);
-  border-color: var(--flash-err-border);
+  background: var(--danger-surface);
+  border-color: var(--danger-border);
 }
 
 .login-form{

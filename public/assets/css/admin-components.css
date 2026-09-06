@@ -7,18 +7,22 @@
     max-width: 500px;            /* Maximale Breite festlegen */
     padding: 10px 12px;
     border-radius: var(--radius-md);
-    background-color: var(--flash-ok-bg); /* Je nach Typ (ok/error) ändern */
+    background-color: var(--success-surface);
     border: 1px solid transparent;
-    border-color: var(--flash-ok-border);
-    color: #fff;
+    border-color: var(--success-border);
+    /* Der Ton traegt sich selbst als Schrift auf der eigenen Toenung; vorher
+       stand hier ein festes Weiss, das im Hell-Theme auf blasser Flaeche
+       unlesbar war. */
+    color: var(--success);
     opacity: 1;
     transition: opacity 0.5s ease-out; /* Übergangseffekt */
     z-index: 9999;               /* Sicherstellen, dass es oben bleibt */
 }
 
 .flash--error {
-    background-color: var(--flash-err-bg);
-    border-color: var(--flash-err-border);
+    background-color: var(--danger-surface);
+    border-color: var(--danger-border);
+    color: var(--danger);
 }
 /* Badges */
 .pages-badge{

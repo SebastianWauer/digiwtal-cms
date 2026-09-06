@@ -356,19 +356,32 @@ Migration und sind je eine eigene Entscheidung: `--accent` / `#c41e3a`
 verdrahteten `color: #fff`) und die `.hc-badge`-Farben `#10b981` / `#ef4444`
 in der System-Health-Datei (siehe Abschnitt 10).
 
-### 2.7 Meldungsflächen
+### 2.7 Meldungsflächen **[V]**
 
-Vier Tokens, in beiden Themes definiert, für Flash-Meldungen:
-`--flash-ok-bg`, `--flash-ok-border`, `--flash-err-bg`, `--flash-err-border`.
+Meldungen benutzen die Zustandsleiter aus 2.6 direkt, ohne eigene Tokens:
 
-Entschieden **[CMS]**: `.flash` setzt `border: 1px solid transparent` als
-Grundform, damit `border-color` überhaupt wirkt, und `.flash--error` schaltet
-auf die Fehler-Tokens um. Beides fehlte; Fehlermeldungen erschienen in Grün.
+| Zustand | Fläche | Rahmen | Schrift |
+|---|---|---|---|
+| Erfolg | `--success-surface` | `--success-border` | `--success` |
+| Fehler | `--danger-surface` | `--danger-border` | `--danger` |
+
+Gilt für `.flash` im Admin-Shell und `.login-alert` auf der Anmeldeseite.
 `flash_render()` in `app/includes/components.php` erzeugt genau die zwei
 Typen `ok` und `error`.
 
-**TODO: ungeklärt** — `.flash` setzt `color: #fff` fest verdrahtet. Im
-Hell-Theme steht damit weiße Schrift auf blassrotem oder blassgrünem Grund.
+`.flash` setzt `border: 1px solid transparent` als Grundform, damit
+`border-color` überhaupt wirkt.
+
+Vorher standen hier vier eigene Tokens (`--flash-ok-bg`, `--flash-ok-border`,
+`--flash-err-bg`, `--flash-err-border`) mit acht Deklarationen über beide
+Themes. Ihre Werte waren die 8-%- und 20-%-Stufen derselben Leiter, nur
+handgerechnet und aus einem fünften Grünton (`rgba(0,255,140,…)`) und einem
+zehnten Rotton (`rgba(255,80,80,…)`) gebildet. Sie sind ersatzlos entfallen.
+
+Die Schriftfarbe stand als festes `#fff` im Code — im Hell-Theme also Weiß
+auf blassgrüner oder blassroter Fläche. Sie folgt jetzt dem Zustandston, der
+sich nach 2.6 auf der eigenen Tönung selbst trägt: **8,50:1** dunkel und
+**6,33:1** hell bei Erfolg, **6,02:1** und **5,75:1** bei Fehler.
 
 ### 2.8 `--outline` ist kein Fokus-Token
 
