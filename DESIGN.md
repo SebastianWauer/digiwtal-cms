@@ -697,7 +697,7 @@ setzt darum bewusst weder `:focus` noch `outline`.
 
 #### Zweckgebundene Abweichungen
 
-Sechs Regeln bleiben, weil sie eine Aufgabe erfüllen statt gewachsen zu sein:
+Fünf Regeln bleiben, weil sie eine Aufgabe erfüllen statt gewachsen zu sein:
 
 | Regel | Was | Warum |
 |---|---|---|
@@ -706,11 +706,6 @@ Sechs Regeln bleiben, weil sie eine Aufgabe erfüllen statt gewachsen zu sein:
 | `.pages-edit-textarea` | Mono, 13px, `min-height: 260px` | Feld für HTML-Quelltext |
 | `.events-edit-form .pages-edit-textarea` | `min-height: 190px` | Kürzeres Feld im Veranstaltungsformular |
 | `.pages-edit-card--compact .pages-edit-input` | `padding: 8px 10px` | Kompakte Kartenvariante |
-| `.migrate-input` | `min-width: 240px` | Steht inline in einer Aktionszeile statt im Formularraster |
-
-**TODO: ungeklärt** — `.migrate-input` wird von keinem Markup benutzt. Die
-Klasse ist tot und steht nur noch in der Form. Löschen oder Verwendung
-nachtragen.
 
 ### 6.4 Zustände — Fokus und Deaktivierung **[V]**
 
