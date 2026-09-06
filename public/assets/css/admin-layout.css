@@ -67,6 +67,24 @@
   --info-border:            color-mix(in srgb, var(--info) 20%, transparent);
   --info-border-strong:     color-mix(in srgb, var(--info) 28%, transparent);
 
+  /* Marker auf beliebigem Bildmaterial. Bewusst KEINE Zustandsfarbe und
+     bewusst themeunabhaengig: der Punkt liegt auf Benutzerfotos, nicht auf
+     einer Oberflaeche, und muss dort in jedem Theme gleich gut sitzen.
+     Magenta, weil es in Fotos selten dominant vorkommt, und mit 4,50 gegen
+     den weissen Innenrand und 4,67 gegen den dunklen Aussenring nahe am
+     bestmoeglichen Gleichgewicht beider Kontraste (Optimum 4,68). */
+  --marker: #e6007e;
+
+  /* Eingabefelder. Beide Werte stammen aus dem Bestand, keiner ist neu.
+     --input-bg ist eine Alpha-Verdunkelung, kein deckender Wert: Felder
+     liegen im CMS in Modals, Tab-Flaechen und Karten mit unterschiedlichem
+     Grund, und ein Alpha-Wert bleibt dort ueberall gleich stark abgesetzt.
+     Er reproduziert die beiden frueher handverlesenen Sonderfaelle bis auf
+     ein bis zwei Stufen (#121317 gegen #101216 im Modal, #0c0f15 gegen
+     #0b0f15 in der Hero-Flaeche) und macht sie damit entbehrlich. */
+  --input-bg: rgba(0,0,0,0.20);
+  --input-border: rgba(255,255,255,0.12);
+
   --shadow: 0 10px 30px rgba(0,0,0,0.35);
 
   --flash-ok-bg: rgba(0,255,140,0.08);
@@ -110,6 +128,13 @@ html[data-theme="light"]{
   --warning: #92400e;
   --danger:  #b42318;
   --info:    #1d4ed8;
+
+  /* Hell: dieselbe Konstruktion gespiegelt - eine dezente Verdunkelung des
+     hellen Grunds statt einer Aufhellung des dunklen. Deckendes Weiss waere
+     hier keine Flaeche, sondern nur ein Rahmen auf dem weissen Panel.
+     Der Rahmen teilt sich im Hell-Theme den einen vorhandenen Rahmenton. */
+  --input-bg: rgba(17,17,20,0.03);
+  --input-border: var(--card-border);
 
   --shadow: 0 10px 30px rgba(16,24,40,0.10);
 

@@ -118,16 +118,6 @@
 .media-filters__field--grow { flex: 1 1 320px; min-width: 260px; }
 .media-filters__label { font-size: 12px; opacity: 0.75; }
 
-.media-input, .media-select {
-  width: 100%;
-  min-height: 36px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(0,0,0,0.20);
-  color: inherit;
-  padding: 8px 10px;
-}
-
 .media-check {
   display: inline-flex;
   gap: 8px;
@@ -531,12 +521,6 @@ html[data-theme="light"] .media-table-wrap {
 html[data-theme="light"] .media-dropzone {
   border-color: var(--card-border);
   background: var(--btn-hover);
-}
-
-html[data-theme="light"] .media-input,
-html[data-theme="light"] .media-select {
-  border-color: var(--card-border);
-  background: var(--card);
 }
 
 html[data-theme="light"] .media-folder-toggle {

@@ -77,15 +77,6 @@
   color: var(--muted);
 }
 
-.ss-input{
-  width: 100%;
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-}
-
 .ss-asset{
   display:grid;
   grid-template-columns: 1fr;

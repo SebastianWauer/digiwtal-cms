@@ -158,16 +158,6 @@
   color: var(--muted);
 }
 
-.pages-edit-input,
-.pages-edit-textarea{
-  width: 100%;
-  border: 1px solid var(--btn-border);
-  background: var(--panel);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-}
-
 .pages-edit-page-icon .mp__input{
   width: min(100%, 12rem);
   border: 1px solid var(--btn-border);
@@ -343,9 +333,9 @@
 }
 
 .pages-edit-iconbtn--cancel{
-  color: var(--danger);
-  background: var(--danger-surface);
-  border-color: var(--danger-border-strong);
+  color: var(--warning);
+  background: var(--warning-surface);
+  border-color: var(--warning-border-strong);
 }
 
 .pages-edit-iconbtn--delete{
@@ -681,8 +671,8 @@ html[data-theme="dark"] .pages-edit-modal{
   border-color: rgba(255,255,255,0.12);
 }
 
-html[data-theme="dark"] .pages-edit-modal .pages-edit-input,
-html[data-theme="dark"] .pages-edit-modal .pages-edit-textarea,
+/* Der Rich-Text-Rahmen ist kein Eingabefeld im Sinne der gemeinsamen Form
+   und hat eine eigene Flaeche; im Modal bleibt sie handgesetzt. */
 html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   background: #101216;
 }
@@ -1016,11 +1006,6 @@ html[data-theme="dark"] .pages-edit-hero-preview__media{
 html[data-theme="dark"] .pages-edit-hero-tabs__panels{
   background: #0f131a;
   border-color: rgba(255,255,255,.12);
-}
-
-html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-input,
-html[data-theme="dark"] .pages-edit-hero-tabpanel .pages-edit-textarea{
-  background: #0b0f15;
 }
 
 .pages-edit-block-tabs{

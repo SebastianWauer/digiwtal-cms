@@ -13,19 +13,11 @@
   flex-wrap: wrap;
 }
 
+/* Steht als einziges Feld inline in einer Aktionszeile statt in einem
+   Formularraster und braucht deshalb eine Mindestbreite.
+   Hinweis: die Klasse wird derzeit von keinem Markup benutzt. */
 .migrate-input{
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--btn-border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  font-size: 14px;
   min-width: 240px;
-}
-
-html[data-theme="light"] .migrate-input{
-  background: #fff;
-  border-color: var(--card-border);
 }
 
 .migrate-logtitle{

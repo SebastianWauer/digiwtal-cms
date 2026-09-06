@@ -328,3 +328,34 @@ summary:focus-visible,
   opacity: .5;
   cursor: not-allowed;
 }
+
+/* =========================
+   Eingabefelder
+   ========================= */
+
+/* Eine Form fuer alle Eingaben. Vorher standen hier sechs Klassen mit vier
+   Flaechen, drei Rahmenfarben und drei Polsterungen fuer dieselbe Sache.
+   Der Fokus kommt aus der zentralen Regel oben, nicht von hier - deshalb
+   setzt dieser Block bewusst kein :focus und kein outline.
+   font: inherit ist noetig, weil Formularelemente die Schrift des Dokuments
+   nicht erben; ohne die Zeile rendern sie in der Browser-Standardschrift. */
+.input,
+.select,
+.textarea,
+.login-input,
+.media-input,
+.media-select,
+.migrate-input,
+.pages-edit-input,
+.pages-edit-textarea,
+.ss-input{
+  width: 100%;
+  min-height: 38px;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}

@@ -206,6 +206,47 @@ Themes gibt.
 Die Dunkel-Spalte ist **wertgleich mit der Verwaltung**. Die Hell-Spalte ist
 **[CMS]** — dieselbe Konstruktion wie bei den Grundflächen in 2.2.
 
+#### Was eine Zustandsfarbe ist — und was nicht
+
+Die vier Tokens tragen **Bedeutung**, nicht Aussehen. Wer eine Farbe braucht,
+weil etwas rot *aussehen* soll, greift zum falschen Werkzeug.
+
+| Semantik | Bedeutet | Beispiele |
+|---|---|---|
+| `--success` | Etwas ist gültig, aktiv, gelungen | Plakette *live*, Startseiten-Haken, Speichern, Status *fertig* |
+| `--warning` | Etwas verlangt Aufmerksamkeit oder ist umkehrbar folgenreich | Plakette *Entwurf*, Abbrechen, Wiederherstellen, Status *in Arbeit* |
+| `--danger` | Etwas zerstört oder ist fehlgeschlagen | Löschen, Plakette *abgelaufen*, Fehlermeldung |
+| `--info` | Neutraler Hinweis ohne Wertung | Navigationsbereich einer Seite |
+
+**Die Abgrenzung zwischen `--warning` und `--danger` ist ein Schweregrad,
+keine Farbwahl.** `.pages-edit-iconbtn--cancel` verwirft eine Bearbeitung,
+`--delete` zerstört eine Seite. Nur das Zweite ist eine Gefahr. Deshalb liegt
+Abbrechen auf `--warning` und Löschen auf `--danger` — die beiden sind damit
+über den Farbton unverwechselbar, ohne dass die Leiter eine fünfte Stufe
+bräuchte.
+
+**Nicht zu den Zustandsfarben gehört, was auf fremdem Material liegt.** Der
+Fokuspunkt der Bildbearbeitung (`.media-edit__focus-dot`) ist ein Marker auf
+beliebigen Benutzerfotos, keine Zustandsmeldung. Er hat ein eigenes,
+**themeunabhängiges** Token:
+
+```css
+--marker: #e6007e;
+```
+
+Seine Anforderung ist eine andere als die einer Zustandsfarbe: Er muss auf
+hellen wie dunklen Bildern sitzen, und er darf sich mit dem Theme nicht
+ändern — das Bild darunter ändert sich ja auch nicht. Der Punkt trägt einen
+weißen Innenrand und einen dunklen Außenring; die Füllung muss sich deshalb
+von **beiden** absetzen. Magenta erreicht 4,50 gegen Weiß und 4,67 gegen
+Schwarz und liegt damit fast auf dem bestmöglichen Gleichgewicht (Optimum
+4,68 bei mittlerer Leuchtdichte). Es kommt außerdem in Fotos selten dominant
+vor. Der vorherige Ton `#e74c3c` lag bei 3,82 / 5,50, also deutlich
+unausgewogener.
+
+**Ebenfalls keine Zustandsfarben,** obwohl farbig: `--accent` (2.4), das
+Violett der Footer-Plakette, die Graublautöne des Katalogstatus.
+
 #### Die Tönungsleiter
 
 | Stufe | Anteil | Wofür |
@@ -268,6 +309,11 @@ je Durchgang**, damit ein Fehler am Server einer Farbe zuzuordnen ist.
 | 4 | Rot | 16 | 6 | 8 | **erledigt** |
 | | **Summe** | **49** | **12** | **16** | von 77 |
 
+Die Durchgänge sind nach der **Herkunftsfarbe** gezählt, nicht nach dem
+Zieltoken. Vier Deklarationen aus der Rot-Familie sind bewusst anderswo
+gelandet: die drei von `.pages-edit-iconbtn--cancel` auf `--warning` und die
+eine des Bildmarkers auf `--marker`.
+
 **Die Migration ist abgeschlossen.** Jeder der vier Grundtöne steht danach
 genau einmal im Projekt, nämlich als Token. Die zwölf Hell-Overrides bei Gelb
 und Rot sind entfallen: Das Hell-Theme hängt jetzt allein an der zweiten
@@ -294,10 +340,13 @@ sie überflüssig macht:
   Gegenstück zum `-text`-Token der Verwaltung. Mit einem Grundton je Theme
   braucht es sie nicht — genau die Begründung aus dem Abschnitt oben.
 
-Zwei Unterscheidungen gehen dabei verloren, und das ist der Preis der vier
-Stufen: `.pages-edit-iconbtn--cancel` (35 % Rahmen) und `--delete` (45 %)
-liegen jetzt beide auf `-border-strong`, sind über den Rahmen also nicht
-mehr auseinanderzuhalten — nur noch über ihre Fläche (8 % gegen 14 %).
+Wo die Angleichung zwei Elemente ununterscheidbar gemacht hätte, ist **die
+Semantik geschärft worden statt die Leiter erweitert**:
+`.pages-edit-iconbtn--cancel` (vormals 35 % Rahmen) und `--delete` (45 %)
+lägen beide auf `-border-strong`. Statt einer fünften Stufe trägt Abbrechen
+jetzt `--warning` und Löschen `--danger` — sie sind über den Farbton
+unterschieden, und der Farbton sagt zusätzlich etwas Wahres über den
+Schweregrad aus (siehe die Abgrenzung oben).
 
 **TODO: ungeklärt** — fünf Fundstellen bleiben bewusst außerhalb dieser
 Migration und sind je eine eigene Entscheidung: `--accent` / `#c41e3a`
@@ -526,27 +575,84 @@ haben genau einen Button ohne `--ghost`. Ausnahmen: `media_list.php` (6),
 **TODO: ungeklärt** — es gibt keine gemeinsame `.surface`-Klasse wie in der
 Verwaltung, und keine Regel zur Schachtelungstiefe.
 
-### 6.3 Eingaben
+### 6.3 Eingaben **[V]** — eine Form
 
-**TODO: ungeklärt — sechs parallele Formen.**
+Alle Eingaben teilen sich einen Regelblock in
+[admin-components.css](public/assets/css/admin-components.css#L330):
 
-| Klasse | Hintergrund | Rahmen | Radius | Polsterung |
-|---|---|---|---|---|
-| `.login-input` | `rgba(0,0,0,.38)` | `--btn-border` | 12px | 9px 11px |
-| `.input` / `.select` / `.textarea` | `rgba(0,0,0,.20)` | `rgba(255,255,255,.12)` | 12px | 10px 12px |
-| `.media-input` | `rgba(0,0,0,.20)` | `rgba(255,255,255,.12)` | 10px | 8px 10px |
-| `.migrate-input` | `rgba(255,255,255,.04)` | `--btn-border` | 12px | 10px 12px |
-| `.pages-edit-input` | `var(--panel)` | `--btn-border` | 12px | 10px 12px |
-| `.ss-input` | `var(--panel)` | `--panel-border` | 12px | 10px 12px |
+```css
+width: 100%;
+min-height: 38px;
+padding: 10px 12px;
+border: 1px solid var(--input-border);
+border-radius: var(--radius-sm);
+background: var(--input-bg);
+color: var(--text);
+font: inherit;
+font-size: 14px;
+```
 
-Vier Flächen, drei Rahmenfarben, für dieselbe Sache. Keine benutzt
-`--input-bg`/`--input-border` — die Tokens existieren hier nicht.
+Vorher standen dort sechs Klassen mit **vier Flächen, drei Rahmenfarben und
+drei Polsterungen** für dieselbe Sache.
 
-Zu entscheiden: eine gemeinsame Form (dann welche?) und die zwei fehlenden
-Tokens.
+#### Die zwei Tokens
 
-**Entschieden ist nur der Fokus** (6.4): alle sechs teilen sich die zentrale
-Regel. Ihre eigenen `:focus`-Regeln sind entfernt.
+| Token | Dunkel | Hell |
+|---|---|---|
+| `--input-bg` | `rgba(0,0,0,0.20)` | `rgba(17,17,20,0.03)` |
+| `--input-border` | `rgba(255,255,255,0.12)` | `var(--card-border)` |
+
+Beide stammen aus dem Bestand, keiner ist erfunden. `rgba(0,0,0,0.20)` war
+die Fläche der Medien-Felder, `rgba(255,255,255,0.12)` deren Rahmen — und
+letzterer ist zugleich wertgleich mit `--input-border` der Verwaltung.
+`rgba(17,17,20,0.03)` war die Hell-Fläche des Anmeldefelds.
+
+**Felder sind im CMS dunkler als ihr Grund, nicht heller.** Das ist der eine
+Punkt, an dem die Verwaltung nicht als Vorlage taugt: Sie hellt mit
+`rgba(255,255,255,0.02)` auf. Fünf der sechs CMS-Klassen setzten das Feld ab,
+indem sie es vertieften. Die Verwaltungswerte zu übernehmen hätte jedes Feld
+der Anwendung umgedreht.
+
+**`--input-bg` ist bewusst ein Alpha-Wert, kein deckender.** Felder liegen im
+CMS in Modals, Hero-Tabflächen und Karten mit jeweils anderem Grund. Ein
+Alpha-Wert bleibt dort überall gleich stark abgesetzt, ein deckender nicht —
+dieselbe Begründung wie bei den Zustandstönungen in 2.6. Er reproduziert die
+beiden früher handverlesenen Sonderfälle bis auf ein bis zwei Stufen
+(`#121317` gegen `#101216` im Modal, `#0c0f15` gegen `#0b0f15` in der
+Hero-Fläche); die beiden Dunkel-Overrides sind dadurch entfallen.
+
+Kontrast der Eingabeschrift gegen `--input-bg`: **17,02:1** dunkel,
+**17,83:1** hell.
+
+Im Hell-Theme teilt sich der Rahmen den einen vorhandenen Rahmenton
+(`#e7ebf1`, zugleich `--card-border`, `--btn-border` und `--panel-border`) —
+als Alias geschrieben, damit der Wert nicht ein viertes Mal dasteht. Im
+Dunkeln steht er eigenständig, weil das Feld dort einen kräftigeren Rahmen
+braucht als ein Button: seine Fläche allein trägt die Form nicht.
+
+**`font: inherit` ist Teil der Form, keine Zutat.** Formularelemente erben
+die Schrift des Dokuments nicht. Fünf der sechs Klassen setzten sie nicht und
+rendeten deshalb in der Browser-Standardschrift statt im System-Stack.
+
+**Der Fokus kommt aus der zentralen Regel** (6.4), nicht aus diesem Block. Er
+setzt darum bewusst weder `:focus` noch `outline`.
+
+#### Zweckgebundene Abweichungen
+
+Sechs Regeln bleiben, weil sie eine Aufgabe erfüllen statt gewachsen zu sein:
+
+| Regel | Was | Warum |
+|---|---|---|
+| `.login-input` | `font-size: 15px`, `line-height: 1.25` | Die Auth-Karte führt eine eigene, größere Textstufe (28px Titel) |
+| `.textarea` | `min-height: 110px`, `resize: vertical` | Mehrzeilig |
+| `.pages-edit-textarea` | Mono, 13px, `min-height: 260px` | Feld für HTML-Quelltext |
+| `.events-edit-form .pages-edit-textarea` | `min-height: 190px` | Kürzeres Feld im Veranstaltungsformular |
+| `.pages-edit-card--compact .pages-edit-input` | `padding: 8px 10px` | Kompakte Kartenvariante |
+| `.migrate-input` | `min-width: 240px` | Steht inline in einer Aktionszeile statt im Formularraster |
+
+**TODO: ungeklärt** — `.migrate-input` wird von keinem Markup benutzt. Die
+Klasse ist tot und steht nur noch in der Form. Löschen oder Verwendung
+nachtragen.
 
 ### 6.4 Zustände — Fokus und Deaktivierung **[V]**
 
@@ -640,6 +746,23 @@ Elementen auch das genommen. Gelöst ist es deshalb, indem allein die
 
 Damit entfällt der Konflikt ganz, statt ihn zu gewinnen: das deaktivierte
 Element bekommt nie `pointer`, und die zentrale Regel greift unbehelligt.
+
+#### Offen: zwei gelbe Buttons nebeneinander
+
+Die Aktionsleiste des Seiteneditors zeigt `--delete` nur bei nicht
+gelöschten und `--restore` nur bei gelöschten Seiten — die beiden schließen
+sich aus. Abbrechen steht immer da.
+
+| Ansicht | Buttons | Unterscheidung |
+|---|---|---|
+| Normale Seite | Speichern (grün), Abbrechen (gelb), Löschen (rot) | drei Töne, eindeutig |
+| Gelöschte Seite | Speichern (grün), **Abbrechen (gelb)**, **Wiederherstellen (gelb)** | beide gelb, nur über die Fläche (8 % gegen 14 %) |
+
+**TODO: ungeklärt.** Bewusst so belassen, nicht vergessen. Der Fall ist
+selten, und die Symbole unterscheiden sich (✕ gegen ↺). Naheliegende Lösung
+wäre `--success` für Wiederherstellen — eine Wiederherstellung ist inhaltlich
+eher eine Erholung als eine Warnung —, aber das ist eine Bedeutungsfrage und
+keine Farbfrage, also nicht nebenbei zu entscheiden.
 
 ### 6.5 Die eine zulässige Ausnahme **[CMS]**
 

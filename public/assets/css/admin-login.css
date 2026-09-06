@@ -98,21 +98,13 @@ body.login-auth{
   letter-spacing: 0.01em;
 }
 
+/* Die Auth-Karte fuehrt eine eigene, groessere Textstufe (28px Titel).
+   Das Feld folgt ihr, statt der 14px-Stufe der Admin-Oberflaeche. */
 .login-input{
-  width: 100%;
-  border: 1px solid var(--btn-border);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.38);
-  color: var(--text);
-  padding: 9px 11px;
-  font: inherit;
   font-size: 15px;
   line-height: 1.25;
 }
 
-html[data-theme="light"] .login-input{
-  background: rgba(17, 17, 20, 0.03);
-}
 
 .login-actions{
   display: flex;
