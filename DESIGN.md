@@ -964,30 +964,63 @@ Es gibt keine `@keyframes` und keine `animation` im Admin-CSS. Das bleibt so.
 
 ---
 
-## 8. Breakpoints
+## 8. Breakpoints **[CMS]**
 
-**TODO: ungeklärt.**
+### In der Admin-Oberfläche gelten vier Grenzen
 
-| | Verwaltung | CMS |
+| Grenze | Wirkung |
+|---|---|
+| `980px` | Editor-Layout, Medienraster, Tabellen und Einstellungen brechen auf eine Spalte; Dashboard-Kennzahlen 4 → 2 |
+| `820px` | Seitenleiste wird zur Schublade mit Backdrop, Formularfelder auf volle Breite, Events-Editor einspaltig |
+| `640px` | Auth-Karte, Aktionsleisten und Editorraster untereinander, Panel-Polsterung kleiner |
+| `1400px` | **Dokumentierte Ausnahme**, siehe unten |
+
+**980 und 640 sind wertgleich mit der Verwaltung.** `820px` tritt an die
+Stelle ihres `860px` und ist die eine bewusste Abweichung: Dort setzt die
+mobile Navigation als Overlay ein — ein Bauteil, das die Verwaltung nicht
+hat, und das daraus folgt, dass der Seiteneditor die Breite braucht
+(Abschnitt 1).
+
+Ausschließlich `max-width`, mobile zuletzt. Tabellen laufen auf schmalen
+Geräten nicht um, sondern scrollen waagerecht.
+
+#### Die Ausnahme: 1400px
+
+`.media-grid` in der Mediathek hat **vier** Rasterstufen: 4 Spalten, dann 3
+ab 1400px, 2 ab 980px, 1 ab 640px. Die 1400er-Grenze trägt die 3-Spalten-
+Stufe. Ohne sie spränge das Raster auf breiten Schirmen von vier Spalten
+direkt auf zwei — ein Sprung, den keine der anderen Ansichten macht.
+
+Sie bleibt deshalb, und sie ist die **einzige** Grenze oberhalb von 980px in
+der Admin-Oberfläche. Wer eine zweite braucht, hat vermutlich ein
+Layoutproblem statt eines Breakpoint-Problems.
+
+### Drei Grenzen liegen außerhalb der Oberfläche
+
+Sie gehören nicht zum Satz oben und werden auch nicht dorthin gezogen:
+
+| Grenze | Wo | Warum eigenständig |
 |---|---|---|
-| Anzahl | 3 (980, 860, 640) | **13 Deklarationen**, 10 verschiedene Grenzen |
-| Grenzen | — | 640, 680, 720, 820, 859, 900, 980, 1100, 1180, 1400 |
-| Richtung | nur `max-width` | 10 × `max-width`, **3 × `min-width`** |
-| Shell-Umbruch | 980px | **820px** |
+| `min-width: 1180px`, `min-width: 860px and max-width: 1179px`, `max-width: 859px` | `admin-system-health.css` | `--hc-*`-Ebene, Abschnitt 10 |
+| `prefers-color-scheme: dark` | `admin-system-health.css` | dieselbe Ebene; steht im Widerspruch zur Theme-Wahl aus 2.1 |
+| `max-width: 680px` | Dual-Hero-**Vorschau** | Bildet die ausgelieferte Website ab, nicht den Admin (6.6) |
 
-**Entschieden [CMS]:** Der Shell-Umbruch liegt bei 820px, weil dort die
-mobile Navigation als Overlay mit Backdrop einsetzt — ein Bauteil, das die
-Verwaltung nicht hat. Die Seitenleiste ist außerdem einklappbar (250px → 64px),
-persistiert als `ui.sidebar_collapsed`. Beides folgt daraus, dass der
-Seiteneditor die Breite braucht.
+> **`859px` ist kein Tippfehler für 860.** Der Wert ist die Gegenstufe zu
+> `min-width: 860px`, damit sich die beiden Bereiche nicht um einen Pixel
+> überlappen. Zusammen mit `min-width: 1180px` bilden die drei einen Satz,
+> der die System-Health-Seite in 1/2/3 Spalten staffelt — **nur gemeinsam
+> anzufassen**, und erst, wenn über die `--hc-*`-Ebene entschieden ist.
 
-Offen ist alles andere: ob die übrigen neun Grenzen zusammengefasst werden
-und ob `min-width` zulässig bleibt.
+### Was zusammengelegt wurde
 
-**TODO: ungeklärt** — `admin-system-health.css` enthält eine
-`@media (prefers-color-scheme: dark)`-Abfrage. Sie ist heute wirkungslos
-(der Selektor greift nur ohne `data-theme`, und `layout.php` setzt es
-immer), aber sie steht im Widerspruch zur Theme-Wahl aus 2.1.
+Vorher zehn Grenzen. Drei Einzelfälle sind auf den Satz gezogen worden, alle
+in dieselbe Richtung — der Umbruch tritt jetzt später ein, nicht früher:
+
+| Ist | Ziel | Betroffen | Folge |
+|---|---|---|---|
+| `1100px` | `980px` | `.stats` | Dashboard-Kennzahlen bleiben 120px länger vierspaltig; bei 1200px Panelbreite rund 290px je Karte |
+| `900px` | `820px` | Events-Editor (4 Regeln) | Auswahlraster und Linkzeilen bleiben 80px länger zweispaltig |
+| `720px` | `640px` | `.ss-row2` | Zwei Einstellungsfelder bleiben 80px länger nebeneinander |
 
 ---
 
