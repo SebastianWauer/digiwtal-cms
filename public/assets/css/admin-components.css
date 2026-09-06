@@ -44,28 +44,18 @@
   background: rgba(255,255,255,0.06);
 }
 .pages-badge--draft{
-  color: rgba(255, 186, 73, 0.95);
-  border-color: rgba(255, 186, 73, 0.35);
-  background: rgba(255, 186, 73, 0.08);
+  color: var(--warning);
+  border-color: var(--warning-border-strong);
+  background: var(--warning-surface);
 }
 
 .pages-badge--expired{
-  color: rgba(255, 120, 120, 0.98);
-  border-color: rgba(255, 120, 120, 0.4);
-  background: rgba(255, 120, 120, 0.1);
+  color: var(--danger);
+  border-color: var(--danger-border-strong);
+  background: var(--danger-surface);
 }
 
-html[data-theme="light"] .pages-badge--draft{
-  color: #b25a00;
-  border-color: rgba(178, 90, 0, 0.35);
-  background: rgba(178, 90, 0, 0.08);
-}
 
-html[data-theme="light"] .pages-badge--expired{
-  color: #b22525;
-  border-color: rgba(178, 37, 37, 0.35);
-  background: rgba(178, 37, 37, 0.08);
-}
 .btn{
   border: 1px solid transparent;
   padding: 7px 12px;        /* vorher: 10px 14px */
@@ -121,36 +111,36 @@ html[data-theme="light"] .btn:not(.btn--ghost){
 .order{ color: var(--muted); }
 /* Button Variants (Components) */
 .btn--warn{
-  border-color: rgba(255, 186, 73, 0.55);
-  color: rgba(255, 214, 145, 0.95);
+  border-color: var(--warning-border-strong);
+  color: var(--warning);
 }
 .btn--warn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
-  background: rgba(255, 186, 73, 0.08);
+  background: var(--warning-surface);
 }
 
 .btn--danger{
-  border-color: rgba(255, 90, 90, 0.55);
-  color: rgba(255, 170, 170, 0.95);
+  border-color: var(--danger-border-strong);
+  color: var(--danger);
 }
 .btn--danger:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
-  background: rgba(255, 90, 90, 0.08);
+  background: var(--danger-surface);
 }
 /* Button Variants (Components) – greifen sicher auch mit btn--ghost */
 
 .btn.btn--ghost.btn--warn{
-  border-color: rgba(255, 186, 73, 0.55);
-  color: rgba(255, 214, 145, 0.95);
+  border-color: var(--warning-border-strong);
+  color: var(--warning);
 }
 .btn.btn--ghost.btn--warn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
-  background: rgba(255, 186, 73, 0.08);
+  background: var(--warning-surface);
 }
 
 .btn.btn--ghost.btn--danger{
-  border-color: rgba(255, 90, 90, 0.55);
-  color: rgba(255, 170, 170, 0.95);
+  border-color: var(--danger-border-strong);
+  color: var(--danger);
 }
 .btn.btn--ghost.btn--danger:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
-  background: rgba(255, 90, 90, 0.08);
+  background: var(--danger-surface);
 }
 /* Button Size Variant (Components) */
 .btn--sm{
@@ -164,21 +154,6 @@ html[data-theme="light"] .btn:not(.btn--ghost){
   font-size: 12.5px;
   border-radius: var(--radius-sm);
   line-height: 1.2;
-}
-html[data-theme="light"] .btn.btn--ghost.btn--warn{
-  color: #b25a00;
-  border-color: rgba(178, 90, 0, 0.35);
-}
-html[data-theme="light"] .btn.btn--ghost.btn--warn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
-  background: rgba(178, 90, 0, 0.08);
-}
-
-html[data-theme="light"] .btn.btn--ghost.btn--danger{
-  color: #b42318;
-  border-color: rgba(180, 35, 24, 0.35);
-}
-html[data-theme="light"] .btn.btn--ghost.btn--danger:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
-  background: rgba(180, 35, 24, 0.08);
 }
 /* Action group: Buttons + Separator exakt mittig im Gap */
 .pages-actions-inline{

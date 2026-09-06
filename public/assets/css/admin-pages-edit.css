@@ -276,7 +276,7 @@
 }
 
 .pages-edit-switch--status .pages-edit-switch__slider{
-  background: color-mix(in srgb, #f2c94c 70%, #ffffff 30%);
+  background: var(--warning);
 }
 
 .pages-edit-switch--status input:checked + .pages-edit-switch__slider{
@@ -343,21 +343,21 @@
 }
 
 .pages-edit-iconbtn--cancel{
-  color: #b4232e;
-  background: color-mix(in srgb, #b4232e 10%, var(--panel));
-  border-color: color-mix(in srgb, #b4232e 35%, var(--btn-border));
+  color: var(--danger);
+  background: var(--danger-surface);
+  border-color: var(--danger-border-strong);
 }
 
 .pages-edit-iconbtn--delete{
-  color: #b4232e;
-  background: color-mix(in srgb, #b4232e 14%, var(--panel));
-  border-color: color-mix(in srgb, #b4232e 45%, var(--btn-border));
+  color: var(--danger);
+  background: var(--danger-surface-strong);
+  border-color: var(--danger-border-strong);
 }
 
 .pages-edit-iconbtn--restore{
-  color: #b26a00;
-  background: color-mix(in srgb, #b26a00 12%, var(--panel));
-  border-color: color-mix(in srgb, #b26a00 40%, var(--btn-border));
+  color: var(--warning);
+  background: var(--warning-surface-strong);
+  border-color: var(--warning-border-strong);
 }
 
 .pages-edit-floating-actions{
@@ -1519,8 +1519,8 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
 
 .pages-edit-catalog__status.is-processing,
 .pages-edit-catalog__status.is-uploaded {
-  color: #92400e;
-  background: #fef3c7;
+  color: var(--warning);
+  background: var(--warning-surface);
 }
 
 .pages-edit-catalog__current-text {

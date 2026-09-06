@@ -169,8 +169,8 @@ body.pages-order-modal-open{ overflow: hidden; }
 }
 
 .pages-order-draft{
-  border-color: rgba(245,158,11,.4);
-  color: #f59e0b;
+  border-color: var(--warning-border-strong);
+  color: var(--warning);
 }
 
 .pages-order-controls{ display: inline-flex; gap: 5px; }

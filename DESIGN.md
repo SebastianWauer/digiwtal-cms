@@ -260,12 +260,18 @@ jede getönte Fläche deutlich lauter und widerspricht Abschnitt 1.
 Betroffen sind 77 Deklarationen in 8 Dateien. Migriert wird **eine Semantik
 je Durchgang**, damit ein Fehler am Server einer Farbe zuzuordnen ist.
 
-| Durchgang | Semantik | Deklarationen | Stand |
-|---|---|---|---|
-| 1 | Blau | 2 von 6 | **erledigt** |
-| 2 | Grün | 14 von 18 | **erledigt** |
-| 3 | Gelb | 23 | offen |
-| 4 | Rot | 30 | offen |
+| Durchgang | Semantik | migriert | Overrides entfernt | ausgenommen | Stand |
+|---|---|---|---|---|---|
+| 1 | Blau | 2 | 0 | 4 | **erledigt** |
+| 2 | Grün | 14 | 0 | 4 | **erledigt** |
+| 3 | Gelb | 17 | 6 | 0 | **erledigt** |
+| 4 | Rot | 16 | 6 | 8 | **erledigt** |
+| | **Summe** | **49** | **12** | **16** | von 77 |
+
+**Die Migration ist abgeschlossen.** Jeder der vier Grundtöne steht danach
+genau einmal im Projekt, nämlich als Token. Die zwölf Hell-Overrides bei Gelb
+und Rot sind entfallen: Das Hell-Theme hängt jetzt allein an der zweiten
+Themespalte der Tokens.
 
 **Werte, die die Leiter nicht kennt, werden der nächstgelegenen Stufe
 zugeordnet — die Leiter wird nicht erweitert.** Der Bestand benutzte
@@ -273,12 +279,25 @@ Deckkräfte zwischen 8 % und 50 %, oft für dieselbe Rolle. Die Angleichung
 macht Rahmen sichtbar schwächer, wo sie vorher über 28 % lagen; das ist der
 Preis dafür, dass vier Stufen genügen. Bisher zugeordnet: 35 %, 40 %, 45 %
 und 50 % auf `-border-strong` (28 %), 20 % als Fläche auf `-surface-strong`
-(14 %).
+(14 %). Vollständig aufgetreten sind 10 %, 12 %, 14 %, 20 %, 35 %, 40 %,
+45 %, 50 % und 55 %.
 
-Zwei Konstruktionen sind dabei ganz entfallen, weil die zweite Themespalte
-sie überflüssig macht: der Weißanteil, mit dem die Statusschalter ihren Ton
-aufhellten (`color-mix(… 78%, #ffffff 22%)`), und die deckende blasse Fläche
-des Katalogstatus (`#dcfce7`), die im Dunkeln eine helle Insel war.
+Drei Konstruktionen sind dabei ganz entfallen, weil die zweite Themespalte
+sie überflüssig macht:
+
+- Der Weißanteil, mit dem die Statusschalter ihren Ton aufhellten
+  (`color-mix(… 78%, #ffffff 22%)` bei Grün, `… 70%, #ffffff 30%` bei Gelb).
+- Die deckenden blassen Flächen des Katalogstatus (`#dcfce7` und `#fef3c7`),
+  die im Dunkel-Theme hell leuchtende Inseln waren.
+- Die aufgehellten Schriftfarben der getönten Buttons (`#ffd691` bei
+  `.btn--warn`, `#ffaaaa` bei `.btn--danger`). Sie waren das handgemachte
+  Gegenstück zum `-text`-Token der Verwaltung. Mit einem Grundton je Theme
+  braucht es sie nicht — genau die Begründung aus dem Abschnitt oben.
+
+Zwei Unterscheidungen gehen dabei verloren, und das ist der Preis der vier
+Stufen: `.pages-edit-iconbtn--cancel` (35 % Rahmen) und `--delete` (45 %)
+liegen jetzt beide auf `-border-strong`, sind über den Rahmen also nicht
+mehr auseinanderzuhalten — nur noch über ihre Fläche (8 % gegen 14 %).
 
 **TODO: ungeklärt** — fünf Fundstellen bleiben bewusst außerhalb dieser
 Migration und sind je eine eigene Entscheidung: `--accent` / `#c41e3a`

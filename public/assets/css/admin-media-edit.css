@@ -60,7 +60,7 @@
   height: 14px;
   border-radius: 50%;
   border: 2px solid #fff;
-  background: #e74c3c;
+  background: var(--danger);
   box-shadow: 0 0 0 2px rgba(0,0,0,.4);
   transform: translate(-50%, -50%);
   pointer-events: none;
