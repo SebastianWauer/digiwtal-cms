@@ -24,6 +24,12 @@
   --primary: #e6e6e6;
   --active: rgba(255,255,255,0.10);
 
+  /* Fokusring. Eigenes Token, bewusst an keine Bedeutung gekoppelt: Fokus
+     zeigt Bedienung an, nicht Zustand. Deckendes Weiss auf --bg ist der
+     hoechste verfuegbare Kontrast, und die Kontur unterscheidet sich vom
+     flaechigen Hover nicht nur im Ton, sondern in der Form. */
+  --focus: #ffffff;
+
   --shadow: 0 10px 30px rgba(0,0,0,0.35);
 
   --flash-ok-bg: rgba(0,255,140,0.08);
@@ -53,6 +59,11 @@ html[data-theme="light"]{
 
   --primary: #111111;
   --active: #f1f3f6;
+
+  /* Hell: Weiss waere unsichtbar. Dunkelster Ton der Hell-Ebene, damit der
+     Ring hier denselben Maximalkontrast hat wie Weiss im Dunkeln. Als Alias
+     auf --text, damit der Farbwert nur an einer Stelle steht. */
+  --focus: var(--text);
 
   --shadow: 0 10px 30px rgba(16,24,40,0.10);
 

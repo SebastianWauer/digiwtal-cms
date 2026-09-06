@@ -187,7 +187,6 @@ body.pages-order-modal-open{ overflow: hidden; }
 }
 
 .pages-order-controls button:hover:not(:disabled){ background: var(--btn-hover); }
-.pages-order-controls button:disabled{ opacity: .3; cursor: default; }
 
 .pages-order-save{
   display: flex;

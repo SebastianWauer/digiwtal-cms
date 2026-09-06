@@ -19,7 +19,7 @@
   --hc-num: tabular-nums;
 }
 
-body[data-theme="dark"]{
+html[data-theme="dark"]{
   --hc-bg: rgba(255,255,255,.04);
   --hc-card: rgba(0,0,0,.18);
   --hc-border: rgba(255,255,255,.10);
@@ -30,7 +30,7 @@ body[data-theme="dark"]{
 }
 
 @media (prefers-color-scheme: dark){
-  body:not([data-theme]){
+  html:not([data-theme]){
     --hc-bg: rgba(255,255,255,.04);
     --hc-card: rgba(0,0,0,.18);
     --hc-border: rgba(255,255,255,.10);

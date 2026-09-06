@@ -108,20 +108,10 @@ body.login-auth{
   font: inherit;
   font-size: 15px;
   line-height: 1.25;
-  outline: none;
 }
 
 html[data-theme="light"] .login-input{
   background: rgba(17, 17, 20, 0.03);
-}
-
-.login-input:focus{
-  border-color: var(--outline);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.10);
-}
-
-html[data-theme="light"] .login-input:focus{
-  box-shadow: 0 0 0 3px rgba(17, 17, 20, 0.08);
 }
 
 .login-actions{

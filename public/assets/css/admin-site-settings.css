@@ -84,11 +84,6 @@
   color: var(--text);
   border-radius: 12px;
   padding: 10px 12px;
-  outline: none;
-}
-
-.ss-input:focus{
-  border-color: var(--outline);
 }
 
 .ss-asset{

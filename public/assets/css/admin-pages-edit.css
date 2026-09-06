@@ -166,12 +166,6 @@
   color: var(--text);
   border-radius: 12px;
   padding: 10px 12px;
-  outline: none;
-}
-
-.pages-edit-input:focus,
-.pages-edit-textarea:focus{
-  border-color: var(--outline);
 }
 
 .pages-edit-page-icon .mp__input{
@@ -179,13 +173,8 @@
   border: 1px solid var(--btn-border);
   border-radius: 12px;
   padding: 10px 12px;
-  outline: none;
   color: var(--text);
   background: var(--panel);
-}
-
-.pages-edit-page-icon .mp__input:focus{
-  border-color: var(--outline);
 }
 
 .pages-edit-page-icon .mp__preview{
@@ -298,9 +287,23 @@
   background: color-mix(in srgb, #1d9f6f 78%, #ffffff 22%);
 }
 
-.pages-edit-switch--status input:focus-visible + .pages-edit-switch__slider,
-.pages-edit-switch--home input:focus-visible + .pages-edit-switch__slider{
-  box-shadow: 0 0 0 2px color-mix(in srgb, #1d9f6f 30%, transparent);
+/* Der Input ist visuell verborgen (0x0, opacity 0). Ein Ring auf ihm waere
+   ein Punkt im Leeren, deshalb traegt der sichtbare Slider den Fokus
+   stellvertretend - gleiche Kontur wie die zentrale Regel. Das ist der
+   Ersatz, der das outline:none unten zulaessig macht. */
+.pages-edit-switch input:focus-visible{
+  outline: none;
+}
+
+.pages-edit-switch input:focus-visible + .pages-edit-switch__slider{
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Deaktiviert: der Input ist unsichtbar, also muss das Label dimmen. */
+.pages-edit-switch:has(input:disabled){
+  opacity: .5;
+  cursor: not-allowed;
 }
 
 .pages-edit-switch input:checked + .pages-edit-switch__slider::after{
@@ -329,7 +332,7 @@
   transition: transform .08s ease, border-color .12s ease, background .12s ease;
 }
 
-.pages-edit-iconbtn:hover{
+.pages-edit-iconbtn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   border-color: var(--outline);
   transform: translateY(-1px);
 }
@@ -605,13 +608,8 @@
 .pages-edit-richtext__surface{
   min-height: 220px;
   padding: 14px;
-  outline: none;
   line-height: 1.62;
   font-size: 15px;
-}
-
-.pages-edit-richtext__surface:focus{
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--outline) 42%, transparent);
 }
 
 .pages-edit-richtext__surface p{

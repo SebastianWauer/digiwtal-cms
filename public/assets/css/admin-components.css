@@ -8,11 +8,17 @@
     padding: 10px 12px;
     border-radius: 12px;
     background-color: var(--flash-ok-bg); /* Je nach Typ (ok/error) ändern */
+    border: 1px solid transparent;
     border-color: var(--flash-ok-border);
     color: #fff;
     opacity: 1;
     transition: opacity 0.5s ease-out; /* Übergangseffekt */
     z-index: 9999;               /* Sicherstellen, dass es oben bleibt */
+}
+
+.flash--error {
+    background-color: var(--flash-err-bg);
+    border-color: var(--flash-err-border);
 }
 /* Badges */
 .pages-badge{
@@ -78,14 +84,14 @@ html[data-theme="light"] .btn:not(.btn--ghost){
   background: #111;
   color: #fff;
 }
-.btn:hover{ opacity: 0.92; }
+.btn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{ opacity: 0.92; }
 
 .btn--ghost{
   background: transparent;
   color: var(--text);
   border-color: var(--btn-border);
 }
-.btn--ghost:hover{ background: var(--btn-hover); }
+.btn--ghost:not(:disabled,[aria-disabled="true"],.is-disabled):hover{ background: var(--btn-hover); }
 
 .hint{ margin-top: 16px; color: var(--muted); }
 
@@ -118,7 +124,7 @@ html[data-theme="light"] .btn:not(.btn--ghost){
   border-color: rgba(255, 186, 73, 0.55);
   color: rgba(255, 214, 145, 0.95);
 }
-.btn--warn:hover{
+.btn--warn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   background: rgba(255, 186, 73, 0.08);
 }
 
@@ -126,7 +132,7 @@ html[data-theme="light"] .btn:not(.btn--ghost){
   border-color: rgba(255, 90, 90, 0.55);
   color: rgba(255, 170, 170, 0.95);
 }
-.btn--danger:hover{
+.btn--danger:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   background: rgba(255, 90, 90, 0.08);
 }
 /* Button Variants (Components) – greifen sicher auch mit btn--ghost */
@@ -135,7 +141,7 @@ html[data-theme="light"] .btn:not(.btn--ghost){
   border-color: rgba(255, 186, 73, 0.55);
   color: rgba(255, 214, 145, 0.95);
 }
-.btn.btn--ghost.btn--warn:hover{
+.btn.btn--ghost.btn--warn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   background: rgba(255, 186, 73, 0.08);
 }
 
@@ -143,7 +149,7 @@ html[data-theme="light"] .btn:not(.btn--ghost){
   border-color: rgba(255, 90, 90, 0.55);
   color: rgba(255, 170, 170, 0.95);
 }
-.btn.btn--ghost.btn--danger:hover{
+.btn.btn--ghost.btn--danger:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   background: rgba(255, 90, 90, 0.08);
 }
 /* Button Size Variant (Components) */
@@ -163,7 +169,7 @@ html[data-theme="light"] .btn.btn--ghost.btn--warn{
   color: #b25a00;
   border-color: rgba(178, 90, 0, 0.35);
 }
-html[data-theme="light"] .btn.btn--ghost.btn--warn:hover{
+html[data-theme="light"] .btn.btn--ghost.btn--warn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   background: rgba(178, 90, 0, 0.08);
 }
 
@@ -171,7 +177,7 @@ html[data-theme="light"] .btn.btn--ghost.btn--danger{
   color: #b42318;
   border-color: rgba(180, 35, 24, 0.35);
 }
-html[data-theme="light"] .btn.btn--ghost.btn--danger:hover{
+html[data-theme="light"] .btn.btn--ghost.btn--danger:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   background: rgba(180, 35, 24, 0.08);
 }
 /* Action group: Buttons + Separator exakt mittig im Gap */
@@ -317,4 +323,33 @@ html[data-theme="light"] .btn.btn--ghost.btn--danger:hover{
   .pages-actions-inline > * + *::before{
     display: none;
   }
+}
+
+/* =========================
+   Fokus und Deaktivierung
+   ========================= */
+
+/* Fokus ist eine Kontur, Hover eine Flaeche - die beiden duerfen nie gleich
+   aussehen. :focus-visible statt :focus, damit der Ring der Tastatur gehoert
+   und beim Mausklick ausbleibt. Der Ring liegt ausserhalb des Elements und
+   ist damit auch dort sichtbar, wo die Flaeche selbst hell ist. */
+.btn:focus-visible,
+a.btn:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+.nav__item:focus-visible,
+[contenteditable="true"]:focus-visible,
+[role="button"]:focus-visible{
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+:disabled,
+[aria-disabled="true"],
+.is-disabled{
+  opacity: .5;
+  cursor: not-allowed;
 }

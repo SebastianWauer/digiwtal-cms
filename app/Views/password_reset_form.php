@@ -7,7 +7,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CMS – Neues Passwort</title>
-  <link rel="stylesheet" href="<?= cms_base_path() ?>/assets/css/admin.css">
+  <link rel="stylesheet" href="<?= h(admin_asset_css('admin-layout.css')) ?>">
+  <link rel="stylesheet" href="<?= h(admin_asset_css('admin-components.css')) ?>">
+  <link rel="stylesheet" href="<?= h(admin_asset_css('admin-login.css')) ?>">
 </head>
 <body>
 <main class="container">

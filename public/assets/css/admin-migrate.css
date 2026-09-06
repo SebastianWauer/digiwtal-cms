@@ -20,11 +20,8 @@
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 14px;
-  outline: none;
   min-width: 240px;
 }
-
-.migrate-input:focus{ border-color: var(--outline); }
 
 html[data-theme="light"] .migrate-input{
   background: #fff;
