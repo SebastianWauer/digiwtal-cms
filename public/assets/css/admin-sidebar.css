@@ -46,8 +46,9 @@
   padding: 7px;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
-  color: var(--text);
-  opacity: 0.5;
+  /* Gedaempft ueber die Textfarbe, nicht ueber Deckkraft: opacity haette das
+     SVG-Icon mitgedaempft, und gerade das soll lesbar bleiben. */
+  color: var(--muted);
   font-size: 0.92rem;
   transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
 }
@@ -59,7 +60,7 @@
   background: var(--active);
   border-color: var(--btn-border);
   font-weight: 650;
-  opacity: 1;
+  color: var(--text);
 }
 
 .nav__icon{
@@ -343,7 +344,7 @@ html[data-theme="light"] .theme-slider__btn[aria-label="Dark Mode"]{ opacity: 0.
   }
 
   .nav__item{
-    opacity: 1;
+    color: var(--text);
     border-radius: var(--radius-sm);
     font-size: 0.93rem;
   }

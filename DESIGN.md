@@ -1071,8 +1071,6 @@ Fundstellen gibt, die weder Regel noch TODO sind, sondern schlicht offen:
   hell-zuerst geschrieben, mit 14 `[data-theme="dark"]`-Blöcken als
   Korrektur — die Umkehrung der Basisebene. **TODO: ungeklärt** — Absicht
   oder Nebeneffekt der Entwicklungsumgebung?
-- **`.nav__item`** dämpft inaktive Einträge über `opacity: 0.5` statt über
-  `--muted`, was das SVG-Icon mitdämpft. **TODO: ungeklärt.**
 - **Kein Stil für `:invalid`** und keiner für Ladezustände. Dieselben zwei
   Lücken wie in der Verwaltung.
 
