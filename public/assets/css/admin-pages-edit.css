@@ -112,7 +112,7 @@
 }
 
 .pages-edit-card-title{
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0.2px;
 }
 
@@ -153,7 +153,7 @@
 .pages-edit-field-hint{
   margin-top: 6px;
   margin-bottom: 10px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -183,7 +183,7 @@
 }
 
 .pages-edit-textarea{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 13px;
   line-height: 1.35;
   min-height: 260px;
@@ -469,7 +469,7 @@
 }
 
 .pages-edit-blockhead-title{
-  font-weight: 760;
+  font-weight: 750;
   letter-spacing: .01em;
 }
 
@@ -577,7 +577,7 @@
 .pages-edit-rt-btn.is-strong{font-weight: 800;}
 .pages-edit-rt-btn.is-italic{font-style: italic;}
 .pages-edit-rt-btn.is-underline{text-decoration: underline;}
-.pages-edit-rt-btn--mode{font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+.pages-edit-rt-btn--mode{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
 
 .pages-edit-rt-select{
   width: auto;

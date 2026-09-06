@@ -390,52 +390,74 @@ ersetzen: die gesamte Zustandsfamilie aus 2.6, dazu `#1d9f6f` (Schalter),
 
 ## 3. Typografie
 
-### Entschieden
+### Ein Schriftstack **[V]**
 
-**Kein Webfont, System-Stack** **[V]** — nichts nachzuladen heißt kein
-Layoutsprung und keine Abhängigkeit vom Netz.
-
-**Mono** gilt für `code`, `pre`, Tokens, Pfade, IDs **[V]**:
-```
-ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-"Liberation Mono", "Courier New", monospace
-```
-
-**Versalien nur für Kleinlabels** **[V]** — im CMS an drei Stellen, alle bei
-10–11px. Nie für Fließtext.
-
-### Offen
-
-**TODO: ungeklärt — der Fließtext-Stack weicht ab.**
+Kein Webfont. Nichts nachzuladen heißt kein Layoutsprung und keine
+Abhängigkeit vom Netz.
 
 ```
-Verwaltung  system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
-CMS         system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif
+Fließtext  system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
+Mono       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+           "Liberation Mono", "Courier New", monospace
 ```
 
-`BlinkMacSystemFont` fehlt, `Roboto` und `Arial` kommen dazu. Gültiges CSS,
-aber ein anderer Stack. Welcher gilt?
+Wertgleich mit der Verwaltung. Der CMS-Stack ließ vorher
+`BlinkMacSystemFont` weg, hängte `Roboto, Arial` an und schrieb `Segoe UI`
+unquotiert; der Mono-Stack stand in drei verschieden langen Fassungen.
 
-**TODO: ungeklärt — Größenskala.** Im Bestand: 30, 28, 26, 25, 24, 22, 20,
-18, 16, 15, 14, 13, 12.5, 12, 11, 10 px sowie 11 rem-Werte und zwei
-`clamp()`. Die Verwaltung führt 11–30 px in acht Stufen. Welche Skala gilt
-für neuen Code — und was ist `12.5px` (6 Vorkommen)?
+Mono gilt für `code`, `pre`, Tokens, Pfade, IDs und das Quelltextfeld des
+Editors.
 
-**TODO: ungeklärt — Gewichte.** Verwaltung 500–800. CMS benutzt 600, 650,
-700, 750, **760**, 800, **850**, **900**. Drei Stufen mehr, `760` genau
-einmal.
+- **TODO: ungeklärt** — `admin-system-health.css` führt mit `--hc-mono`
+  einen eigenen Mono-Stack auf der `--hc-*`-Ebene (Abschnitt 10).
 
-**TODO: ungeklärt — `letter-spacing`.** Die Verwaltung nennt `.04em`–`.08em`
-für Kleinlabels. Das CMS benutzt an zwei Stellen `.12em`, beide in
-Hero-Vorschauen. Frontend-Typografie (siehe 6.6) oder Ausreißer?
+### Ein Gewichtssatz **[V]**
 
-**TODO: ungeklärt — Zeilenhöhe.** `body` hat keine `line-height`; der
-Fließtext läuft mit dem Browserwert. Dieselbe Lücke wie in der Verwaltung.
+**600 · 650 · 700 · 750 · 800.** Derselbe Satz wie in der Verwaltung, ohne
+deren 500, das hier nicht vorkommt.
 
-**TODO: ungeklärt — Zeilenlänge.** Keine Begrenzung in `ch`. `--max: 1200px`
-ist definiert, wird aber **nirgends benutzt**; `.panel` setzt stattdessen
-`max-width: clamp(980px, 92vw, 1560px)`. Soll `--max` weg oder auf den
-echten Wert gesetzt werden?
+| Gewicht | Rolle |
+|---|---|
+| 800 | Titel — `.h1`, Kartentitel, Kennzahlen |
+| 750 | Kleinlabels, Plaketten, Tabellenköpfe |
+| 700 | Arbeitsgewicht für alles Hervorgehobene |
+| 650 | Aktiver Nav-Eintrag, Dateinamen |
+| 600 | Feldbeschriftungen, sekundäre Labels |
+
+Vorher standen acht Stufen im Bestand. Zusammengelegt wurden:
+
+| Ist | Anzahl | Ziel | Warum |
+|---|---|---|---|
+| `760` | 1 | `750` | Zehn Einheiten Abstand, nicht wahrnehmbar |
+| `850` | 5 | `800` | Alle fünf sind Titel, und 800 ist die Titelstufe |
+| `900` | 2 | `800` | Dito |
+
+> **Sichtbare Folge:** Auf Systemen mit variabler Systemschrift (Segoe UI
+> Variable, SF Pro) rendern 850 und 900 tatsächlich schwerer als 800. Dort
+> werden diese sieben Stellen leichter. Auf Systemen mit statischen Schnitten
+> ändert sich nichts, weil dort ohnehin auf 700/800 gerundet wurde.
+
+Versalien mit `letter-spacing` bleiben ausschließlich Kleinlabels
+vorbehalten, nie Fließtext.
+
+### Größen
+
+`12.5px` ist auf `12px` normalisiert (6 Stellen) — ein halber Pixel zwischen
+zwei vorhandenen Stufen war Rundungsartefakt, keine Absicht.
+
+- **TODO: ungeklärt — die Skala selbst.** Im Bestand stehen 10, 11, 12, 13,
+  14, 15, 16, 18, 20, 22, 24, 25, 26, 28, 30 px, dazu elf rem-Werte zwischen
+  `.75rem` und `1rem` und zwei `clamp()`. Die Verwaltung führt acht Stufen
+  von 11 bis 30. Welche gilt hier, und werden die rem-Werte auf px
+  zurückgeführt?
+- **TODO: ungeklärt — `letter-spacing`.** Die Verwaltung nennt `.04em`–`.08em`
+  für Kleinlabels; das CMS benutzt an zwei Stellen `.12em`, beide in
+  Hero-Vorschauen (6.6).
+- **TODO: ungeklärt — Zeilenhöhe.** `body` hat keine `line-height`; der
+  Fließtext läuft mit dem Browserwert. Dieselbe Lücke wie in der Verwaltung.
+- **TODO: ungeklärt — Zeilenlänge.** Keine Begrenzung in `ch`. `--max: 1200px`
+  ist definiert, wird aber nirgends benutzt; `.panel` setzt stattdessen
+  `max-width: clamp(980px, 92vw, 1560px)`.
 
 ---
 

@@ -152,7 +152,7 @@ html[data-theme="light"] .btn:not(.btn--ghost){
 }
 .btn--xs{
   padding: 5px 9px;
-  font-size: 12.5px;
+  font-size: 12px;
   border-radius: var(--radius-sm);
   line-height: 1.2;
 }

@@ -262,7 +262,7 @@ body.pages-order-modal-open{ overflow: hidden; }
 .pages-title strong{ font-weight: 800; }
 
 .pages-mono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 13px;
   color: rgba(255,255,255,0.72);
 }

@@ -22,7 +22,7 @@
 
 .ss-title{
   font-size: 26px;
-  font-weight: 850;
+  font-weight: 800;
   margin: 0 0 10px 0;
 }
 
@@ -36,7 +36,7 @@
 .ss-cardhead h2{
   margin: 0;
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .ss-sub{
@@ -73,7 +73,7 @@
 
 .ss-hint{
   margin-top: 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -115,7 +115,7 @@
 
 .ss-kv .k{
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
   margin-bottom: 2px;
 }
 

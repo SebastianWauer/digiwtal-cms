@@ -21,7 +21,7 @@
 }
 
 .migrate-logtitle{
-  font-weight: 850;
+  font-weight: 800;
   font-size: 13px;
   margin-bottom: 10px;
 }
@@ -34,7 +34,7 @@
   min-height: 140px;
   color: var(--text);
   overflow:auto;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -45,6 +45,6 @@ html[data-theme="light"] .migrate-log{
 .migrate-foot{
   margin-top: 10px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .migrate-actions--spaced{ margin-top:10px; }
