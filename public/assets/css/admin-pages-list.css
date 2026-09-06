@@ -183,8 +183,9 @@ body.pages-order-modal-open{ overflow: hidden; }
   border-radius: 9px;
   background: transparent;
   color: var(--text);
-  cursor: pointer;
 }
+
+.pages-order-controls button:not(:disabled){ cursor: pointer; }
 
 .pages-order-controls button:hover:not(:disabled){ background: var(--btn-hover); }
 

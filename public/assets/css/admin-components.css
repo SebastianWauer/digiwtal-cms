@@ -334,7 +334,7 @@ html[data-theme="light"] .btn.btn--ghost.btn--danger:not(:disabled,[aria-disable
    und beim Mausklick ausbleibt. Der Ring liegt ausserhalb des Elements und
    ist damit auch dort sichtbar, wo die Flaeche selbst hell ist. */
 .btn:focus-visible,
-a.btn:focus-visible,
+a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,

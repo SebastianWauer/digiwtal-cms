@@ -1547,5 +1547,8 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   width: 18px;
   height: 18px;
   accent-color: var(--accent, #c41e3a);
+}
+
+.pages-edit-checkbox:not(:disabled) {
   cursor: pointer;
 }

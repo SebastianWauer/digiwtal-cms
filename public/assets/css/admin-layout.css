@@ -61,9 +61,10 @@ html[data-theme="light"]{
   --active: #f1f3f6;
 
   /* Hell: Weiss waere unsichtbar. Dunkelster Ton der Hell-Ebene, damit der
-     Ring hier denselben Maximalkontrast hat wie Weiss im Dunkeln. Als Alias
-     auf --text, damit der Farbwert nur an einer Stelle steht. */
-  --focus: var(--text);
+     Ring hier denselben Maximalkontrast hat wie Weiss im Dunkeln. Bewusst als
+     eigener Wert und nicht als Alias auf --text: --focus ist an keine
+     Bedeutung gekoppelt und soll einer Aenderung von --text nicht folgen. */
+  --focus: #0b1020;
 
   --shadow: 0 10px 30px rgba(16,24,40,0.10);
 
