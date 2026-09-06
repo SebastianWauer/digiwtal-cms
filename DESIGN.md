@@ -1067,12 +1067,6 @@ Diese drei sind in dieser Session entschieden und nicht verhandelbar:
 Kein eigener Abschnitt der Verwaltungs-DESIGN.md, hier aber nötig, weil es
 Fundstellen gibt, die weder Regel noch TODO sind, sondern schlicht offen:
 
-- **`theme.css`** (572 Zeilen) wird von nichts geladen — weder in
-  `app/Views`, `app/includes`, `app/Frontend`, `app/PageBuilder` noch in
-  `plugins/`. Sie enthält ein **drittes** Farbsystem (`--color-primary:
-  #2563eb`, `--color-accent: #f59e0b`, rem-Radien, `transform: scale(1.03)`).
-  **TODO: ungeklärt** — Frontend-Theme der ausgelieferten Website (dann
-  gehört es nicht in diesen Ordner) oder toter Code?
 - **`admin-system-health.css`** führt eine eigene, vollständige Token-Ebene
   (`--hc-*`) ohne Bezug zur Basis. **TODO: ungeklärt** — auflösen oder als
   bewusster Sonderfall dokumentieren?
