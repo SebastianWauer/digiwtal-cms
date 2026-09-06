@@ -1067,10 +1067,6 @@ Fundstellen gibt, die weder Regel noch TODO sind, sondern schlicht offen:
 - **`admin-system-health.css`** führt eine eigene, vollständige Token-Ebene
   (`--hc-*`) ohne Bezug zur Basis. **TODO: ungeklärt** — auflösen oder als
   bewusster Sonderfall dokumentieren?
-- **Die neueren Teile von `admin-pages-edit.css`** (ab etwa Zeile 970) sind
-  hell-zuerst geschrieben, mit 14 `[data-theme="dark"]`-Blöcken als
-  Korrektur — die Umkehrung der Basisebene. **TODO: ungeklärt** — Absicht
-  oder Nebeneffekt der Entwicklungsumgebung?
 - **Kein Stil für `:invalid`** und keiner für Ladezustände. Dieselben zwei
   Lücken wie in der Verwaltung.
 

@@ -661,19 +661,14 @@
   max-height: calc(100vh - 60px);
   overflow: auto;
   box-shadow: var(--shadow);
-  background: var(--card);
-  border: 1px solid color-mix(in srgb, var(--card-border) 92%, transparent);
-  opacity: 1;
-}
-
-html[data-theme="dark"] .pages-edit-modal{
   background: #16181d;
-  border-color: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.12);
+  opacity: 1;
 }
 
 /* Der Rich-Text-Rahmen ist kein Eingabefeld im Sinne der gemeinsamen Form
    und hat eine eigene Flaeche; im Modal bleibt sie handgesetzt. */
-html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
+.pages-edit-modal .pages-edit-richtext{
   background: #101216;
 }
 
@@ -836,8 +831,8 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   height: 360px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
-  background: linear-gradient(140deg, #232832, #12151b);
+  border: 1px solid rgba(255,255,255,.14);
+  background: linear-gradient(140deg, #1b2028, #0d1015);
   background-size: cover;
   background-position: center;
 }
@@ -941,9 +936,9 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   display: inline-flex;
   gap: 6px;
   padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  background: #0f131a;
   width: fit-content;
 }
 
@@ -964,9 +959,9 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
 }
 
 .pages-edit-hero-tabs__panels{
-  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
+  background: #0f131a;
   padding: 12px;
   flex: 1;
   min-height: 0;
@@ -993,21 +988,6 @@ html[data-theme="dark"] .pages-edit-modal .pages-edit-richtext{
   grid-template-columns: 1fr 84px;
 }
 
-html[data-theme="dark"] .pages-edit-hero-tabs__bar{
-  background: #0f131a;
-  border-color: rgba(255,255,255,.12);
-}
-
-html[data-theme="dark"] .pages-edit-hero-preview__media{
-  border-color: rgba(255,255,255,.14);
-  background: linear-gradient(140deg, #1b2028, #0d1015);
-}
-
-html[data-theme="dark"] .pages-edit-hero-tabs__panels{
-  background: #0f131a;
-  border-color: rgba(255,255,255,.12);
-}
-
 .pages-edit-block-tabs{
   display: flex;
   flex-direction: column;
@@ -1020,9 +1000,9 @@ html[data-theme="dark"] .pages-edit-hero-tabs__panels{
   display: inline-flex;
   gap: 6px;
   padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--card-border) 82%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  background: #0f131a;
   width: fit-content;
 }
 
@@ -1043,9 +1023,9 @@ html[data-theme="dark"] .pages-edit-hero-tabs__panels{
 }
 
 .pages-edit-block-tabs__panels{
-  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
+  background: #0f131a;
   padding: 12px;
   flex: 1;
   min-height: 0;
@@ -1076,9 +1056,9 @@ html[data-theme="dark"] .pages-edit-hero-tabs__panels{
   gap: 10px;
   align-content: start;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
+  background: #0f131a;
   min-width: 0;
 }
 
@@ -1132,9 +1112,9 @@ html[data-theme="dark"] .pages-edit-hero-tabs__panels{
   display: grid;
   gap: 12px;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
+  background: #0f131a;
 }
 
 .pages-edit-carousel-editor__head{
@@ -1161,9 +1141,9 @@ html[data-theme="dark"] .pages-edit-hero-tabs__panels{
   position: relative;
   min-height: 140px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--card-border) 78%, transparent);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--panel) 88%, var(--card) 12%);
+  background: #0f131a;
 }
 
 .pages-edit-carousel-editor__preview::before{
@@ -1190,27 +1170,6 @@ html[data-theme="dark"] .pages-edit-hero-tabs__panels{
 
 .pages-edit-carousel-editor__preview.is-empty img{
   display: none;
-}
-
-html[data-theme="dark"] .pages-edit-block-tabs__bar{
-  background: #0f131a;
-  border-color: rgba(255,255,255,.12);
-}
-
-html[data-theme="dark"] .pages-edit-block-tabs__panels{
-  background: #0f131a;
-  border-color: rgba(255,255,255,.12);
-}
-
-html[data-theme="dark"] .pages-edit-threecols__column{
-  background: #0f131a;
-  border-color: rgba(255,255,255,.12);
-}
-
-html[data-theme="dark"] .pages-edit-carousel-editor__item,
-html[data-theme="dark"] .pages-edit-carousel-editor__preview{
-  background: #0f131a;
-  border-color: rgba(255,255,255,.12);
 }
 
 .pages-edit-modal__close{
@@ -1535,4 +1494,47 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
 
 .pages-edit-checkbox:not(:disabled) {
   cursor: pointer;
+}
+
+/* =========================
+   Hell-Theme
+   ========================= */
+
+/* Die Bloecke oben sind dunkel-zuerst geschrieben wie der Rest der Datei.
+   Vorher war es umgekehrt: die Basis trug eine color-mix-Konstruktion, die
+   nur im Hellen aufging (dort ergibt --panel 72% + --card 28% reines Weiss
+   auf weissem Panel), und acht [data-theme="dark"]-Bloecke korrigierten sie
+   zurueck. Gerendert aendert sich nichts, nur wer wen ueberschreibt. */
+html[data-theme="light"] .pages-edit-modal{
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--card-border) 92%, transparent);
+}
+
+html[data-theme="light"] .pages-edit-modal .pages-edit-richtext{
+  background: color-mix(in srgb, var(--panel) 68%, var(--card) 32%);
+}
+
+html[data-theme="light"] .pages-edit-hero-tabs__bar,
+html[data-theme="light"] .pages-edit-block-tabs__bar{
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border-color: color-mix(in srgb, var(--card-border) 82%, transparent);
+}
+
+html[data-theme="light"] .pages-edit-hero-tabs__panels,
+html[data-theme="light"] .pages-edit-block-tabs__panels,
+html[data-theme="light"] .pages-edit-threecols__column,
+html[data-theme="light"] .pages-edit-carousel-editor__item{
+  background: color-mix(in srgb, var(--panel) 72%, var(--card) 28%);
+  border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
+}
+
+html[data-theme="light"] .pages-edit-carousel-editor__preview{
+  background: color-mix(in srgb, var(--panel) 88%, var(--card) 12%);
+  border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
+}
+
+/* Frontend-Vorschau (6.6): bildet die Website ab, folgt deren Gestaltung. */
+html[data-theme="light"] .pages-edit-hero-preview__media{
+  border-color: color-mix(in srgb, var(--card-border) 78%, transparent);
+  background: linear-gradient(140deg, #232832, #12151b);
 }
