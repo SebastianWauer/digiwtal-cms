@@ -175,7 +175,8 @@ jobs:
           COMMON="--archive --compress --delete --human-readable
             --exclude=.git/ --exclude=.github/ --exclude=.env --exclude=.claude/
             --exclude=storage/ --exclude=/vendor/ --exclude=node_modules/
-            --exclude=secrets/ --exclude=keys/ --exclude=*.zip --exclude=upload.sh"
+            --exclude=secrets/ --exclude=keys/ --exclude=*.zip --exclude=upload.sh
+            --exclude=AGENTS.md --exclude=CLAUDE.md --exclude=DESIGN.md"
 
           echo "::group::CMS"
           rsync $COMMON -e "$SSH_CMD" ./ "$SSH_USER@$SSH_HOST:$CMS_PATH/"
