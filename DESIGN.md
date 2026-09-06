@@ -455,9 +455,11 @@ zwei vorhandenen Stufen war Rundungsartefakt, keine Absicht.
   Hero-Vorschauen (6.6).
 - **TODO: ungeklärt — Zeilenhöhe.** `body` hat keine `line-height`; der
   Fließtext läuft mit dem Browserwert. Dieselbe Lücke wie in der Verwaltung.
-- **TODO: ungeklärt — Zeilenlänge.** Keine Begrenzung in `ch`. `--max: 1200px`
-  ist definiert, wird aber nirgends benutzt; `.panel` setzt stattdessen
-  `max-width: clamp(980px, 92vw, 1560px)`.
+- **TODO: ungeklärt — Zeilenlänge.** Begrenzt wird nur über die
+  Containerbreite `--max: clamp(980px, 92vw, 1560px)` auf `.panel`, nicht in
+  `ch`. Bei 14px sind 1560px rund 180 Zeichen und damit weit über dem
+  Lesbaren. Das Token trug vorher ein totes `1200px`, während `.panel` die
+  Breite doppelt festlegte; beides steht jetzt an einer Stelle.
 
 ---
 

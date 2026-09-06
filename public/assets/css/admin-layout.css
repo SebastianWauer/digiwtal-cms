@@ -1,5 +1,9 @@
 :root{
-  --max: 1200px;
+  /* Breite der Arbeitsflaeche. Die Verwaltung fuehrt hier 1240px fest; das
+     CMS spannt weiter, weil der Seiteneditor die Breite braucht (Abschnitt 1).
+     Der Wert stand vorher als totes 1200px hier, waehrend .panel eine
+     abweichende clamp() setzte. */
+  --max: clamp(980px, 92vw, 1560px);
 
   /* default: dark (dunkelgrau) */
   --bg: #0f1012;
@@ -182,7 +186,7 @@ code{
 }
 .panel{
   width: 100%;
-  max-width: clamp(980px, 92vw, 1560px);
+  max-width: var(--max);
   margin: 0 auto;
   background: var(--panel);
   border: 1px solid var(--panel-border);
