@@ -872,27 +872,73 @@ Verstoß.
 
 ---
 
-## 7. Bewegung
+## 7. Bewegung **[CMS]**
 
-**TODO: ungeklärt.**
+Die Verwaltung verbietet Transforms. **Diese Regel gilt hier nicht** — und
+das ist der Kern dieses Abschnitts: Der Blockeditor arbeitet mit
+Drag-and-Drop, die Seitenleiste fährt als Schublade ein, Schalter haben
+einen Knopf, der eine Strecke zurücklegt. Dort trägt Bewegung Funktion.
 
-Die Verwaltung erlaubt genau eine Formel (`120ms ease` auf `opacity`,
-`background`, `border-color`), auf genau zwei Elementen, und verbietet
-Transforms. Das CMS hat:
+**Die Trennung ist nicht „Transform ja/nein", sondern wozu sich etwas
+bewegt.**
 
-- **10 verschiedene Transition-Deklarationen** mit sechs Dauern: `.08s`,
-  `.12s`, `.15s`, `.2s`, `160ms`, `0.5s`
-- **`transform` wird animiert**, unter anderem hebt
-  `.pages-edit-iconbtn:hover` um `translateY(-1px)` an
-- umgekehrt hat `.nav__item` **keine** Transition, obwohl es eines der zwei
-  Elemente ist, die die Verwaltung animiert
+### Rückmeldung auf Bedienung — eine Formel
 
-Zu entscheiden: eine Formel oder mehrere, und ob Transforms zulässig sind.
-Die Transform-Frage ist nicht rein ästhetisch — der Editor arbeitet mit
-Drag-and-Drop, wo Bewegung Funktion trägt.
+Farbe und Deckkraft, die auf Zeiger oder Tastatur reagieren:
 
-**TODO: ungeklärt** — `prefers-reduced-motion` wird nirgends abgefragt.
-Dieselbe Lücke wie in der Verwaltung, hier aber mit mehr Bewegung.
+```css
+transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
+```
+
+Gilt auf `.btn`, `.nav__item`, `.pages-edit-iconbtn`,
+`.events-edit-select-tile` und `.pages-order-item`. `.btn` und `.nav__item`
+hatten vorher **gar keine** Transition, obwohl sie die zwei Elemente sind,
+die auch die Verwaltung animiert.
+
+Hier wird **nichts bewegt**. Position und Größe bleiben unangetastet.
+
+### Funktionale Bewegung — 160ms
+
+Wo die Bewegung selbst die Aussage ist: eine Schublade fährt ein, ein Knopf
+wandert von links nach rechts, ein Pfeil dreht sich, um „offen" zu zeigen.
+
+```css
+transition: transform 160ms ease;   /* bzw. left, opacity, background */
+```
+
+| Element | Was sich bewegt |
+|---|---|
+| `.sidebar` | Schublade unter 820px |
+| `.mobile-nav-backdrop` | Verdunkelung dahinter |
+| `.sidebar-toggle__chev` | Pfeil dreht bei eingeklappter Leiste |
+| `.media-folder-toggle__chev` | Pfeil dreht bei geöffnetem Ordner |
+| `.theme-slider__thumb` | Knopf des Theme-Umschalters |
+| `.pages-edit-switch__slider` und `::after` | Knopf und Bahn des Statusschalters |
+
+Vorher liefen diese mit 120ms, 160ms und 200ms nebeneinander.
+
+### Was entfernt wurde
+
+`.pages-edit-iconbtn:hover` hob den Button um `translateY(-1px)` an. Das ist
+Bewegung ohne Aussage — der Hover meldet sich bereits über Rahmen und
+Fläche. Ebenso entfielen zwei tote Angaben: `.events-edit-select-tile`
+animierte `box-shadow` (den es nicht mehr gibt) und `transform` (der nie
+gesetzt wurde).
+
+### Eine dokumentierte Ausnahme
+
+`.flash` blendet mit `opacity 0.5s ease-out` aus. Das ist weder
+Bedienungsrückmeldung noch Ortsveränderung, sondern das Verschwinden einer
+Meldung nach drei Sekunden — mit 120ms wäre es ein Blinzeln statt eines
+Abgangs.
+
+### Keine Keyframes
+
+Es gibt keine `@keyframes` und keine `animation` im Admin-CSS. Das bleibt so.
+
+- **TODO: ungeklärt** — `prefers-reduced-motion` wird nirgends abgefragt.
+  Anders als in der Verwaltung ist der Bedarf hier real: Schublade, Schalter
+  und Pfeile bewegen sich tatsächlich.
 
 ---
 

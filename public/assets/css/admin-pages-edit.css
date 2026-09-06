@@ -248,7 +248,7 @@
   height: 22px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--muted) 35%, transparent);
-  transition: background .2s ease;
+  transition: background 160ms ease;
 }
 
 .pages-edit-switch__slider::after{
@@ -260,7 +260,7 @@
   height: 16px;
   border-radius: 50%;
   background: #fff;
-  transition: transform .2s ease;
+  transition: transform 160ms ease;
   /* Kein Schmuckschatten: der weisse Knopf steht im Zustand "an" auf
      --success und hat dort im Dunkeln nur 1,91:1. Der Schatten traegt die
      Kante, die die Flaeche selbst nicht hergibt. */
@@ -321,12 +321,11 @@
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
-  transition: transform .08s ease, border-color .12s ease, background .12s ease;
+  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
 .pages-edit-iconbtn:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
   border-color: var(--outline);
-  transform: translateY(-1px);
 }
 
 .pages-edit-iconbtn--save{
@@ -1366,7 +1365,7 @@ html[data-theme="dark"] .pages-edit-carousel-editor__preview{
   border: 1px solid var(--btn-border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--panel) 92%, var(--card) 8%);
-  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
 .events-edit-select-tile.is-active {
