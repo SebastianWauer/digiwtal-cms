@@ -61,6 +61,8 @@
   border-radius: 50%;
   border: 2px solid #fff;
   background: var(--marker);
+  /* Kein Schatten, sondern der dunkle Aussenring des Markers - zusammen mit
+     dem weissen Innenrand haelt er den Punkt auf jedem Foto lesbar (2.6). */
   box-shadow: 0 0 0 2px rgba(0,0,0,.4);
   transform: translate(-50%, -50%);
   pointer-events: none;

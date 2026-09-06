@@ -524,19 +524,53 @@ Durchgehend `1px solid` **[V]**. Rahmenfarbe folgt der Fläche
 **TODO: ungeklärt** — das CMS hat kein `--input-border`; die sechs
 Eingabeformen benutzen drei verschiedene Rahmenfarben (Abschnitt 6.3).
 
-### Schatten
+### Schatten **[V]**
 
-**TODO: ungeklärt.**
+Genau zwei Formen sind zulässig.
 
-Entschieden ist nur das Token: `--shadow: 0 10px 30px rgba(0,0,0,.35)`
-(hell: `rgba(16,24,40,.10)`) **[V]**, benutzt auf `.panel`. Die Auth-Karte
-setzt bewusst `box-shadow: none` **[V]**.
+**`--shadow`**, und nur auf schwebenden Flächen:
 
-Daneben stehen **12 weitere, eindeutige `box-shadow`-Werte**, darunter drei
-verschiedene Modal-Schatten (`0 10px 26px`, `0 22px 52px`, `0 24px 80px`).
-Die Verwaltung erlaubt außer `--shadow` nur einen `inset`-Statusring. Ob
-diese Regel hier gilt, ist nicht entschieden — sie würde 12 Stellen
-betreffen.
+```css
+--shadow: 0 10px 30px rgba(0, 0, 0, .35);   /* hell: rgba(16,24,40,.10) */
+```
+
+Benutzt auf `.panel`, `.sidebar-toggle`, `.pages-edit-modal`,
+`.pages-order-modal__dialog` und `.pages-edit-floating-actions` — alle
+`position: fixed` oder das tragende Panel. Die Auth-Karte setzt bewusst
+`box-shadow: none`.
+
+Vorher trugen die drei schwebenden Flächen **drei verschiedene Schatten**
+(`0 10px 26px`, `0 22px 52px`, `0 24px 80px`) für dieselbe Aufgabe.
+
+**Der Statusring**, eine Innenkante zur farblichen Markierung:
+
+```css
+box-shadow: inset 0 0 0 2px <Zustandsfarbe>;
+```
+
+Heute nur in `admin-system-health.css` auf den Plaketten-Punkten, dort noch
+auf der `--hc-*`-Ebene (Abschnitt 10).
+
+#### Was entfernt wurde
+
+| Was | Wo | Warum |
+|---|---|---|
+| `0 1px 0 rgba(0,0,0,.06)` | `.pages-edit-card` | Haarlinie unter einer nicht schwebenden Karte |
+| `0 1px 0 rgba(0,0,0,.03)` | `.pages-edit-blockcard` | dieselbe Haarlinie, andere Deckkraft |
+| `0 8px 20px rgba(2,6,23,.08)` | `.events-edit-select-tile.is-active` | Die Auswahl zeigt bereits `border-color`; der Schatten war Zugabe |
+
+#### Zwei Ausnahmen, die eine Aufgabe erfüllen
+
+Beide sind **keine Schlagschatten**, sondern Konturen, die `box-shadow` nur
+als Mittel benutzen — deshalb deckt `--shadow` sie nicht ab:
+
+- `.pages-edit-switch__slider::after` — `0 1px 2px rgba(0,0,0,.25)`. Der
+  weiße Knopf steht im Zustand *an* auf `--success` und hat dort im Dunkeln
+  nur **1,91:1**. Der Schatten trägt die Kante, die die Fläche selbst nicht
+  hergibt.
+- `.media-edit__focus-dot` — `0 0 0 2px rgba(0,0,0,.4)`. Der dunkle
+  Außenring des Bildmarkers. Zusammen mit dem weißen Innenrand hält er den
+  Punkt auf beliebigen Fotos lesbar; die Rechnung dazu steht in 2.6.
 
 ---
 

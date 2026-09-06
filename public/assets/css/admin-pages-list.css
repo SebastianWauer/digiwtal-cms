@@ -45,7 +45,7 @@
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
   background: var(--card);
-  box-shadow: 0 24px 80px rgba(0,0,0,.45);
+  box-shadow: var(--shadow);
 }
 
 .pages-order-modal__head{
