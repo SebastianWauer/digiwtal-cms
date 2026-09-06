@@ -38,6 +38,35 @@
      flaechigen Hover nicht nur im Ton, sondern in der Form. */
   --focus: #ffffff;
 
+  /* Zustandsfarben. Bedeutungstraeger, keine Markenfarben. Je Semantik ein
+     Ton, die Toenungen werden per color-mix daraus abgeleitet - gegen
+     transparent, damit sie sich dem tatsaechlichen Untergrund anpassen und
+     nicht die Panelfarbe in Elemente einbacken, die auf Karten liegen. */
+  --success: #32d583;
+  --warning: #ffba49;
+  --danger:  #ff6b6b;
+  --info:    #6aa9ff;
+
+  --success-surface:        color-mix(in srgb, var(--success) 8%,  transparent);
+  --success-surface-strong: color-mix(in srgb, var(--success) 14%, transparent);
+  --success-border:         color-mix(in srgb, var(--success) 20%, transparent);
+  --success-border-strong:  color-mix(in srgb, var(--success) 28%, transparent);
+
+  --warning-surface:        color-mix(in srgb, var(--warning) 8%,  transparent);
+  --warning-surface-strong: color-mix(in srgb, var(--warning) 14%, transparent);
+  --warning-border:         color-mix(in srgb, var(--warning) 20%, transparent);
+  --warning-border-strong:  color-mix(in srgb, var(--warning) 28%, transparent);
+
+  --danger-surface:         color-mix(in srgb, var(--danger) 8%,  transparent);
+  --danger-surface-strong:  color-mix(in srgb, var(--danger) 14%, transparent);
+  --danger-border:          color-mix(in srgb, var(--danger) 20%, transparent);
+  --danger-border-strong:   color-mix(in srgb, var(--danger) 28%, transparent);
+
+  --info-surface:           color-mix(in srgb, var(--info) 8%,  transparent);
+  --info-surface-strong:    color-mix(in srgb, var(--info) 14%, transparent);
+  --info-border:            color-mix(in srgb, var(--info) 20%, transparent);
+  --info-border-strong:     color-mix(in srgb, var(--info) 28%, transparent);
+
   --shadow: 0 10px 30px rgba(0,0,0,0.35);
 
   --flash-ok-bg: rgba(0,255,140,0.08);
@@ -73,6 +102,14 @@ html[data-theme="light"]{
      eigener Wert und nicht als Alias auf --text: --focus ist an keine
      Bedeutung gekoppelt und soll einer Aenderung von --text nicht folgen. */
   --focus: #0b1020;
+
+  /* Nur die vier Grundtoene wechseln. Die Leiter darueber bleibt unveraendert,
+     weil sie aus ihnen abgeleitet ist. Die dunkelthemen-Toene erreichen auf
+     weissem Grund nur 1,7 bis 2,8:1 und sind dort als Schrift unlesbar. */
+  --success: #166534;
+  --warning: #92400e;
+  --danger:  #b42318;
+  --info:    #1d4ed8;
 
   --shadow: 0 10px 30px rgba(16,24,40,0.10);
 
