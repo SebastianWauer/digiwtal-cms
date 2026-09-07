@@ -1159,8 +1159,11 @@ if ($method === 'GET' && $sub === '/navigation') {
     $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
         ? 'page_icon_media_id'
         : 'NULL AS page_icon_media_id';
+    $parentIdSelect = api_db_column_exists($pdo, 'pages', 'parent_id')
+        ? 'parent_id'
+        : 'NULL AS parent_id';
     $stmt = $pdo->query("
-        SELECT id, nav_label, slug, {$pageIconSelect}, nav_area, nav_order
+        SELECT id, {$parentIdSelect}, nav_label, slug, {$pageIconSelect}, nav_area, nav_order
         FROM pages
         WHERE is_deleted = 0 AND status = 'live' AND nav_visible = 1
         ORDER BY CASE WHEN nav_order > 0 THEN 0 ELSE 1 END ASC, nav_order ASC, id ASC
@@ -1168,11 +1171,25 @@ if ($method === 'GET' && $sub === '/navigation') {
     $rows = $stmt ? $stmt->fetchAll() : [];
     if (!is_array($rows)) $rows = [];
 
+    // Nur als Unterseite ausgeben, wenn die Elternseite selbst in dieser Liste
+    // (also ebenfalls in der Navigation sichtbar) steht - sonst bliebe der
+    // Eintrag sonst komplett unsichtbar, weil das Frontend ihn keinem
+    // vorhandenen Eltern-Knoten zuordnen kann.
+    $visibleIds = [];
+    foreach ($rows as $r) {
+        if (is_array($r)) $visibleIds[(int)($r['id'] ?? 0)] = true;
+    }
+
     $out = [];
     foreach ($rows as $r) {
         if (!is_array($r)) continue;
+        $parentId = isset($r['parent_id']) && $r['parent_id'] !== null ? (int)$r['parent_id'] : null;
+        if ($parentId !== null && !isset($visibleIds[$parentId])) {
+            $parentId = null;
+        }
         $out[] = [
             'id'         => (int)($r['id'] ?? 0),
+            'parent_id'  => $parentId,
             'title'      => (string)($r['nav_label'] ?? ''),
             'url'        => (string)($r['slug'] ?? ''),
             'icon_url'   => (int)($r['page_icon_media_id'] ?? 0) > 0
@@ -1673,6 +1690,16 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
     $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
         ? 'p.page_icon_media_id'
         : 'NULL AS page_icon_media_id';
+    $hasRedirectColumns = api_db_column_exists($pdo, 'pages', 'redirect_type');
+    $redirectSelect = $hasRedirectColumns
+        ? "p.redirect_type, p.redirect_target_url, target.slug AS redirect_target_slug"
+        : "'none' AS redirect_type, NULL AS redirect_target_url, NULL AS redirect_target_slug";
+    $redirectJoin = $hasRedirectColumns
+        ? "LEFT JOIN pages target
+             ON target.id = p.redirect_target_page_id
+            AND target.is_deleted = 0
+            AND target.status = 'live'"
+        : '';
     $stmt = $pdo->prepare("
         SELECT
             p.id,
@@ -1681,6 +1708,7 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
             p.frontend_title,
             p.subtitle,
             {$pageIconSelect},
+            {$redirectSelect},
             sm.meta_title,
             sm.meta_description,
             p.content_json,
@@ -1689,6 +1717,7 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
         LEFT JOIN seo_meta sm
             ON sm.entity_type = 'page'
            AND sm.entity_id = p.id
+        {$redirectJoin}
         WHERE p.slug = :s
           AND p.is_deleted = 0
           AND p.status = 'live'
@@ -1703,10 +1732,12 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
         $stmtHome = $pdo->prepare("
             SELECT
                 p.id, p.slug, p.title, p.frontend_title, p.subtitle, {$pageIconSelect},
+                {$redirectSelect},
                 sm.meta_title, sm.meta_description, p.content_json, p.updated_at
             FROM pages p
             LEFT JOIN seo_meta sm
                 ON sm.entity_type = 'page' AND sm.entity_id = p.id
+            {$redirectJoin}
             WHERE (p.is_home = 1 OR p.slug = '/') AND p.is_deleted = 0 AND p.status = 'live'
             ORDER BY p.is_home DESC
             LIMIT 1
@@ -1717,6 +1748,24 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
 
     if (!is_array($row)) {
         json_response(['ok' => false, 'error' => 'not_found'], 404);
+    }
+
+    // Weiterleitungsziel wird hier zu einer fertigen URL aufgeloest: bei einer
+    // internen Ziel-Seite ein Pfad relativ zur Frontend-Domain (nicht zum CMS!),
+    // bei einer externen URL der unveraenderte Wert.
+    $redirectType = (string)($row['redirect_type'] ?? 'none');
+    $redirectUrl = null;
+    if ($redirectType === 'page') {
+        $targetSlug = $row['redirect_target_slug'] ?? null;
+        if (is_string($targetSlug) && $targetSlug !== '') {
+            $redirectUrl = '/' . ltrim($targetSlug, '/');
+        }
+    } elseif ($redirectType === 'url') {
+        $rawUrl = (string)($row['redirect_target_url'] ?? '');
+        $redirectUrl = $rawUrl !== '' ? $rawUrl : null;
+    }
+    if ($redirectUrl === null) {
+        $redirectType = 'none';
     }
 
     $blocks = [];
@@ -1741,6 +1790,8 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
         'page_icon_url' => (int)($row['page_icon_media_id'] ?? 0) > 0
             ? api_cms_path('/media/file?id=' . (int)$row['page_icon_media_id'])
             : null,
+        'redirect_type' => $redirectType,
+        'redirect_url'  => $redirectUrl,
         'seo'        => [
             'title'       => (string)($row['meta_title'] ?? ''),
             'description' => (string)($row['meta_description'] ?? ''),
