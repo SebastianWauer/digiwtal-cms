@@ -83,8 +83,8 @@ final class ThemeEngine
         $seo = $seoSvc->getForPage((int)($page['id'] ?? 0), $page);
 
         // Navigation
-        $navHeader = $repo->listPublicNav('header');
-        $navFooter = $repo->listPublicNav('footer');
+        $navHeader = $this->nestNavItems($repo->listPublicNav('header'));
+        $navFooter = $this->nestNavItems($repo->listPublicNav('footer'));
         $nav = ['header' => $navHeader, 'footer' => $navFooter];
         $settings = (new SiteSettingsRepositoryDb($pdo))->getAll();
         $faviconMediaId = (int)($settings['favicon_media_id'] ?? 0);
@@ -110,6 +110,41 @@ final class ThemeEngine
 
         // Verfügbar in layout.php: $page, $blocks, $seo, $nav, $renderer, $themeRoot
         require $layout;
+    }
+
+    /**
+     * Gruppiert eine flache Navigationsliste zu einem Baum: Unterseiten, deren
+     * Elternseite im selben Bereich ebenfalls sichtbar ist, wandern in ein
+     * "children"-Array statt als eigener Top-Level-Eintrag zu erscheinen. Ist
+     * die Elternseite hier nicht vorhanden (z.B. nicht in der Navigation),
+     * bleibt der Eintrag auf oberster Ebene.
+     */
+    private function nestNavItems(array $items): array
+    {
+        $byId = [];
+        foreach ($items as $item) {
+            $id = (int)($item['id'] ?? 0);
+            if ($id > 0) $byId[$id] = true;
+        }
+
+        $childrenByParent = [];
+        $topLevel = [];
+        foreach ($items as $item) {
+            $parentId = isset($item['parent_id']) && $item['parent_id'] !== null ? (int)$item['parent_id'] : 0;
+            if ($parentId > 0 && isset($byId[$parentId])) {
+                $childrenByParent[$parentId][] = $item;
+            } else {
+                $topLevel[] = $item;
+            }
+        }
+
+        $attach = function (array $item) use (&$attach, $childrenByParent): array {
+            $id = (int)($item['id'] ?? 0);
+            $item['children'] = array_map($attach, $childrenByParent[$id] ?? []);
+            return $item;
+        };
+
+        return array_map($attach, $topLevel);
     }
 
     private function normalizeHex(string $color, string $fallback): string

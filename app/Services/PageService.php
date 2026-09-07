@@ -186,8 +186,13 @@ final class PageService
             $redirectTargetUrl = null;
         } elseif ($redirectType === 'url') {
             $redirectTargetUrl = trim((string)$redirectTargetUrl);
-            if ($redirectTargetUrl === '' || preg_match('#^(https?://|/)#i', $redirectTargetUrl) !== 1) {
-                return ['ok' => false, 'flash' => ['type'=>'error','msg'=>'Weiterleitungs-URL muss mit "http://", "https://" oder "/" beginnen.'], 'id' => (int)($id ?? 0)];
+            if ($redirectTargetUrl === '') {
+                return ['ok' => false, 'flash' => ['type'=>'error','msg'=>'Bitte eine Ziel-URL für die Weiterleitung eintragen.'], 'id' => (int)($id ?? 0)];
+            }
+            // Ohne Schema eingetragene Domains (z.B. "beispiel.de") nicht ablehnen,
+            // sondern als externe Adresse verstehen und "https://" ergänzen.
+            if (preg_match('#^(https?://|/)#i', $redirectTargetUrl) !== 1) {
+                $redirectTargetUrl = 'https://' . ltrim($redirectTargetUrl, '/');
             }
             $redirectTargetPageId = null;
         } else {

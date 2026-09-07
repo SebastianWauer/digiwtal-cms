@@ -243,6 +243,7 @@ body.pages-order-modal-open{ overflow: hidden; }
 }
 
 /* Spalten */
+.pages-col-type{ width: 130px; text-align:center; }
 .pages-col-start{ width: 110px; text-align:center; }
 .pages-col-navigation{ width: 155px; text-align:center; }
 .pages-col-status{ width: 110px; text-align:center; }
@@ -286,7 +287,7 @@ body.pages-order-modal-open{ overflow: hidden; }
 .pages-nav-badge--footer{ color: #a78bfa; border-color: rgba(167,139,250,.4); }
 .pages-nav-badge--both{ color: var(--success); border-color: var(--success-border-strong); }
 .pages-nav-badge--none{ color: var(--muted); }
-.pages-nav-badge--redirect{ color: var(--info); border-color: var(--info-border-strong); margin-left: 8px; }
+.pages-nav-badge--redirect{ color: var(--info); border-color: var(--info-border-strong); }
 
 
 

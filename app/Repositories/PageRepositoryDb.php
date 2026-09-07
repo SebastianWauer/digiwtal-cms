@@ -184,6 +184,8 @@ final class PageRepositoryDb implements PageRepositoryInterface
     {
         $stmt = $this->pdo->prepare("
             SELECT
+              id,
+              parent_id,
               slug,
               nav_label,
               page_icon_media_id,
