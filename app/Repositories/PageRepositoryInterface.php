@@ -17,6 +17,7 @@ interface PageRepositoryInterface
     public function findPublicHome(): ?array;
     public function listPublicNav(string $area): array;
     public function listNav(string $area): array;
+    public function listHierarchy(): array;
     public function insert(
         string $slug,
         string $title,
@@ -45,6 +46,16 @@ interface PageRepositoryInterface
         int $navOrder
     ): void;
     public function setIconMediaId(int $id, ?int $mediaId): void;
+    public function setHierarchyAndRedirect(
+        int $id,
+        ?int $parentId,
+        string $slugSegment,
+        string $redirectType,
+        ?int $redirectTargetPageId,
+        ?string $redirectTargetUrl
+    ): void;
+    public function updateSlugOnly(int $id, string $slug): void;
+    public function findSlugById(int $id): ?string;
     public function setHome(int $id): void;
     public function softDelete(int $id): void;
     public function restore(int $id): void;

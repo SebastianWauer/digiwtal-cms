@@ -7,6 +7,8 @@ declare(strict_types=1);
 /** @var array $revisions */
 /** @var ?array $selectedRevision */
 /** @var array $navCandidates */
+/** @var array $parentOptions */
+/** @var array $redirectTargetOptions */
 /** @var array $eventCategoryOptions */
 /** @var array $newsCategoryOptions */
 
@@ -15,10 +17,19 @@ use App\PageBuilder\BlockRegistry;
 echo flash_render($flash);
 
 $id      = (int)($page['id'] ?? 0);
-$slug    = (string)($page['slug'] ?? '');
+$slug    = (string)($page['slug_segment'] ?? '');
+$fullSlug = (string)($page['slug'] ?? '');
 $title   = (string)($page['title'] ?? '');
 $content = (string)($page['content_json'] ?? '{"blocks":[]}');
 $deleted = !empty($page['is_deleted']);
+
+$parentId              = isset($page['parent_id']) && $page['parent_id'] !== null ? (int)$page['parent_id'] : 0;
+$redirectType          = (string)($page['redirect_type'] ?? 'none');
+if (!in_array($redirectType, ['none', 'page', 'url'], true)) $redirectType = 'none';
+$redirectTargetPageId  = isset($page['redirect_target_page_id']) && $page['redirect_target_page_id'] !== null ? (int)$page['redirect_target_page_id'] : 0;
+$redirectTargetUrl     = (string)($page['redirect_target_url'] ?? '');
+$parentOptions         = is_array($parentOptions ?? null) ? $parentOptions : [];
+$redirectTargetOptions = is_array($redirectTargetOptions ?? null) ? $redirectTargetOptions : [];
 
 $isHome     = !empty($page['is_home']);
 $navVisible = !empty($page['nav_visible']);
@@ -196,12 +207,47 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
           <div class="pages-edit-field">
             <div class="pages-edit-field-label">Slug</div>
-            <input id="pageSlugInput" class="pages-edit-input" type="text" name="slug" value="<?= h($slug) ?>" placeholder="/Titel" <?= $canSave ? '' : 'readonly' ?>>
+            <input id="pageSlugInput" class="pages-edit-input" type="text" name="slug" value="<?= h($slug) ?>" placeholder="Titel" <?= $canSave ? '' : 'readonly' ?>>
             <div class="pages-edit-field-hint">
-              Optional. Wenn leer, wird der Slug automatisch aus dem Titel erzeugt.
-              Beispiel: <code>/kontakt</code>
+              Nur das eigene Pfadstück dieser Seite (ohne „/“). Optional. Wenn leer, wird es
+              automatisch aus dem Titel erzeugt. Die volle URL ergibt sich zusammen mit der
+              übergeordneten Seite (siehe „Navigation“).
             </div>
             <div class="pages-edit-field-hint pages-edit-slug-live" id="pageSlugLiveHint"></div>
+            <?php if ($id > 0 && $fullSlug !== ''): ?>
+              <div class="pages-edit-field-hint">Aktuelle volle URL: <code><?= h($fullSlug) ?></code></div>
+            <?php endif; ?>
+          </div>
+
+          <div class="pages-edit-field">
+            <div class="pages-edit-field-label">Seitentyp</div>
+            <select id="pageRedirectTypeInput" class="pages-edit-input" name="redirect_type" <?= $canSave ? '' : 'disabled' ?>>
+              <option value="none" <?= $redirectType === 'none' ? 'selected' : '' ?>>Inhaltsseite</option>
+              <option value="page" <?= $redirectType === 'page' ? 'selected' : '' ?>>Weiterleitung zu einer Seite</option>
+              <option value="url"  <?= $redirectType === 'url'  ? 'selected' : '' ?>>Weiterleitung zu einer URL</option>
+            </select>
+            <div class="pages-edit-field-hint">Eine Weiterleitung liefert unter dieser URL einen dauerhaften Redirect (301) statt Inhalt.</div>
+          </div>
+
+          <div class="pages-edit-field" id="pageRedirectTargetPageField" <?= $redirectType === 'page' ? '' : 'hidden' ?>>
+            <div class="pages-edit-field-label">Ziel-Seite</div>
+            <select class="pages-edit-input" name="redirect_target_page_id" <?= $canSave ? '' : 'disabled' ?>>
+              <option value="">– bitte wählen –</option>
+              <?php foreach ($redirectTargetOptions as $opt): ?>
+                <?php
+                  $optId = (int)($opt['id'] ?? 0);
+                  if ($optId <= 0) continue;
+                  $optSlug = '/' . trim((string)($opt['slug'] ?? ''), '/');
+                  $optTitle = trim((string)($opt['frontend_title'] ?? '')) ?: trim((string)($opt['title'] ?? '')) ?: $optSlug;
+                ?>
+                <option value="<?= $optId ?>" <?= $redirectTargetPageId === $optId ? 'selected' : '' ?>><?= h($optTitle) ?> (<?= h($optSlug) ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <div class="pages-edit-field" id="pageRedirectTargetUrlField" <?= $redirectType === 'url' ? '' : 'hidden' ?>>
+            <div class="pages-edit-field-label">Ziel-URL</div>
+            <input class="pages-edit-input" type="text" name="redirect_target_url" value="<?= h($redirectTargetUrl) ?>" placeholder="https://beispiel.de oder /pfad" <?= $canSave ? '' : 'readonly' ?>>
           </div>
 
           <div class="pages-edit-grid2 pages-edit-grid2--compact" id="section-status">
@@ -239,6 +285,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
             </div>
           </div>
 
+          <div id="pageContentSection" <?= $redirectType === 'none' ? '' : 'hidden' ?>>
           <hr class="pages-edit-sep">
 
           <div class="pages-edit-card-title pages-edit-pb-title" id="section-builder">PageBuilder</div>
@@ -267,6 +314,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
             <textarea class="pages-edit-textarea pages-edit-raw__textarea" id="rawJsonTextarea" rows="10" <?= $canSave ? '' : 'readonly' ?>><?= h($content) ?></textarea>
             <div class="pages-edit-field-hint">Nur Debug. Gespeichert wird der PageBuilder-Stand.</div>
           </details>
+          </div>
 
         </div>
       </div>
@@ -333,11 +381,28 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
             </div>
 
             <div class="pages-edit-field">
-              <div class="pages-edit-field-label">Unterseite</div>
-              <select class="pages-edit-input" disabled>
-                <option>Keine (Feature folgt)</option>
+              <div class="pages-edit-field-label">Übergeordnete Seite</div>
+              <select id="pageParentSelect" class="pages-edit-input" name="parent_id" <?= $canSave && !$isHome ? '' : 'disabled' ?>>
+                <option value="">– Keine (oberste Ebene) –</option>
+                <?php foreach ($parentOptions as $opt): ?>
+                  <?php
+                    $optId = (int)($opt['id'] ?? 0);
+                    if ($optId <= 0) continue;
+                    $optSlug = '/' . trim((string)($opt['slug'] ?? ''), '/');
+                    $optTitle = trim((string)($opt['frontend_title'] ?? '')) ?: trim((string)($opt['title'] ?? '')) ?: $optSlug;
+                  ?>
+                  <option value="<?= $optId ?>" <?= $parentId === $optId ? 'selected' : '' ?>><?= h($optTitle) ?> (<?= h($optSlug) ?>)</option>
+                <?php endforeach; ?>
               </select>
-              <div class="pages-edit-field-hint">Hierarchie/Unterseiten sind aktuell noch nicht im Datenmodell vorhanden.</div>
+              <?php if (!$canSave || $isHome): ?>
+                <input type="hidden" id="pageParentHidden" name="parent_id" value="<?= $isHome ? '' : $parentId ?>">
+              <?php endif; ?>
+              <div class="pages-edit-field-hint">
+                Macht diese Seite zur Unterseite. Die volle URL ergibt sich aus dem Pfad der
+                Elternseite und dem Slug oben. Ändert sich der Pfad der Elternseite später, zieht
+                diese Seite automatisch mit.
+                <?php if ($isHome): ?>Die Startseite kann keine Unterseite sein.<?php endif; ?>
+              </div>
             </div>
           </div>
         </details>
@@ -548,6 +613,11 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   const statusToggle = document.querySelector('input[name="status_toggle"]');
   const statusHidden = document.getElementById('pageStatusHidden');
   const homeToggle = document.querySelector('input[name="is_home"]');
+  const parentSelect = document.getElementById('pageParentSelect');
+  const redirectTypeSelect = document.getElementById('pageRedirectTypeInput');
+  const redirectTargetPageField = document.getElementById('pageRedirectTargetPageField');
+  const redirectTargetUrlField = document.getElementById('pageRedirectTargetUrlField');
+  const pageContentSection = document.getElementById('pageContentSection');
   const pageIconInput = document.querySelector('input[name="page_icon_media_id"]');
   const pageIconClearBtn = document.querySelector('[data-page-icon-clear]');
   let previewDebounceTimer = null;
@@ -942,18 +1012,52 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     });
   }
 
-  function slugifyLikeServer(input) {
+  function slugifyToken(input) {
     let s = String(input || '').trim().toLowerCase();
     s = s.replaceAll('ä', 'ae').replaceAll('ö', 'oe').replaceAll('ü', 'ue').replaceAll('ß', 'ss');
-    s = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (s === '' || s === 'home' || s === 'startseite') s = 'home';
-    return '/' + s;
+    return s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function currentParentSlug() {
+    if (!parentSelect || !parentSelect.value) return '';
+    const pid = parseInt(parentSelect.value, 10);
+    if (!pid) return '';
+    const opt = PAGE_OPTIONS.find((p) => Number(p.id) === pid);
+    return opt ? String(opt.slug || '') : '';
   }
 
   function updateSlugHint() {
     if (!slugLiveHint || !titleInput) return;
-    const generated = slugifyLikeServer(titleInput.value || '');
-    slugLiveHint.textContent = 'URL wird: ' + generated;
+    const parentSlug = currentParentSlug();
+    const typed = slugInput ? slugInput.value.trim().replace(/^\/+|\/+$/g, '') : '';
+    let segment = typed;
+    if (segment === '') {
+      segment = slugifyToken(titleInput.value || '');
+      if (segment === '' || (!parentSlug && (segment === 'home' || segment === 'startseite'))) segment = parentSlug ? 'seite' : 'home';
+    }
+    const full = parentSlug ? (parentSlug.replace(/\/+$/, '') + '/' + segment) : ('/' + segment);
+    slugLiveHint.textContent = 'URL wird: ' + full;
+  }
+
+  function updateRedirectFieldsVisibility() {
+    if (!redirectTypeSelect) return;
+    const type = redirectTypeSelect.value;
+    if (redirectTargetPageField) redirectTargetPageField.hidden = type !== 'page';
+    if (redirectTargetUrlField) redirectTargetUrlField.hidden = type !== 'url';
+    if (pageContentSection) pageContentSection.hidden = type !== 'none';
+  }
+
+  function updateParentAvailability() {
+    if (!parentSelect || !homeToggle) return;
+    const hiddenParent = document.getElementById('pageParentHidden');
+    if (homeToggle.checked) {
+      parentSelect.value = '';
+      parentSelect.setAttribute('disabled', 'disabled');
+      if (hiddenParent) hiddenParent.removeAttribute('disabled');
+    } else if (CAN_EDIT) {
+      parentSelect.removeAttribute('disabled');
+      if (hiddenParent) hiddenParent.setAttribute('disabled', 'disabled');
+    }
   }
 
   function keepSelectionOnToolbarClick(btn) {
@@ -2857,6 +2961,23 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     });
     updateSlugHint();
   }
+  if (slugInput) {
+    slugInput.addEventListener('input', updateSlugHint);
+  }
+  if (parentSelect) {
+    parentSelect.addEventListener('change', updateSlugHint);
+  }
+  if (homeToggle) {
+    homeToggle.addEventListener('change', () => {
+      updateParentAvailability();
+      updateSlugHint();
+    });
+  }
+  updateParentAvailability();
+  if (redirectTypeSelect) {
+    redirectTypeSelect.addEventListener('change', updateRedirectFieldsVisibility);
+  }
+  updateRedirectFieldsVisibility();
 
   if (form) {
     form.addEventListener('input', () => schedulePreviewUpdate());

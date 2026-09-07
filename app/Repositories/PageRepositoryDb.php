@@ -17,8 +17,8 @@ final class PageRepositoryDb implements PageRepositoryInterface
     {
         $stmt = $this->pdo->query("
             SELECT
-              id, slug, title, frontend_title, nav_label, page_icon_media_id,
-              status,
+              id, parent_id, slug, slug_segment, title, frontend_title, nav_label, page_icon_media_id,
+              status, redirect_type, redirect_target_page_id, redirect_target_url,
               is_home, is_deleted, deleted_at, updated_at,
               nav_visible, nav_area, nav_order
             FROM pages
@@ -112,9 +112,10 @@ final class PageRepositoryDb implements PageRepositoryInterface
     {
         $stmt = $this->pdo->prepare("
             SELECT
-              id, slug, title,
+              id, parent_id, slug, slug_segment, title,
               frontend_title, subtitle, status,
               content_json,
+              redirect_type, redirect_target_page_id, redirect_target_url,
               is_home, nav_visible, nav_label, page_icon_media_id, nav_area, nav_order,
               is_deleted, deleted_at
             FROM pages
@@ -147,6 +148,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt = $this->pdo->prepare("
             SELECT
               id, slug, title, frontend_title, subtitle, status, content_json,
+              redirect_type, redirect_target_page_id, redirect_target_url,
               is_home, nav_visible, nav_label, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE slug = :s
@@ -164,6 +166,7 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt = $this->pdo->query("
             SELECT
               id, slug, title, frontend_title, subtitle, status, content_json,
+              redirect_type, redirect_target_page_id, redirect_target_url,
               is_home, nav_visible, nav_label, page_icon_media_id, nav_area, nav_order
             FROM pages
             WHERE is_home = 1
@@ -217,6 +220,31 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt->execute([':a' => $area]);
         $rows = $stmt->fetchAll();
         return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Alle nicht geloeschten Seiten mit ihrer Eltern-Beziehung, fuer
+     * Pfad-Berechnung, Zyklus-Pruefung und den Eltern-Auswaehler im Editor.
+     */
+    public function listHierarchy(): array
+    {
+        $stmt = $this->pdo->query("
+            SELECT id, parent_id, slug, slug_segment, title
+            FROM pages
+            WHERE is_deleted = 0
+        ");
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function findSlugById(int $id): ?string
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT slug FROM pages WHERE id = :id AND is_deleted = 0 AND status = 'live' LIMIT 1
+        ");
+        $stmt->execute([':id' => $id]);
+        $slug = $stmt->fetchColumn();
+        return $slug === false ? null : (string)$slug;
     }
 
     public function insert(
@@ -319,6 +347,39 @@ final class PageRepositoryDb implements PageRepositoryInterface
         $stmt->bindValue(':media_id', $mediaId !== null && $mediaId > 0 ? $mediaId : null, $mediaId !== null && $mediaId > 0 ? PDO::PARAM_INT : PDO::PARAM_NULL);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
+    }
+
+    public function setHierarchyAndRedirect(
+        int $id,
+        ?int $parentId,
+        string $slugSegment,
+        string $redirectType,
+        ?int $redirectTargetPageId,
+        ?string $redirectTargetUrl
+    ): void {
+        $stmt = $this->pdo->prepare("
+            UPDATE pages
+            SET parent_id = :parent_id,
+                slug_segment = :slug_segment,
+                redirect_type = :redirect_type,
+                redirect_target_page_id = :redirect_target_page_id,
+                redirect_target_url = :redirect_target_url
+            WHERE id = :id
+            LIMIT 1
+        ");
+        $stmt->bindValue(':parent_id', $parentId, $parentId !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue(':slug_segment', $slugSegment, PDO::PARAM_STR);
+        $stmt->bindValue(':redirect_type', $redirectType, PDO::PARAM_STR);
+        $stmt->bindValue(':redirect_target_page_id', $redirectTargetPageId, $redirectTargetPageId !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue(':redirect_target_url', $redirectTargetUrl, $redirectTargetUrl !== null ? PDO::PARAM_STR : PDO::PARAM_NULL);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    public function updateSlugOnly(int $id, string $slug): void
+    {
+        $stmt = $this->pdo->prepare("UPDATE pages SET slug = :slug WHERE id = :id LIMIT 1");
+        $stmt->execute([':slug' => $slug, ':id' => $id]);
     }
 
     public function softDelete(int $id): void

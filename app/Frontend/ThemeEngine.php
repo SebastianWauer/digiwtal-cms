@@ -37,6 +37,34 @@ final class ThemeEngine
             return;
         }
 
+        $redirectType = (string)($page['redirect_type'] ?? 'none');
+        if ($redirectType !== 'none') {
+            $target = null;
+            if ($redirectType === 'page') {
+                $targetPageId = (int)($page['redirect_target_page_id'] ?? 0);
+                $target = $targetPageId > 0 ? $repo->findSlugById($targetPageId) : null;
+                if ($target !== null) {
+                    $target = cms_base_path() . $target;
+                }
+            } elseif ($redirectType === 'url') {
+                $target = (string)($page['redirect_target_url'] ?? '');
+                $target = $target !== '' ? $target : null;
+            }
+
+            if ($target === null) {
+                $this->notFound();
+                return;
+            }
+
+            $qs = (string)($_SERVER['QUERY_STRING'] ?? '');
+            if ($qs !== '' && !str_contains($target, '?')) {
+                $target .= '?' . $qs;
+            }
+            http_response_code(301);
+            header('Location: ' . $target);
+            exit;
+        }
+
         // Blocks aus content_json dekodieren
         $blocks = [];
         $raw    = (string)($page['content_json'] ?? '');

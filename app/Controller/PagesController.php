@@ -1006,13 +1006,18 @@ final class PagesController
         if (!is_array($page)) {
             $page = [
                 'id'             => 0,
-                'slug'           => '/',
+                'slug'           => '',
+                'slug_segment'   => '',
+                'parent_id'      => null,
                 'title'          => '',
                 'frontend_title' => '',
                 'subtitle'       => '',
                 'status'         => 'live',
                 'content_json'   => json_encode(['blocks' => []], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{"blocks":[]}',
                 'is_deleted'     => 0,
+                'redirect_type'            => 'none',
+                'redirect_target_page_id'  => null,
+                'redirect_target_url'      => '',
 
                 'is_home'        => 0,
                 'nav_visible'    => 0,
@@ -1025,6 +1030,11 @@ final class PagesController
             $page['frontend_title'] = (string)($page['frontend_title'] ?? '');
             $page['subtitle']       = (string)($page['subtitle'] ?? '');
             $page['status']         = (string)($page['status'] ?? 'live');
+            $page['slug_segment']   = (string)($page['slug_segment'] ?? '');
+            $page['parent_id']      = isset($page['parent_id']) && $page['parent_id'] !== null ? (int)$page['parent_id'] : null;
+            $page['redirect_type']  = (string)($page['redirect_type'] ?? 'none');
+            $page['redirect_target_page_id'] = isset($page['redirect_target_page_id']) && $page['redirect_target_page_id'] !== null ? (int)$page['redirect_target_page_id'] : null;
+            $page['redirect_target_url']     = (string)($page['redirect_target_url'] ?? '');
 
             $page['is_home']     = (int)($page['is_home'] ?? 0);
             $page['nav_visible'] = (int)($page['nav_visible'] ?? 0);
@@ -1038,6 +1048,14 @@ final class PagesController
         $revisions = [];
         $selectedRevision = null;
         $navCandidates = $repo->listActive();
+        $excludedParentIds = $id > 0 ? $this->descendantIds($id, $navCandidates) : [];
+        $excludedParentIds[] = $id; // eine Seite kann nicht ihre eigene Elternseite sein
+        $parentOptions = array_values(array_filter($navCandidates, static function (array $c) use ($excludedParentIds): bool {
+            return !in_array((int)($c['id'] ?? 0), $excludedParentIds, true);
+        }));
+        $redirectTargetOptions = array_values(array_filter($navCandidates, static function (array $c) use ($id): bool {
+            return (int)($c['id'] ?? 0) !== $id;
+        }));
         $eventCategoryOptions = [];
         $newsCategoryOptions = [];
         try {
@@ -1118,8 +1136,15 @@ final class PagesController
             }
         }
 
-        $slug    = (string)($_POST['slug'] ?? '/');
+        $slug    = (string)($_POST['slug'] ?? '');
         $title   = (string)($_POST['title'] ?? '');
+
+        $parentId = (int)($_POST['parent_id'] ?? 0);
+        $parentId = $parentId > 0 ? $parentId : null;
+        $redirectType = (string)($_POST['redirect_type'] ?? 'none');
+        $redirectTargetPageId = (int)($_POST['redirect_target_page_id'] ?? 0);
+        $redirectTargetPageId = $redirectTargetPageId > 0 ? $redirectTargetPageId : null;
+        $redirectTargetUrl = (string)($_POST['redirect_target_url'] ?? '');
 
         $frontendTitle = (string)($_POST['frontend_title'] ?? '');
         $subtitle      = (string)($_POST['subtitle'] ?? '');
@@ -1164,6 +1189,10 @@ final class PagesController
             $navLabel,
             $navArea,
             $navOrder,
+            $parentId,
+            $redirectType,
+            $redirectTargetPageId,
+            $redirectTargetUrl,
             (int)($user['id'] ?? 0)
         );
 
@@ -1199,6 +1228,14 @@ final class PagesController
         $revisions = $id2 > 0 ? $repo->listRevisions($id2, 20) : [];
         $selectedRevision = null;
         $navCandidates = $repo->listActive();
+        $excludedParentIds = $id2 > 0 ? $this->descendantIds($id2, $navCandidates) : [];
+        $excludedParentIds[] = $id2;
+        $parentOptions = array_values(array_filter($navCandidates, static function (array $c) use ($excludedParentIds): bool {
+            return !in_array((int)($c['id'] ?? 0), $excludedParentIds, true);
+        }));
+        $redirectTargetOptions = array_values(array_filter($navCandidates, static function (array $c) use ($id2): bool {
+            return (int)($c['id'] ?? 0) !== $id2;
+        }));
         $eventCategoryOptions = [];
         $newsCategoryOptions = [];
         try {
@@ -1215,12 +1252,17 @@ final class PagesController
             $page = [
                 'id'             => 0,
                 'slug'           => $svc->normalizeSlug($slug),
+                'slug_segment'   => $slug,
+                'parent_id'      => $parentId,
                 'title'          => $title,
                 'frontend_title' => $frontendTitle,
                 'subtitle'       => $subtitle,
                 'status'         => $status,
                 'content_json'   => $content,
                 'is_deleted'     => 0,
+                'redirect_type'           => $redirectType,
+                'redirect_target_page_id' => $redirectTargetPageId,
+                'redirect_target_url'     => $redirectTargetUrl,
 
                 'is_home'        => $isHome ? 1 : 0,
                 'nav_visible'    => $navVisible ? 1 : 0,
@@ -1247,6 +1289,30 @@ final class PagesController
 
         require __DIR__ . '/../Views/pages_edit.php';
         \admin_layout_end();
+    }
+
+    /** @return int[] IDs aller Nachkommen (rekursiv) einer Seite, aus einer listActive()-artigen Zeilenliste. */
+    private function descendantIds(int $id, array $rows): array
+    {
+        $childrenByParent = [];
+        foreach ($rows as $row) {
+            $pid = $row['parent_id'] ?? null;
+            if ($pid === null) continue;
+            $childrenByParent[(int)$pid][] = (int)$row['id'];
+        }
+
+        $result = [];
+        $queue = $childrenByParent[$id] ?? [];
+        while ($queue !== []) {
+            $childId = array_shift($queue);
+            if (isset($result[$childId])) continue;
+            $result[$childId] = true;
+            foreach ($childrenByParent[$childId] ?? [] as $grandchild) {
+                $queue[] = $grandchild;
+            }
+        }
+
+        return array_keys($result);
     }
 
     private function nextNavigationOrder(\PDO $pdo, string $area): int

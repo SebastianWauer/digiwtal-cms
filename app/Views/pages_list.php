@@ -13,6 +13,44 @@ $headerNavigationRows = is_array($headerNavigationRows ?? null) ? $headerNavigat
 $footerNavigationRows = is_array($footerNavigationRows ?? null) ? $footerNavigationRows : [];
 $navAreaLabels = ['header' => 'Header', 'footer' => 'Footer', 'both' => 'Header & Footer'];
 
+// Baumreihenfolge: Kinder direkt nach ihrer Elternseite einsortieren, dabei
+// die fachliche Sortierung von listActive() je Ebene beibehalten. Seiten
+// ohne (noch) auffindbare Elternseite (z.B. Eltern im Papierkorb) fallen auf
+// die oberste Ebene zurück, statt zu verschwinden.
+$buildPageTree = static function (array $rows): array {
+    $byParent = [];
+    $byId = [];
+    foreach ($rows as $row) {
+        $pid = isset($row['parent_id']) && $row['parent_id'] !== null ? (int)$row['parent_id'] : 0;
+        $byParent[$pid][] = $row;
+        $byId[(int)($row['id'] ?? 0)] = $row;
+    }
+
+    $flat = [];
+    $visited = [];
+    $walk = function (int $parentId, int $depth) use (&$walk, &$flat, &$visited, $byParent): void {
+        foreach ($byParent[$parentId] ?? [] as $row) {
+            $rid = (int)($row['id'] ?? 0);
+            if (isset($visited[$rid])) continue;
+            $visited[$rid] = true;
+            $row['_depth'] = $depth;
+            $flat[] = $row;
+            $walk($rid, $depth + 1);
+        }
+    };
+    $walk(0, 0);
+
+    foreach ($rows as $row) {
+        $rid = (int)($row['id'] ?? 0);
+        if (isset($visited[$rid])) continue;
+        $row['_depth'] = 0;
+        $flat[] = $row;
+    }
+
+    return [$flat, $byId];
+};
+[$rows, $pagesById] = $buildPageTree(is_array($rows ?? null) ? $rows : []);
+
 $renderOrderModal = static function (string $area, string $title, array $navigationRows) use ($navAreaLabels): void {
     $modalId = 'pages-order-modal-' . $area;
     ?>
@@ -128,9 +166,25 @@ echo flash_render($flash ?? null);
           if (!in_array($status, ['live', 'draft'], true)) $status = 'live';
           $badgeClass = $status === 'draft' ? 'pages-badge--draft' : 'pages-badge--live';
           $badgeText = $status === 'draft' ? 'Entwurf' : 'Live';
+          $depth = max(0, (int)($r['_depth'] ?? 0));
+          $redirectType = (string)($r['redirect_type'] ?? 'none');
+          $redirectLabel = '';
+          if ($redirectType === 'page') {
+              $targetId = (int)($r['redirect_target_page_id'] ?? 0);
+              $targetPage = $pagesById[$targetId] ?? null;
+              $targetSlug = is_array($targetPage) ? '/' . trim((string)($targetPage['slug'] ?? ''), '/') : '#' . $targetId;
+              $redirectLabel = '→ ' . $targetSlug;
+          } elseif ($redirectType === 'url') {
+              $redirectLabel = '→ ' . (string)($r['redirect_target_url'] ?? '');
+          }
         ?>
         <tr>
-          <td class="pages-title"><strong><?= h($title !== '' ? $title : '(ohne Titel)') ?></strong></td>
+          <td class="pages-title" style="padding-left: <?= 16 + $depth * 16 ?>px;">
+            <strong><?= h($title !== '' ? $title : '(ohne Titel)') ?></strong>
+            <?php if ($redirectType !== 'none'): ?>
+              <span class="pages-nav-badge pages-nav-badge--redirect"><?= h($redirectLabel !== '' ? $redirectLabel : 'Weiterleitung') ?></span>
+            <?php endif; ?>
+          </td>
           <td class="pages-slug"><span class="pages-mono"><?= h($slug === '/' ? '/' : ltrim($slug, '/')) ?></span></td>
           <td class="pages-col-start">
             <?php if ($isHome): ?><span class="pages-check" aria-label="Startseite">✓</span><?php endif; ?>
