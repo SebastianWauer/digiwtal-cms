@@ -1681,7 +1681,9 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
     if ($method !== 'GET') {
         json_response(['ok' => false, 'error' => 'method_not_allowed'], 405);
     }
-    $slugRaw = $m[1];
+    // Unterseiten senden ihren "/"-haltigen Slug urlencodiert (z.B. "gravuren%2Ffirmenschilder");
+    // request_path() dekodiert das nicht, weil parse_url() Prozent-Escapes unangetastet laesst.
+    $slugRaw = rawurldecode($m[1]);
     if (!preg_match('/^[a-z0-9][a-z0-9\/-]*$/', $slugRaw)) {
         json_response(['ok' => false, 'error' => 'bad_request'], 400);
     }
