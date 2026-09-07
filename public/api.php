@@ -1690,7 +1690,9 @@ if (preg_match('/^\/pages\/(.+)$/', $sub, $m)) {
     $pageIconSelect = api_db_column_exists($pdo, 'pages', 'page_icon_media_id')
         ? 'p.page_icon_media_id'
         : 'NULL AS page_icon_media_id';
-    $hasRedirectColumns = api_db_column_exists($pdo, 'pages', 'redirect_type');
+    $hasRedirectColumns = api_db_column_exists($pdo, 'pages', 'redirect_type')
+        && api_db_column_exists($pdo, 'pages', 'redirect_target_page_id')
+        && api_db_column_exists($pdo, 'pages', 'redirect_target_url');
     $redirectSelect = $hasRedirectColumns
         ? "p.redirect_type, p.redirect_target_url, target.slug AS redirect_target_slug"
         : "'none' AS redirect_type, NULL AS redirect_target_url, NULL AS redirect_target_slug";
