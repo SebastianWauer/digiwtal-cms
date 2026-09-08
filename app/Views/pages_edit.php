@@ -1852,6 +1852,19 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const buttons = [];
     const panels = [];
 
+    let removedDeprecatedImageFields = false;
+    for (let i = 1; i <= 6; i++) {
+      [`item_${i}_image_alt`, `item_${i}_image_caption`].forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(block.data, key)) {
+          delete block.data[key];
+          removedDeprecatedImageFields = true;
+        }
+      });
+    }
+    if (removedDeprecatedImageFields && CAN_EDIT) {
+      serialize(false);
+    }
+
     const getItemCount = () => {
       const raw = String(block.data.item_count ?? (defs.service_showcase.defaults ? defs.service_showcase.defaults.item_count : '3'));
       let count = Number.parseInt(raw, 10);
@@ -1904,6 +1917,64 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       return section;
     };
 
+    const appendImagePreview = (target, imageKey) => {
+      const preview = el('div', {class: 'pages-edit-service-showcase-editor__preview'});
+      const previewImage = el('img', {alt: ''});
+      const previewLabel = el('div', {class: 'pages-edit-field-hint'});
+      preview.appendChild(previewImage);
+
+      const updatePreview = () => {
+        const source = resolvePreviewImageSource(String(block.data[imageKey] || ''), '');
+        if (source.primary === '') {
+          preview.classList.add('is-empty');
+          previewImage.removeAttribute('src');
+          previewLabel.textContent = 'Kein Bild ausgewählt.';
+          return;
+        }
+
+        preview.classList.remove('is-empty');
+        previewImage.dataset.fallbackApplied = '0';
+        previewImage.onerror = source.fallback !== '' ? () => {
+          if (previewImage.dataset.fallbackApplied === '1') return;
+          previewImage.dataset.fallbackApplied = '1';
+          previewImage.src = source.fallback;
+        } : null;
+        previewImage.src = source.primary;
+        previewLabel.textContent = 'Vorschau';
+      };
+
+      target.addEventListener('input', updatePreview);
+      target.addEventListener('change', updatePreview);
+      target.appendChild(preview);
+      target.appendChild(previewLabel);
+      updatePreview();
+    };
+
+    const appendItemPanelContent = (panel, index) => {
+      const grid = el('div', {class: 'pages-edit-service-showcase-editor__item-grid'});
+      const main = el('div', {class: 'pages-edit-service-showcase-editor__column'});
+      const side = el('div', {class: 'pages-edit-service-showcase-editor__column pages-edit-service-showcase-editor__column--media'});
+
+      appendSection(main, 'Text', [
+        `item_${index}_title`,
+        `item_${index}_lead`,
+        `item_${index}_text`,
+      ]);
+      appendSection(main, 'Link', [
+        `item_${index}_link_url`,
+        `item_${index}_link_text`,
+      ]);
+
+      const mediaSection = appendSection(side, 'Bild', [
+        `item_${index}_image_url`,
+      ]);
+      appendImagePreview(mediaSection, `item_${index}_image_url`);
+
+      grid.appendChild(main);
+      grid.appendChild(side);
+      panel.appendChild(grid);
+    };
+
     const addTab = (id, label, sections, itemIndex = 0) => {
       const btn = el('button', {
         type: 'button',
@@ -1923,9 +1994,13 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       if (itemIndex > 0) panel.dataset.itemIndex = String(itemIndex);
       panel.setAttribute('role', 'tabpanel');
       panel.hidden = true;
-      sections.forEach((section) => {
-        appendSection(panel, String(section.title || ''), Array.isArray(section.keys) ? section.keys : []);
-      });
+      if (typeof sections === 'function') {
+        sections(panel);
+      } else {
+        sections.forEach((section) => {
+          appendSection(panel, String(section.title || ''), Array.isArray(section.keys) ? section.keys : []);
+        });
+      }
       panels.push(panel);
       panelWrap.appendChild(panel);
       return panel;
@@ -1939,22 +2014,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     ]);
 
     for (let i = 1; i <= 6; i++) {
-      addTab(`item-${i}`, `Unterkategorie ${i}`, [
-        {title: 'Text', keys: [
-          `item_${i}_title`,
-          `item_${i}_lead`,
-          `item_${i}_text`,
-        ]},
-        {title: 'Bild', keys: [
-          `item_${i}_image_url`,
-          `item_${i}_image_alt`,
-          `item_${i}_image_caption`,
-        ]},
-        {title: 'Link', keys: [
-          `item_${i}_link_url`,
-          `item_${i}_link_text`,
-        ]},
-      ], i);
+      addTab(`item-${i}`, `Unterkategorie ${i}`, (panel) => appendItemPanelContent(panel, i), i);
     }
 
     addTab('closing', 'Abschluss', [

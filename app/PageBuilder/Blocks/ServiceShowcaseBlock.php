@@ -47,8 +47,6 @@ final class ServiceShowcaseBlock extends AbstractBlockType
                 "item_{$i}_lead" => '',
                 "item_{$i}_text" => '',
                 "item_{$i}_image_url" => '',
-                "item_{$i}_image_alt" => '',
-                "item_{$i}_image_caption" => '',
                 "item_{$i}_link_url" => '',
                 "item_{$i}_link_text" => '',
             ];
@@ -108,22 +106,12 @@ final class ServiceShowcaseBlock extends AbstractBlockType
                 ],
                 "item_{$i}_text" => [
                     'type' => 'string', 'max' => 1200,
-                    'label' => "Unterkategorie {$i} – Text", 'control' => 'textarea', 'rows' => 5,
+                    'label' => "Unterkategorie {$i} – Text", 'control' => 'textarea', 'rows' => 4,
                 ],
                 "item_{$i}_image_url" => [
                     'type' => 'string', 'max' => 2000,
                     'label' => "Unterkategorie {$i} – Bild", 'control' => 'input',
                     'hint' => 'Hochformat wirkt am besten, Richtwert 520 × 620.',
-                ],
-                "item_{$i}_image_alt" => [
-                    'type' => 'string', 'max' => 240,
-                    'label' => "Unterkategorie {$i} – Bildbeschreibung", 'control' => 'input',
-                    'hint' => 'Beschreibt knapp, was auf dem Bild zu sehen ist.',
-                ],
-                "item_{$i}_image_caption" => [
-                    'type' => 'string', 'max' => 120,
-                    'label' => "Unterkategorie {$i} – Bildzeile", 'control' => 'input',
-                    'hint' => 'Kurze Zeile ueber dem Bild, z. B. "Edelstahl, graviert".',
                 ],
                 "item_{$i}_link_url" => [
                     'type' => 'string', 'max' => 2000,
@@ -198,7 +186,7 @@ final class ServiceShowcaseBlock extends AbstractBlockType
 
         // Nicht genutzte Unterkategorien leeren, damit nichts Verwaistes im JSON stehen bleibt.
         for ($i = max(1, $count + 1); $i <= self::MAX_ITEMS; $i++) {
-            foreach (['title', 'lead', 'text', 'image_url', 'image_alt', 'image_caption', 'link_url', 'link_text'] as $part) {
+            foreach (['title', 'lead', 'text', 'image_url', 'link_url', 'link_text'] as $part) {
                 $clean["item_{$i}_{$part}"] = '';
             }
         }
