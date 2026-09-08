@@ -44,7 +44,10 @@
   padding: 20px;
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
-  background: var(--card);
+  /* Deckend statt var(--card): das ist im Dunkel-Theme rgba(255,255,255,.03)
+     und liess die Seitenuebersicht durch den Dialog scheinen. Im Hell-Theme
+     ist --panel bereits #ffffff, dort bleibt es damit unveraendert weiss. */
+  background: color-mix(in srgb, white 4%, var(--panel));
   box-shadow: var(--shadow);
 }
 
