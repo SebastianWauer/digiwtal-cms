@@ -1868,7 +1868,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         btn.setAttribute('aria-selected', active ? 'true' : 'false');
       });
       panels.forEach((panel) => {
-        const show = panel.dataset.tab === id && !panel.hidden;
+        const show = panel.dataset.tab === id && panel.dataset.disabled !== '1';
         panel.classList.toggle('is-active', show);
         panel.hidden = !show;
       });
@@ -1981,7 +1981,11 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       panels.forEach((panel) => {
         const idx = Number.parseInt(panel.dataset.itemIndex || '', 10);
         if (!Number.isFinite(idx)) return;
-        panel.hidden = idx > count;
+        panel.dataset.disabled = idx > count ? '1' : '0';
+        if (idx > count) {
+          panel.classList.remove('is-active');
+          panel.hidden = true;
+        }
       });
 
       const activeBtn = buttons.find((btn) => btn.classList.contains('is-active') && !btn.hidden);
