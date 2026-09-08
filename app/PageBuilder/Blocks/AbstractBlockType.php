@@ -26,6 +26,14 @@ abstract class AbstractBlockType implements BlockTypeInterface
         $fields = $this->fields();
         $clean  = ['type' => $this->type()];
 
+        // Interner Titel: nur fuer die Redaktion im PageBuilder, gilt fuer
+        // jeden Blocktyp gleich und steht deshalb hier statt in fields().
+        $internalTitle = trim((string)($data['internal_title'] ?? ''));
+        if (mb_strlen($internalTitle) > 200) {
+            $internalTitle = mb_substr($internalTitle, 0, 200);
+        }
+        $clean['internal_title'] = $internalTitle;
+
         // fields() liefert assoziatives Array: ['fieldName' => ['max'=>..., ...]]
         foreach ($fields as $name => $field) {
             $value = $data[$name] ?? null;

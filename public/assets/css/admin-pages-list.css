@@ -108,7 +108,9 @@ body.pages-order-modal-open{ overflow: hidden; }
 .pages-order-item[draggable="true"]{ cursor: grab; }
 .pages-order-item[draggable="true"]:active{ cursor: grabbing; }
 .pages-order-item.is-dragging{
-  background: var(--active);
+  /* Voll deckend statt var(--active): das ist im Dunkel-Theme selbst ein
+     rgba()-Ton und liesse den Hintergrund weiterhin leicht durchscheinen. */
+  background: color-mix(in srgb, white 12%, var(--panel));
   border-color: var(--accent, #c41e3a);
 }
 

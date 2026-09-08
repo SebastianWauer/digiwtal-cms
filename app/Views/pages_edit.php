@@ -568,6 +568,25 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     }
     return t;
   }
+
+  // Anzeige-Titel für die Blockliste: eigener "Interner Titel", sonst das
+  // naheliegendste Textfeld des Blocks (was auch im Frontend zu sehen wäre),
+  // sonst gar nichts (dann bleibt es beim reinen Typ-Label).
+  function blockPreviewTitle(block) {
+    const data = (block && block.data && typeof block.data === 'object') ? block.data : {};
+    const custom = typeof data.internal_title === 'string' ? data.internal_title.trim() : '';
+    if (custom !== '') return custom;
+
+    const candidateKeys = ['headline', 'title', 'topline', 'caption', 'subtitle', 'text'];
+    for (const key of candidateKeys) {
+      const raw = data[key];
+      if (typeof raw !== 'string') continue;
+      const plain = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (plain === '') continue;
+      return plain.length > 60 ? plain.slice(0, 57) + '…' : plain;
+    }
+    return '';
+  }
   let activeMediaPickerInput = null;
   let sortableInstance = null;
   const historyStack = [];
@@ -2224,15 +2243,33 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     return block.data[key];
   }
 
+  function renderInternalTitleField(block) {
+    if (!block.data || typeof block.data !== 'object') block.data = {};
+    return renderField(block, 'internal_title', {
+      type: 'string',
+      max: 200,
+      label: 'Interner Titel',
+      control: 'input',
+      hint: 'Nur im PageBuilder sichtbar, für die eigene Übersicht. Leer = die Blockliste zeigt stattdessen den Inhalt des Blocks.',
+    });
+  }
+
   function renderBlockEditorContent(block) {
-    if (block.type === 'hero') return renderHeroBlockFields(block);
-    if (block.type === 'dual_hero') return renderDualHeroBlockFields(block);
-    if (block.type === 'page_carousel') return renderPageCarouselBlockFields(block);
-    if (block.type === 'catalog') return renderCatalogBlockFields(block);
-    if (block.type === 'text') return renderTextBlockFields(block);
-    if (block.type === 'columns') return renderColumnsBlockFields(block);
-    if (block.type === 'three_columns_layout') return renderThreeColumnsLayoutFields(block);
-    return renderBlockFields(block);
+    const wrapper = el('div', {class: 'pages-edit-block-editor'});
+    wrapper.appendChild(renderInternalTitleField(block));
+
+    let specific;
+    if (block.type === 'hero') specific = renderHeroBlockFields(block);
+    else if (block.type === 'dual_hero') specific = renderDualHeroBlockFields(block);
+    else if (block.type === 'page_carousel') specific = renderPageCarouselBlockFields(block);
+    else if (block.type === 'catalog') specific = renderCatalogBlockFields(block);
+    else if (block.type === 'text') specific = renderTextBlockFields(block);
+    else if (block.type === 'columns') specific = renderColumnsBlockFields(block);
+    else if (block.type === 'three_columns_layout') specific = renderThreeColumnsLayoutFields(block);
+    else specific = renderBlockFields(block);
+    wrapper.appendChild(specific);
+
+    return wrapper;
   }
 
   function renderThreeColumnsLayoutFields(block, initialTab = 'settings') {
@@ -2356,8 +2393,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       const card = el('div', {class: 'pages-edit-card pages-edit-blockcard pages-edit-blockcard--nested'});
       const head = el('div', {class: 'pages-edit-card-head'});
       const left = el('div', {class: 'pages-edit-blockhead-left'});
-      left.appendChild(el('strong', {class: 'pages-edit-blockhead-title', html: blockLabel(nestedBlock.type)}));
-      left.appendChild(el('span', {class: 'pages-edit-blockhead-meta', html: `(${nestedBlock.type})`}));
+      const nestedDisplayLabel = blockLabel(nestedBlock.type);
+      const nestedPreviewTitle = blockPreviewTitle(nestedBlock);
+      const nestedTitleEl = el('strong', {class: 'pages-edit-blockhead-title'});
+      nestedTitleEl.textContent = nestedPreviewTitle !== '' ? nestedPreviewTitle : nestedDisplayLabel;
+      left.appendChild(nestedTitleEl);
+      const nestedMetaEl = el('span', {class: 'pages-edit-blockhead-meta'});
+      nestedMetaEl.textContent = nestedPreviewTitle !== '' ? `(${nestedDisplayLabel})` : `(${nestedBlock.type})`;
+      left.appendChild(nestedMetaEl);
       const right = el('div', {class: 'pages-edit-blockhead-actions'});
       const upButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm pages-edit-blockbtn', html: '↑'});
       const downButton = el('button', {type: 'button', class: 'btn btn--ghost btn--sm pages-edit-blockbtn', html: '↓'});
@@ -2840,8 +2883,13 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       const left = el('div', {class: 'pages-edit-blockhead-left'});
       left.appendChild(el('span', {class: 'pages-edit-drag-handle', html: '⋮⋮'}));
       const displayLabel = blockLabel(block.type);
-      left.appendChild(el('strong', {class: 'pages-edit-blockhead-title', html: displayLabel}));
-      left.appendChild(el('span', {class: 'pages-edit-blockhead-meta', html: `(${block.type})`}));
+      const previewTitle = blockPreviewTitle(block);
+      const titleEl = el('strong', {class: 'pages-edit-blockhead-title'});
+      titleEl.textContent = previewTitle !== '' ? previewTitle : displayLabel;
+      left.appendChild(titleEl);
+      const metaEl = el('span', {class: 'pages-edit-blockhead-meta'});
+      metaEl.textContent = previewTitle !== '' ? `(${displayLabel})` : `(${block.type})`;
+      left.appendChild(metaEl);
 
       const right = el('div', {class: 'pages-edit-blockhead-actions'});
       const editBtn = el('button', {type:'button', class:'btn btn--ghost btn--sm pages-edit-blockbtn pages-edit-blockbtn--toggle', html: 'Bearbeiten'});
