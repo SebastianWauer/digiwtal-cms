@@ -1317,7 +1317,85 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       return fieldWrap;
     }
 
-    if (isImageUrlField) {
+    if (control === 'page_link') {
+      const currentValue = String(val || '').trim();
+      const select = el('select', {class: 'pages-edit-input'});
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '– Seite auswählen –';
+      select.appendChild(placeholder);
+
+      PAGE_OPTIONS.forEach((page) => {
+        const slug = String(page && page.slug ? page.slug : '').trim();
+        if (slug === '') return;
+        const title = String(page && page.title ? page.title : slug).trim();
+        const status = String(page && page.status ? page.status : 'live');
+        const option = document.createElement('option');
+        option.value = slug;
+        option.textContent = `${title} (${slug})${status === 'live' ? '' : ' · Entwurf'}`;
+        select.appendChild(option);
+      });
+
+      if (
+        currentValue !== ''
+        && !PAGE_OPTIONS.some((page) => String(page && page.slug ? page.slug : '').trim() === currentValue)
+      ) {
+        const custom = document.createElement('option');
+        custom.value = currentValue;
+        custom.textContent = `Aktueller Wert (${currentValue})`;
+        select.appendChild(custom);
+      }
+      select.value = currentValue;
+      select.disabled = !CAN_EDIT;
+
+      input = el('input', {
+        class: 'pages-edit-input',
+        type: 'text',
+        placeholder: '/pfad oder https://beispiel.de'
+      });
+      input.value = currentValue;
+      input.readOnly = !CAN_EDIT;
+
+      const syncSelectFromInput = () => {
+        const typed = input.value.trim();
+        select.value = Array.from(select.options).some((option) => option.value === typed) ? typed : '';
+      };
+
+      select.addEventListener('change', () => {
+        if (!CAN_EDIT) return;
+        input.value = select.value;
+        block.data[key] = input.value.trim();
+        serialize();
+      });
+      input.addEventListener('input', () => {
+        if (!CAN_EDIT) return;
+        block.data[key] = input.value.trim();
+        syncSelectFromInput();
+        serialize();
+      });
+
+      const pageLinkActions = el('div', {class: 'pages-edit-pb-actions'});
+      if (CAN_EDIT) {
+        const clearBtn = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: 'Entfernen'});
+        clearBtn.addEventListener('click', () => {
+          input.value = '';
+          select.value = '';
+          block.data[key] = '';
+          serialize();
+        });
+        pageLinkActions.appendChild(clearBtn);
+      }
+
+      fieldWrap.appendChild(select);
+      fieldWrap.appendChild(input);
+      if (CAN_EDIT) fieldWrap.appendChild(pageLinkActions);
+      fieldWrap.appendChild(el('div', {
+        class: 'pages-edit-field-hint',
+        html: 'Die Auswahl speichert den Seitenpfad. Das Textfeld bleibt fuer externe Links oder Sonderziele editierbar.'
+      }));
+      if (hintText) fieldWrap.appendChild(el('div', {class: 'pages-edit-field-hint', html: hintText}));
+      return fieldWrap;
+    } else if (isImageUrlField) {
       input = el('input', {
         class: 'pages-edit-input',
         type: 'text',
@@ -1759,6 +1837,173 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const initialMatch = String(initialTab).match(/^tile-(\d+)$/);
     const initialIndex = initialMatch ? Number.parseInt(initialMatch[1], 10) : 0;
     activateTab(initialIndex >= 1 && initialIndex <= getColCount() ? `tile-${initialIndex}` : 'settings');
+    return wrapper;
+  }
+
+  function renderServiceShowcaseBlockFields(block, initialTab = 'intro') {
+    const fields = (defs.service_showcase && defs.service_showcase.fields && typeof defs.service_showcase.fields === 'object')
+      ? defs.service_showcase.fields
+      : {};
+    if (!block.data || typeof block.data !== 'object') block.data = {};
+
+    const wrapper = el('div', {class: 'pages-edit-block-tabs pages-edit-service-showcase-editor'});
+    const tabBar = el('div', {class: 'pages-edit-block-tabs__bar'});
+    const panelWrap = el('div', {class: 'pages-edit-block-tabs__panels'});
+    const buttons = [];
+    const panels = [];
+
+    const getItemCount = () => {
+      const raw = String(block.data.item_count ?? (defs.service_showcase.defaults ? defs.service_showcase.defaults.item_count : '3'));
+      let count = Number.parseInt(raw, 10);
+      if (!Number.isFinite(count)) count = 3;
+      if (count < 1) count = 1;
+      if (count > 6) count = 6;
+      return count;
+    };
+
+    const activateTab = (id) => {
+      buttons.forEach((btn) => {
+        const active = btn.dataset.tab === id && !btn.hidden;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      panels.forEach((panel) => {
+        const show = panel.dataset.tab === id && !panel.hidden;
+        panel.classList.toggle('is-active', show);
+        panel.hidden = !show;
+      });
+    };
+
+    const appendFields = (target, keys) => {
+      const fieldGroup = el('div', {class: 'pages-edit-fields'});
+      keys.forEach((key) => {
+        if (!fields[key]) return;
+        try {
+          fieldGroup.appendChild(renderField(block, key, fields[key]));
+        } catch (e) {
+          console.error('Service showcase field render failed:', key, e);
+        }
+      });
+      if (!fieldGroup.children.length) {
+        fieldGroup.appendChild(el('div', {
+          class: 'pages-edit-field-hint',
+          html: 'Fuer diesen Bereich sind aktuell keine Felder konfiguriert.'
+        }));
+      }
+      target.appendChild(fieldGroup);
+      return fieldGroup;
+    };
+
+    const appendSection = (target, title, keys) => {
+      const section = el('section', {class: 'pages-edit-service-showcase-editor__section'});
+      if (title !== '') {
+        section.appendChild(el('h3', {class: 'pages-edit-service-showcase-editor__title', html: title}));
+      }
+      appendFields(section, keys);
+      target.appendChild(section);
+      return section;
+    };
+
+    const addTab = (id, label, sections, itemIndex = 0) => {
+      const btn = el('button', {
+        type: 'button',
+        class: 'pages-edit-block-tabbtn',
+        html: label,
+      });
+      btn.dataset.tab = id;
+      if (itemIndex > 0) btn.dataset.itemIndex = String(itemIndex);
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', 'false');
+      btn.addEventListener('click', () => activateTab(id));
+      buttons.push(btn);
+      tabBar.appendChild(btn);
+
+      const panel = el('section', {class: 'pages-edit-block-tabpanel'});
+      panel.dataset.tab = id;
+      if (itemIndex > 0) panel.dataset.itemIndex = String(itemIndex);
+      panel.setAttribute('role', 'tabpanel');
+      panel.hidden = true;
+      sections.forEach((section) => {
+        appendSection(panel, String(section.title || ''), Array.isArray(section.keys) ? section.keys : []);
+      });
+      panels.push(panel);
+      panelWrap.appendChild(panel);
+      return panel;
+    };
+
+    addTab('intro', 'Intro', [
+      {title: 'Seitenkopf', keys: ['kicker', 'headline', 'headline_muted', 'lead']},
+    ]);
+    addTab('stock', 'Werkstoffleiste', [
+      {title: 'Leiste', keys: ['stock_label', 'stock_items', 'item_count']},
+    ]);
+
+    for (let i = 1; i <= 6; i++) {
+      addTab(`item-${i}`, `Unterkategorie ${i}`, [
+        {title: 'Text', keys: [
+          `item_${i}_title`,
+          `item_${i}_lead`,
+          `item_${i}_text`,
+        ]},
+        {title: 'Bild', keys: [
+          `item_${i}_image_url`,
+          `item_${i}_image_alt`,
+          `item_${i}_image_caption`,
+        ]},
+        {title: 'Link', keys: [
+          `item_${i}_link_url`,
+          `item_${i}_link_text`,
+        ]},
+      ], i);
+    }
+
+    addTab('closing', 'Abschluss', [
+      {title: 'Text', keys: [
+        'closing_kicker',
+        'closing_headline',
+        'closing_text',
+      ]},
+      {title: 'Aktionen', keys: [
+        'closing_button_text',
+        'closing_button_url',
+        'closing_secondary_text',
+        'closing_secondary_url',
+      ]},
+    ]);
+
+    const updateItemTabs = () => {
+      const count = getItemCount();
+      buttons.forEach((btn) => {
+        const idx = Number.parseInt(btn.dataset.itemIndex || '', 10);
+        if (!Number.isFinite(idx)) return;
+        btn.hidden = idx > count;
+      });
+      panels.forEach((panel) => {
+        const idx = Number.parseInt(panel.dataset.itemIndex || '', 10);
+        if (!Number.isFinite(idx)) return;
+        panel.hidden = idx > count;
+      });
+
+      const activeBtn = buttons.find((btn) => btn.classList.contains('is-active') && !btn.hidden);
+      if (!activeBtn) {
+        activateTab('stock');
+      }
+    };
+
+    wrapper.appendChild(tabBar);
+    wrapper.appendChild(panelWrap);
+    wrapper.addEventListener('change', updateItemTabs);
+    updateItemTabs();
+
+    const initialItemMatch = String(initialTab).match(/^item-(\d+)$/);
+    const initialIndex = initialItemMatch ? Number.parseInt(initialItemMatch[1], 10) : 0;
+    if (initialIndex >= 1 && initialIndex <= getItemCount()) {
+      activateTab(`item-${initialIndex}`);
+    } else if (buttons.some((btn) => btn.dataset.tab === initialTab && !btn.hidden)) {
+      activateTab(String(initialTab));
+    } else {
+      activateTab('intro');
+    }
     return wrapper;
   }
 
@@ -2265,6 +2510,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     else if (block.type === 'catalog') specific = renderCatalogBlockFields(block);
     else if (block.type === 'text') specific = renderTextBlockFields(block);
     else if (block.type === 'columns') specific = renderColumnsBlockFields(block);
+    else if (block.type === 'service_showcase') specific = renderServiceShowcaseBlockFields(block);
     else if (block.type === 'three_columns_layout') specific = renderThreeColumnsLayoutFields(block);
     else specific = renderBlockFields(block);
     wrapper.appendChild(specific);
@@ -2843,6 +3089,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         blockModalSub.textContent = 'Text-Block: Inhalte und Bild sind in getrennten Kacheln';
       } else if (block.type === 'columns') {
         blockModalSub.textContent = 'Kachel-Block: Anzahl und Inhalte der Kacheln';
+      } else if (block.type === 'service_showcase') {
+        blockModalSub.textContent = 'Leistungs-Showcase: Intro, Werkstoffleiste, Unterkategorien und Abschluss getrennt bearbeiten';
       } else if (block.type === 'page_carousel') {
         blockModalSub.textContent = 'Seiten-Karussell: Seiten auswählen und mit Bild sowie Beschreibung hervorheben';
       } else if (block.type === 'catalog') {
@@ -2859,7 +3107,9 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     } catch (err) {
       console.error('Block-Editor konnte nicht vollständig geladen werden:', err);
       blockModalFields.innerHTML = '';
-      blockModalFields.appendChild(renderBlockFields(block));
+      blockModalFields.appendChild(block.type === 'service_showcase'
+        ? renderServiceShowcaseBlockFields(block)
+        : renderBlockFields(block));
     }
     blockModal.classList.add('is-open');
     if (modalBackdrop) {

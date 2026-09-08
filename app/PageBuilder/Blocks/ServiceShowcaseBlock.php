@@ -127,8 +127,8 @@ final class ServiceShowcaseBlock extends AbstractBlockType
                 ],
                 "item_{$i}_link_url" => [
                     'type' => 'string', 'max' => 2000,
-                    'label' => "Unterkategorie {$i} – Linkziel", 'control' => 'input',
-                    'hint' => 'Interner Pfad wie /gravuren/firmenschilder oder vollstaendige https://-Adresse.',
+                    'label' => "Unterkategorie {$i} – Linkziel", 'control' => 'page_link',
+                    'hint' => 'Seite auswaehlen oder manuell einen internen Pfad wie /gravuren/firmenschilder bzw. eine vollstaendige https://-Adresse eingeben.',
                 ],
                 "item_{$i}_link_text" => [
                     'type' => 'string', 'max' => 80,
