@@ -55,6 +55,13 @@ $buildPageTree = static function (array $rows): array {
     return $flat;
 };
 $rows = $buildPageTree(is_array($rows ?? null) ? $rows : []);
+$hasExpandableRows = false;
+foreach ($rows as $treeRow) {
+    if (!empty($treeRow['_has_children'])) {
+        $hasExpandableRows = true;
+        break;
+    }
+}
 
 $renderOrderModal = static function (string $area, string $title, array $navigationRows) use ($navAreaLabels): void {
     $modalId = 'pages-order-modal-' . $area;
@@ -125,6 +132,9 @@ echo flash_render($flash ?? null);
   <div class="pages-actions-left">
     <?php if ($canCreate): ?>
       <a class="btn" href="<?= cms_base_path() ?>/pages/edit">Neue Seite anlegen</a>
+    <?php endif; ?>
+    <?php if ($hasExpandableRows): ?>
+      <button type="button" class="btn btn--ghost" data-tree-toggle-all hidden>Alle einklappen</button>
     <?php endif; ?>
   </div>
 
@@ -258,17 +268,76 @@ echo flash_render($flash ?? null);
     roots.forEach((root) => walk(root, false));
   };
 
+  // Nur Zeilen mit Unterseiten lassen sich ueberhaupt einklappen.
+  const collapsibleRows = rows.filter((row) => row.querySelector('[data-tree-toggle]'));
+  const allButton = document.querySelector('[data-tree-toggle-all]');
+  const STORAGE_KEY = 'cms.pages.collapsed';
+
+  // localStorage kann im privaten Modus oder bei gesperrten Site-Daten werfen -
+  // das Ein-/Ausklappen selbst darf daran nicht scheitern.
+  const readStored = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return new Set(Array.isArray(parsed) ? parsed.map(String) : []);
+    } catch (e) {
+      return new Set();
+    }
+  };
+
+  // Gespeichert wird nur, was es aktuell auch gibt; geloeschte Seiten fallen
+  // damit von selbst aus dem Speicher.
+  const persist = () => {
+    try {
+      const collapsed = collapsibleRows
+        .filter((row) => row.classList.contains('is-collapsed'))
+        .map((row) => row.dataset.pageId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed));
+    } catch (e) {
+      /* Speichern ist optional */
+    }
+  };
+
+  const setRowCollapsed = (row, collapsed) => {
+    row.classList.toggle('is-collapsed', collapsed);
+    const toggle = row.querySelector('[data-tree-toggle]');
+    if (toggle) toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  };
+
+  const syncAllButton = () => {
+    if (!allButton) return;
+    const anyExpanded = collapsibleRows.some((row) => !row.classList.contains('is-collapsed'));
+    allButton.textContent = anyExpanded ? 'Alle einklappen' : 'Alle ausklappen';
+    allButton.dataset.treeToggleAll = anyExpanded ? 'collapse' : 'expand';
+  };
+
   document.addEventListener('click', (event) => {
     const toggle = event.target.closest('[data-tree-toggle]');
-    if (!toggle) return;
-    const row = toggle.closest('tr[data-page-id]');
-    if (!row) return;
-    const collapsed = row.classList.toggle('is-collapsed');
-    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    applyVisibility();
+    if (toggle) {
+      const row = toggle.closest('tr[data-page-id]');
+      if (!row) return;
+      setRowCollapsed(row, !row.classList.contains('is-collapsed'));
+      applyVisibility();
+      persist();
+      syncAllButton();
+      return;
+    }
+
+    if (allButton && event.target.closest('[data-tree-toggle-all]')) {
+      const collapse = allButton.dataset.treeToggleAll !== 'expand';
+      collapsibleRows.forEach((row) => setRowCollapsed(row, collapse));
+      applyVisibility();
+      persist();
+      syncAllButton();
+    }
   });
 
+  const stored = readStored();
+  collapsibleRows.forEach((row) => {
+    if (stored.has(row.dataset.pageId)) setRowCollapsed(row, true);
+  });
+  if (allButton) allButton.hidden = false;
   applyVisibility();
+  syncAllButton();
 })();
 </script>
 
