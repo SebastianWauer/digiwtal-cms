@@ -21,6 +21,7 @@ use App\PageBuilder\Blocks\EventsBlock;
 use App\PageBuilder\Blocks\ThreeColumnsLayoutBlock;
 use App\PageBuilder\Blocks\NewsBlock;
 use App\PageBuilder\Blocks\SocialAccountBlock;
+use App\PageBuilder\Blocks\ServiceShowcaseBlock;
 
 final class BlockRegistry
 {
@@ -58,6 +59,7 @@ final class BlockRegistry
             new ThreeColumnsLayoutBlock(),
             new NewsBlock(),
             new SocialAccountBlock(),
+            new ServiceShowcaseBlock(),
         ];
 
         return self::$typesCache;

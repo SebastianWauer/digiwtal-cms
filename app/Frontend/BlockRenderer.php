@@ -14,8 +14,9 @@ final class BlockRenderer
             return '';
         }
 
-        // Nur alphanumerische Zeichen + Bindestriche erlaubt (verhindert Path-Traversal)
-        if (!preg_match('/^[a-z0-9\-]+$/', $type)) {
+        // Registrierte Blocktypen verwenden Bindestriche und Unterstriche. Beides
+        // ist pfadsicher; Punkte und Slashes bleiben fuer Path-Traversal gesperrt.
+        if (!preg_match('/^[a-z0-9_-]+$/', $type)) {
             return '';
         }
 
