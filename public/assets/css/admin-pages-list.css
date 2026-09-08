@@ -267,6 +267,48 @@ body.pages-order-modal-open{ overflow: hidden; }
 
 .pages-title strong{ font-weight: 800; }
 
+/* Ein-/Ausklappen der Unterseiten in der Seitenuebersicht */
+.pages-tree{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pages-tree__toggle,
+.pages-tree__spacer{
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.pages-tree__toggle{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.pages-tree__toggle:not(:disabled,[aria-disabled="true"],.is-disabled):hover{
+  color: var(--text);
+  background: var(--btn-hover);
+}
+
+/* Zugeklappt zeigt der Pfeil nach rechts, aufgeklappt nach unten. */
+.pages-tree__chevron{
+  transform: rotate(90deg);
+  transition: transform 160ms ease;
+}
+
+tr.is-collapsed .pages-tree__chevron{
+  transform: rotate(0deg);
+}
+
 .pages-mono{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 13px;

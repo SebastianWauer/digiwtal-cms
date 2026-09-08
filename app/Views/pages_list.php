@@ -32,16 +32,23 @@ $buildPageTree = static function (array $rows): array {
             if (isset($visited[$rid])) continue;
             $visited[$rid] = true;
             $row['_depth'] = $depth;
+            $row['_parent_id'] = $parentId;
+            $row['_has_children'] = ($byParent[$rid] ?? []) !== [];
             $flat[] = $row;
             $walk($rid, $depth + 1);
         }
     };
     $walk(0, 0);
 
+    // Verwaiste Unterseiten: Elternseite nicht in der Liste (z.B. im Papierkorb).
+    // Sie stehen auf oberster Ebene und gelten dort auch als Wurzel, damit das
+    // Ein-/Ausklappen sie nicht an einer unsichtbaren Elternzeile aufhaengt.
     foreach ($rows as $row) {
         $rid = (int)($row['id'] ?? 0);
         if (isset($visited[$rid])) continue;
         $row['_depth'] = 0;
+        $row['_parent_id'] = 0;
+        $row['_has_children'] = ($byParent[$rid] ?? []) !== [];
         $flat[] = $row;
     }
 
@@ -167,10 +174,27 @@ echo flash_render($flash ?? null);
           $badgeText = $status === 'draft' ? 'Entwurf' : 'Live';
           $depth = max(0, (int)($r['_depth'] ?? 0));
           $redirectType = (string)($r['redirect_type'] ?? 'none');
+          $parentId = max(0, (int)($r['_parent_id'] ?? 0));
+          $hasChildren = !empty($r['_has_children']);
+          $rowTitle = $title !== '' ? $title : '(ohne Titel)';
         ?>
-        <tr>
+        <tr data-page-id="<?= $id ?>" data-parent-id="<?= $parentId ?>">
           <td class="pages-title" style="padding-left: <?= 16 + $depth * 16 ?>px;">
-            <strong><?= h($title !== '' ? $title : '(ohne Titel)') ?></strong>
+            <span class="pages-tree">
+              <?php if ($hasChildren): ?>
+                <button type="button" class="pages-tree__toggle" data-tree-toggle aria-expanded="true"
+                        title="Unterseiten ein-/ausklappen"
+                        aria-label="Unterseiten von <?= h($rowTitle) ?> ein- oder ausklappen">
+                  <svg class="pages-tree__chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"
+                       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 6l6 6-6 6"></path>
+                  </svg>
+                </button>
+              <?php else: ?>
+                <span class="pages-tree__spacer" aria-hidden="true"></span>
+              <?php endif; ?>
+              <strong><?= h($rowTitle) ?></strong>
+            </span>
           </td>
           <td class="pages-slug"><span class="pages-mono"><?= h($slug === '/' ? '/' : ltrim($slug, '/')) ?></span></td>
           <td class="pages-col-type">
@@ -203,6 +227,50 @@ echo flash_render($flash ?? null);
     </tbody>
   </table>
 </div>
+
+<script>
+(() => {
+  const rows = [...document.querySelectorAll('.pages-table tbody tr[data-page-id]')];
+  if (rows.length === 0) return;
+
+  const childrenByParent = new Map();
+  const roots = [];
+  rows.forEach((row) => {
+    const parentId = row.dataset.parentId || '0';
+    if (parentId === '0') {
+      roots.push(row);
+      return;
+    }
+    if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+    childrenByParent.get(parentId).push(row);
+  });
+
+  // Eine Zeile ist sichtbar, wenn keine ihrer Elternzeilen eingeklappt ist.
+  const applyVisibility = () => {
+    const walk = (row, hidden) => {
+      const children = childrenByParent.get(row.dataset.pageId) || [];
+      const childrenHidden = hidden || row.classList.contains('is-collapsed');
+      children.forEach((child) => {
+        child.hidden = childrenHidden;
+        walk(child, childrenHidden);
+      });
+    };
+    roots.forEach((root) => walk(root, false));
+  };
+
+  document.addEventListener('click', (event) => {
+    const toggle = event.target.closest('[data-tree-toggle]');
+    if (!toggle) return;
+    const row = toggle.closest('tr[data-page-id]');
+    if (!row) return;
+    const collapsed = row.classList.toggle('is-collapsed');
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    applyVisibility();
+  });
+
+  applyVisibility();
+})();
+</script>
 
 <?php if ($canEdit): ?>
   <?php $renderOrderModal('header', 'Header', $headerNavigationRows); ?>
