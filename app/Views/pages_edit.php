@@ -2290,6 +2290,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       ? defs.catalog.fields
       : {};
     const maxPdfMb = 500;
+    const maxPages = 600;
     const wrapper = el('div', {class: 'pages-edit-catalog'});
     const contentFields = el('div', {class: 'pages-edit-fields'});
     ['title', 'subtitle', 'download_label', 'back_label', 'back_url'].forEach((key) => {
@@ -2418,8 +2419,29 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       catalogProcessingCount++;
       uploadButton.disabled = true;
       fileInput.disabled = true;
+      // PDF zuerst im Browser oeffnen: scheitert das oder ist der Katalog zu
+      // lang, faellt es in Sekunden auf statt nach der komplett uebertragenen Datei.
+      let pdf = null;
       try {
-        setProgress(1, 'PDF-Upload wird vorbereitet …');
+        setProgress(1, 'PDF wird im Browser geprüft …');
+        const pdfjs = await loadPdfJs();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const assetBase = window.cmsAdminUrl('/assets/vendor/pdfjs/');
+        const loadingTask = pdfjs.getDocument({
+          data: bytes,
+          cMapUrl: assetBase + 'cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: assetBase + 'standard_fonts/',
+          wasmUrl: assetBase + 'wasm/'
+        });
+        pdf = await loadingTask.promise;
+        const pageCount = Number(pdf.numPages || 0);
+        if (pageCount <= 0) throw new Error('Die PDF enthält keine lesbaren Seiten.');
+        if (pageCount > maxPages) {
+          throw new Error(`Die PDF hat ${pageCount} Seiten. Der Katalog darf höchstens ${maxPages} Seiten enthalten.`);
+        }
+
+        setProgress(2, `PDF-Upload wird vorbereitet … (${pageCount} Seiten)`);
         const start = await catalogPost('/media/catalog/upload/start', {
           filename: file.name,
           size_bytes: file.size,
@@ -2433,7 +2455,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
           const blob = file.slice(from, to, 'application/octet-stream');
           const chunk = new File([blob], `catalog-part-${index}.bin`, {type: 'application/octet-stream'});
           await catalogPost('/media/catalog/upload/chunk', {token: start.token, index}, chunk, 'chunk');
-          setProgress(2 + ((index + 1) / chunkCount) * 16, `PDF wird hochgeladen: Abschnitt ${index + 1} von ${chunkCount}`);
+          setProgress(3 + ((index + 1) / chunkCount) * 15, `PDF wird hochgeladen: Abschnitt ${index + 1} von ${chunkCount}`);
         }
 
         const finished = await catalogPost('/media/catalog/upload/finish', {token: start.token});
@@ -2446,21 +2468,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         serialize();
         updateCurrent('PDF gespeichert. Seiten werden jetzt erzeugt …');
 
-        setProgress(20, 'PDF wird im Browser geöffnet …');
-        const pdfjs = await loadPdfJs();
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const assetBase = window.cmsAdminUrl('/assets/vendor/pdfjs/');
-        const loadingTask = pdfjs.getDocument({
-          data: bytes,
-          cMapUrl: assetBase + 'cmaps/',
-          cMapPacked: true,
-          standardFontDataUrl: assetBase + 'standard_fonts/',
-          wasmUrl: assetBase + 'wasm/'
-        });
-        const pdf = await loadingTask.promise;
-        const pageCount = Number(pdf.numPages || 0);
-        if (pageCount <= 0 || pageCount > 600) throw new Error('Die PDF hat eine ungültige Seitenanzahl.');
-
+        setProgress(20, 'Seitenerzeugung wird vorbereitet …');
         await catalogPost('/media/catalog/pages/start', {media_id: mediaId, page_count: pageCount});
         block.data.catalog_status = 'processing';
         block.data.page_count = String(pageCount);
@@ -2499,14 +2507,19 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         updateCurrent();
         setProgress(100, `Katalog ist bereit: ${pageCount} Seiten. Bitte die Seite jetzt speichern.`);
         fileInput.value = '';
-        if (typeof pdf.cleanup === 'function') await pdf.cleanup();
-        if (typeof pdf.destroy === 'function') await pdf.destroy();
       } catch (error) {
         console.error('Catalog processing failed:', error);
         setProgress(Number(progress.value || 0), `Fehler: ${error && error.message ? error.message : 'Katalog konnte nicht verarbeitet werden.'}`);
         updateCurrent();
         window.alert(`Katalog konnte nicht vollständig verarbeitet werden: ${error && error.message ? error.message : 'Unbekannter Fehler'}`);
       } finally {
+        // Auch im Fehlerfall freigeben - sonst haelt der Tab die geoeffnete PDF.
+        if (pdf) {
+          try {
+            if (typeof pdf.cleanup === 'function') await pdf.cleanup();
+            if (typeof pdf.destroy === 'function') await pdf.destroy();
+          } catch (_error) {}
+        }
         catalogProcessingCount = Math.max(0, catalogProcessingCount - 1);
         uploadButton.disabled = !CAN_EDIT;
         fileInput.disabled = !CAN_EDIT;
