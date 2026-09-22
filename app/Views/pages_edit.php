@@ -2289,6 +2289,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     const fields = (defs.catalog && defs.catalog.fields && typeof defs.catalog.fields === 'object')
       ? defs.catalog.fields
       : {};
+    const maxPdfMb = 500;
     const wrapper = el('div', {class: 'pages-edit-catalog'});
     const contentFields = el('div', {class: 'pages-edit-fields'});
     ['title', 'subtitle', 'download_label', 'back_label', 'back_url'].forEach((key) => {
@@ -2299,7 +2300,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     uploadCard.appendChild(el('h3', {class: 'pages-edit-catalog__title', html: 'Katalog-PDF und Blätteransicht'}));
     uploadCard.appendChild(el('p', {
       class: 'pages-edit-field-hint',
-      html: 'PDFs bis 100 MB werden stückweise übertragen. Anschließend erzeugt dieser Browser einmalig optimierte WebP-Seiten. Bitte den Tab während der Verarbeitung geöffnet lassen.'
+      html: `PDFs bis ${maxPdfMb} MB werden stückweise übertragen. Anschließend erzeugt dieser Browser einmalig optimierte WebP-Seiten. Bitte den Tab während der Verarbeitung geöffnet lassen.`
     }));
 
     const current = el('div', {class: 'pages-edit-catalog__current'});
@@ -2409,8 +2410,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         window.alert('Bitte eine gültige PDF-Datei auswählen.');
         return;
       }
-      if (file.size <= 0 || file.size > 100 * 1024 * 1024) {
-        window.alert('Die Katalog-PDF darf maximal 100 MB groß sein.');
+      if (file.size <= 0 || file.size > maxPdfMb * 1024 * 1024) {
+        window.alert(`Die Katalog-PDF darf maximal ${maxPdfMb} MB groß sein.`);
         return;
       }
 

@@ -9,7 +9,7 @@ use PDO;
 
 final class CatalogService
 {
-    public const MAX_PDF_BYTES = 100 * 1024 * 1024;
+    public const MAX_PDF_BYTES = 500 * 1024 * 1024;
     public const CHUNK_SIZE = 2 * 1024 * 1024;
     public const MAX_PAGES = 600;
     private const MAX_PAGE_BYTES = 4 * 1024 * 1024;
@@ -32,7 +32,7 @@ final class CatalogService
             throw new \RuntimeException('Bitte eine PDF-Datei auswählen.');
         }
         if ($sizeBytes <= 0 || $sizeBytes > self::MAX_PDF_BYTES) {
-            throw new \RuntimeException('Die Katalog-PDF darf maximal 100 MB groß sein.');
+            throw new \RuntimeException('Die Katalog-PDF darf maximal ' . intdiv(self::MAX_PDF_BYTES, 1024 * 1024) . ' MB groß sein.');
         }
 
         $folderId = $folderId > 0 ? $folderId : 1;
