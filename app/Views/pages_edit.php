@@ -13,6 +13,7 @@ declare(strict_types=1);
 /** @var array $newsCategoryOptions */
 
 use App\PageBuilder\BlockRegistry;
+use App\Core\FrontendSource;
 
 echo flash_render($flash);
 
@@ -64,6 +65,19 @@ if (!is_array($blocks)) $blocks = [];
 $defs = BlockRegistry::definitions();
 $defsJson = json_encode($defs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if (!is_string($defsJson) || $defsJson === '') $defsJson = '{}';
+
+// Customer content belongs to the configured frontend, not the CMS block registry.
+$pagePresetsPath = FrontendSource::file('pagebuilder/presets.json');
+$pagePresets = $pagePresetsPath !== null ? json_decode((string)file_get_contents($pagePresetsPath), true) : [];
+if (!is_array($pagePresets)) $pagePresets = [];
+$pagePresets = array_filter($pagePresets, static function ($preset) use ($defs): bool {
+    if (!is_array($preset) || !is_array($preset['blocks'] ?? null)) return false;
+    foreach ($preset['blocks'] as $block) {
+        if (!is_array($block) || !isset($defs[(string)($block['type'] ?? '')])) return false;
+    }
+    return true;
+});
+$pagePresetsJson = json_encode($pagePresets, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 // Die Auswahl wird aus der Registry erzeugt. So ist jeder registrierte Block
 // automatisch auch im PageBuilder auswählbar; die Map steuert nur Reihenfolge
@@ -296,6 +310,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
             <div class="pages-edit-pb-actions">
               <button type="button" class="btn btn--ghost btn--sm" id="pbUndoBtn">↩ Rückgängig</button>
               <button type="button" class="btn btn--ghost btn--sm" id="pbRedoBtn">↪ Wiederholen</button>
+              <?php if ($pagePresets !== []): ?>
+                <select id="pbPagePreset" class="pages-edit-input" aria-label="Seitenvorlage">
+                  <?php foreach ($pagePresets as $presetKey => $preset): ?>
+                    <option value="<?= h((string)$presetKey) ?>"><?= h((string)($preset['label'] ?? $presetKey)) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn--ghost btn--sm" id="pbApplyPreset">Vorlage einsetzen</button>
+              <?php endif; ?>
               <?php foreach ($blockAddOptions as $blockType => $blockLabel): ?>
                 <button type="button" class="btn btn--ghost btn--sm" data-add-block="<?= h($blockType) ?>">+ <?= h($blockLabel) ?></button>
               <?php endforeach; ?>
@@ -555,6 +577,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 <script>
 (() => {
   const defs = <?= $defsJson ?>;
+  const PAGE_PRESETS = <?= $pagePresetsJson ?: '{}' ?>;
+  const FRONTEND_ASSET_BASE = <?= json_encode(rtrim((string)\App\Core\Env::get('FRONTEND_BASE_URL', ''), '/'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
   const PAGE_OPTIONS = <?= $pagePickerOptionsJson ?>;
   const EVENT_CATEGORY_OPTIONS = <?= $eventCategoryOptionsJson ?>;
   const NEWS_CATEGORY_OPTIONS = <?= $newsCategoryOptionsJson ?>;
@@ -768,8 +792,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         delete data.position;
       }
       return { id: (typeof b.id === 'string' && b.id) ? b.id : uuid(), type, data };
-    })
-    .filter(b => defs[b.type]);
+    });
 
   function snapshot() {
     return JSON.stringify({ blocks: model.blocks.map(b => ({ id: b.id, type: b.type, data: Object.assign({}, b.data) })) });
@@ -797,7 +820,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       id: (typeof b.id === 'string' && b.id) ? b.id : uuid(),
       type: String(b.type || ''),
       data: (b.data && typeof b.data === 'object') ? b.data : {},
-    })).filter((b) => defs[b.type]);
+    }));
     historyIndex = idx;
     render();
     serialize(false);
@@ -876,7 +899,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
     const direct = String(rawUrl || '').trim();
     if (direct !== '') {
-      return { primary: direct, fallback: '' };
+      return { primary: direct.startsWith('/assets/') && FRONTEND_ASSET_BASE ? FRONTEND_ASSET_BASE + direct : direct, fallback: '' };
     }
     return { primary: '', fallback: '' };
   }
@@ -1248,7 +1271,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       news: NEWS_CATEGORY_OPTIONS,
     };
     const categoryOptions = block && key === 'category_slugs'
-      ? categoryOptionsByType[String(block.type || '')]
+      ? categoryOptionsByType[editorType(block)]
       : null;
 
     if (block && key === 'category_slugs' && Array.isArray(categoryOptions) && categoryOptions.length > 0) {
@@ -1440,9 +1463,9 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       enumVals.forEach(opt => {
         const o = document.createElement('option');
         o.value = String(opt);
-        if (block && block.type === 'events' && key === 'limit' && String(opt) === 'all') {
+        if (block && editorType(block) === 'events' && key === 'limit' && String(opt) === 'all') {
           o.textContent = 'Alle Events';
-        } else if (block && block.type === 'events' && key === 'include_past') {
+        } else if (block && editorType(block) === 'events' && key === 'include_past') {
           o.textContent = String(opt) === '1' ? 'Ja' : 'Nein';
         } else {
           o.textContent = String(opt);
@@ -1543,6 +1566,10 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     return fieldWrap;
   }
 
+  function editorType(block) {
+    return defs[block.type]?.editor_type || block.type;
+  }
+
   function renderBlockFields(block) {
     const def = defs[block.type];
     const fields = def.fields || {};
@@ -1552,7 +1579,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   }
 
   function renderTextBlockFields(block) {
-    const fields = (defs.text && defs.text.fields && typeof defs.text.fields === 'object') ? defs.text.fields : {};
+    const fields = (defs[block.type] && defs[block.type].fields && typeof defs[block.type].fields === 'object') ? defs[block.type].fields : {};
     const wrapper = el('div', {class: 'pages-edit-block-tabs'});
     const tabBar = el('div', {class: 'pages-edit-block-tabs__bar'});
     const panelWrap = el('div', {class: 'pages-edit-block-tabs__panels'});
@@ -1634,7 +1661,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   }
 
   function renderColumnsBlockFields(block, initialTab = 'settings') {
-    const fields = (defs.columns && defs.columns.fields && typeof defs.columns.fields === 'object') ? defs.columns.fields : {};
+    const fields = (defs[block.type] && defs[block.type].fields && typeof defs[block.type].fields === 'object') ? defs[block.type].fields : {};
+    const maxColumns = Math.max(1, ...(fields.col_count?.enum || ['5']).map(Number));
     if (!block.data || typeof block.data !== 'object') block.data = {};
     const wrapper = el('div', {class: 'pages-edit-block-tabs'});
     const tabBar = el('div', {class: 'pages-edit-block-tabs__bar'});
@@ -1660,14 +1688,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       let count = Number.parseInt(raw, 10);
       if (!Number.isFinite(count)) count = 2;
       if (count < 1) count = 1;
-      if (count > 5) count = 5;
+      if (count > maxColumns) count = maxColumns;
       return count;
     };
 
     const columnValue = (key) => {
       if (Object.prototype.hasOwnProperty.call(block.data, key)) return block.data[key];
-      const defaults = defs.columns && defs.columns.defaults && typeof defs.columns.defaults === 'object'
-        ? defs.columns.defaults
+      const defaults = defs[block.type] && defs[block.type].defaults && typeof defs[block.type].defaults === 'object'
+        ? defs[block.type].defaults
         : {};
       return Object.prototype.hasOwnProperty.call(defaults, key) ? defaults[key] : '';
     };
@@ -1716,11 +1744,14 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     if (fields.col_count) {
       settingsFields.appendChild(renderField(block, 'col_count', fields.col_count));
     }
+    Object.keys(fields).filter(key => !/^col_/.test(key) && key !== 'title').forEach(key => {
+      settingsFields.appendChild(renderField(block, key, fields[key]));
+    });
     settingsPanel.appendChild(settingsFields);
     panels.push(settingsPanel);
     panelWrap.appendChild(settingsPanel);
 
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= maxColumns; i++) {
       const titleKey = `col_${i}_title`;
       const imageKey = `col_${i}_image_url`;
       const textKey = `col_${i}_text`;
@@ -1779,6 +1810,10 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       const buttonTextField = fields[buttonTextKey] ? renderField(block, buttonTextKey, fields[buttonTextKey]) : null;
       if (buttonShowField) panelFields.appendChild(buttonShowField);
       if (buttonTextField) panelFields.appendChild(buttonTextField);
+      ['category', 'meta', 'note'].forEach(part => {
+        const key = `col_${i}_${part}`;
+        if (fields[key]) panelFields.appendChild(renderField(block, key, fields[key]));
+      });
 
       if (buttonShowField && buttonTextField) {
         const showInput = buttonShowField.querySelector('input[type="checkbox"]');
@@ -1841,8 +1876,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   }
 
   function renderServiceShowcaseBlockFields(block, initialTab = 'intro') {
-    const fields = (defs.service_showcase && defs.service_showcase.fields && typeof defs.service_showcase.fields === 'object')
-      ? defs.service_showcase.fields
+    const fields = (defs[block.type] && defs[block.type].fields && typeof defs[block.type].fields === 'object')
+      ? defs[block.type].fields
       : {};
     if (!block.data || typeof block.data !== 'object') block.data = {};
 
@@ -1866,7 +1901,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     }
 
     const getItemCount = () => {
-      const raw = String(block.data.item_count ?? (defs.service_showcase.defaults ? defs.service_showcase.defaults.item_count : '3'));
+      const raw = String(block.data.item_count ?? (defs[block.type].defaults ? defs[block.type].defaults.item_count : '3'));
       let count = Number.parseInt(raw, 10);
       if (!Number.isFinite(count)) count = 3;
       if (count < 1) count = 1;
@@ -1959,6 +1994,8 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         `item_${index}_title`,
         `item_${index}_lead`,
         `item_${index}_text`,
+        `item_${index}_tags`,
+        `item_${index}_icon`,
       ]);
       appendSection(main, 'Link', [
         `item_${index}_link_url`,
@@ -2007,7 +2044,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     };
 
     addTab('intro', 'Intro', [
-      {title: 'Seitenkopf', keys: ['kicker', 'headline', 'headline_muted', 'lead']},
+      {title: 'Seitenkopf', keys: ['layout', 'anchor', 'section_number', 'kicker', 'headline', 'headline_muted', 'lead', 'button_text', 'button_url']},
     ]);
     addTab('stock', 'Werkstoffleiste', [
       {title: 'Leiste', keys: ['stock_label', 'stock_items', 'item_count']},
@@ -2539,7 +2576,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   function normalizeNestedBuilderBlock(rawBlock) {
     if (!rawBlock || typeof rawBlock !== 'object') return null;
     const type = String(rawBlock.type || '').trim();
-    if (!type || !defs[type] || type === 'three_columns_layout') return null;
+    if (!type || type === 'three_columns_layout') return null;
     let data = {};
     if (rawBlock.data && typeof rawBlock.data === 'object' && !Array.isArray(rawBlock.data)) {
       data = Object.assign({}, rawBlock.data);
@@ -2579,20 +2616,108 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
   function renderBlockEditorContent(block) {
     const wrapper = el('div', {class: 'pages-edit-block-editor'});
+    if (!defs[block.type]) {
+      wrapper.appendChild(el('p', {class: 'pages-edit-field-hint', html: 'Dieser Block ist nicht freigegeben.'}));
+      return wrapper;
+    }
     wrapper.appendChild(renderInternalTitleField(block));
 
     let specific;
-    if (block.type === 'hero') specific = renderHeroBlockFields(block);
-    else if (block.type === 'dual_hero') specific = renderDualHeroBlockFields(block);
-    else if (block.type === 'page_carousel') specific = renderPageCarouselBlockFields(block);
-    else if (block.type === 'catalog') specific = renderCatalogBlockFields(block);
-    else if (block.type === 'text') specific = renderTextBlockFields(block);
-    else if (block.type === 'columns') specific = renderColumnsBlockFields(block);
-    else if (block.type === 'service_showcase') specific = renderServiceShowcaseBlockFields(block);
-    else if (block.type === 'three_columns_layout') specific = renderThreeColumnsLayoutFields(block);
+    if (editorType(block) === 'hero') specific = renderHeroBlockFields(block);
+    else if (editorType(block) === 'dual_hero') specific = renderDualHeroBlockFields(block);
+    else if (editorType(block) === 'page_carousel') specific = renderPageCarouselBlockFields(block);
+    else if (editorType(block) === 'catalog') specific = renderCatalogBlockFields(block);
+    else if (editorType(block) === 'text') specific = renderTextBlockFields(block);
+    else if (editorType(block) === 'columns') specific = renderColumnsBlockFields(block);
+    else if (editorType(block) === 'service_showcase') specific = renderServiceShowcaseBlockFields(block);
+    else if (editorType(block) === 'logo_strip' || editorType(block) === 'references') specific = renderReferenceFields(block);
+    else if (editorType(block) === 'gallery') specific = renderGalleryFields(block);
+    else if (editorType(block) === 'three_columns_layout') specific = renderThreeColumnsLayoutFields(block);
     else specific = renderBlockFields(block);
     wrapper.appendChild(specific);
 
+    return wrapper;
+  }
+
+  function renderReferenceFields(block) {
+    const fields = defs[block.type].fields || {};
+    const wrapper = el('div', {class: 'pages-edit-fields'});
+    Object.keys(fields).filter(key => !/^item_\d+_/.test(key)).forEach(key => {
+      wrapper.appendChild(renderField(block, key, fields[key]));
+    });
+    const maxItems = Math.max(1, ...(fields.item_count?.enum || ['1']).map(Number));
+    const sections = [];
+    for (let i = 1; i <= maxItems; i++) {
+      const section = el('details', {class: 'pages-edit-details'});
+      const summary = el('summary');
+      const content = el('div', {class: 'pages-edit-fields'});
+      const updateTitle = () => {
+        summary.textContent = `${editorType(block) === 'logo_strip' ? 'Logo' : 'Referenz'} ${i}`
+          + (block.data[`item_${i}_title`] ? `: ${block.data[`item_${i}_title`]}` : '');
+      };
+      section.appendChild(summary);
+      section.appendChild(content);
+      Object.keys(fields).filter(key => key.startsWith(`item_${i}_`)).forEach(key => {
+        content.appendChild(renderField(block, key, fields[key]));
+      });
+      section.addEventListener('input', updateTitle);
+      updateTitle();
+      sections.push(section);
+      wrapper.appendChild(section);
+    }
+    const updateCount = () => {
+      const count = Number.parseInt(block.data.item_count || defs[block.type].defaults.item_count, 10);
+      sections.forEach((section, index) => { section.hidden = index >= count; });
+    };
+    wrapper.addEventListener('change', updateCount);
+    updateCount();
+    return wrapper;
+  }
+
+  function renderGalleryFields(block) {
+    const wrapper = el('div', {class: 'pages-edit-fields'});
+    const fields = defs[block.type].fields || {};
+    Object.keys(fields).filter(key => key !== 'items_json').forEach(key => wrapper.appendChild(renderField(block, key, fields[key])));
+    const decoded = safeParseJson(String(block.data.items_json || '[]'));
+    const items = Array.isArray(decoded) ? decoded.filter(item => item && typeof item === 'object').slice(0, 20) : [];
+    const syncItems = () => { block.data.items_json = JSON.stringify(items); serialize(); };
+    const rebuild = () => { syncItems(); wrapper.replaceWith(renderGalleryFields(block)); };
+    items.forEach((item, index) => {
+      const section = el('details', {class: 'pages-edit-details'});
+      section.appendChild(el('summary', {html: `Bild ${index + 1}`}));
+      const itemBlock = {type: 'gallery', data: {
+        image_url: String(item.url || ''), alt: String(item.alt || ''),
+        caption: String(item.caption || ''), caption_secondary: String(item.caption_secondary || '')
+      }};
+      const content = el('div', {class: 'pages-edit-fields'});
+      for (const [key, label] of Object.entries({image_url: 'Bild', alt: 'Alternativtext', caption: 'Bildunterschrift', caption_secondary: 'Zweite Beschriftung'})) {
+        content.appendChild(renderField(itemBlock, key, {type: 'string', max: key === 'image_url' ? 2000 : 300, label, control: 'input'}));
+      }
+      const updateItem = () => {
+        Object.assign(item, {url: itemBlock.data.image_url, alt: itemBlock.data.alt, caption: itemBlock.data.caption, caption_secondary: itemBlock.data.caption_secondary});
+        syncItems();
+      };
+      content.addEventListener('input', updateItem);
+      content.addEventListener('change', updateItem);
+      const actions = el('div', {class: 'pages-edit-pb-actions'});
+      for (const [label, delta] of [['Nach vorne', -1], ['Nach hinten', 1]]) {
+        const button = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: label});
+        button.disabled = !CAN_EDIT || index + delta < 0 || index + delta >= items.length;
+        button.addEventListener('click', () => { [items[index], items[index + delta]] = [items[index + delta], items[index]]; rebuild(); });
+        actions.appendChild(button);
+      }
+      const remove = el('button', {type: 'button', class: 'btn btn--ghost btn--danger btn--sm', html: 'Entfernen'});
+      remove.disabled = !CAN_EDIT;
+      remove.addEventListener('click', () => { items.splice(index, 1); rebuild(); });
+      actions.appendChild(remove);
+      section.appendChild(content);
+      section.appendChild(actions);
+      wrapper.appendChild(section);
+    });
+    const add = el('button', {type: 'button', class: 'btn btn--ghost btn--sm', html: 'Bild hinzufuegen'});
+    add.disabled = !CAN_EDIT || items.length >= 20;
+    add.addEventListener('click', () => { items.push({url: '', alt: '', caption: '', caption_secondary: ''}); rebuild(); });
+    wrapper.appendChild(add);
     return wrapper;
   }
 
@@ -2948,7 +3073,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
   }
 
   function renderHeroBlockFields(block) {
-    const fields = (defs.hero && defs.hero.fields && typeof defs.hero.fields === 'object') ? defs.hero.fields : {};
+    const fields = (defs[block.type] && defs[block.type].fields && typeof defs[block.type].fields === 'object') ? defs[block.type].fields : {};
     const wrapper = el('div', {class: 'pages-edit-hero-tabs'});
     const preview = el('div', {class: 'pages-edit-hero-preview'});
     const previewMedia = el('div', {class: 'pages-edit-hero-preview__media'});
@@ -3161,19 +3286,19 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       blockModalTitle.textContent = `${blockLabel(block.type)} bearbeiten`;
     }
     if (blockModalSub) {
-      if (block.type === 'hero') {
+      if (editorType(block) === 'hero') {
         blockModalSub.textContent = 'Hero-Block: Fokus auf Titelbild, Typografie und Einstieg';
-      } else if (block.type === 'text') {
+      } else if (editorType(block) === 'text') {
         blockModalSub.textContent = 'Text-Block: Inhalte und Bild sind in getrennten Kacheln';
-      } else if (block.type === 'columns') {
+      } else if (editorType(block) === 'columns') {
         blockModalSub.textContent = 'Kachel-Block: Anzahl und Inhalte der Kacheln';
-      } else if (block.type === 'service_showcase') {
+      } else if (editorType(block) === 'service_showcase') {
         blockModalSub.textContent = 'Leistungs-Showcase: Intro, Werkstoffleiste, Unterkategorien und Abschluss getrennt bearbeiten';
-      } else if (block.type === 'page_carousel') {
+      } else if (editorType(block) === 'page_carousel') {
         blockModalSub.textContent = 'Seiten-Karussell: Seiten auswählen und mit Bild sowie Beschreibung hervorheben';
-      } else if (block.type === 'catalog') {
+      } else if (editorType(block) === 'catalog') {
         blockModalSub.textContent = 'Blätterkatalog: große PDF hochladen, Seiten optimieren und Download anbieten';
-      } else if (block.type === 'three_columns_layout') {
+      } else if (editorType(block) === 'three_columns_layout') {
         blockModalSub.textContent = 'Mehrspalten-Layout: Spalten frei hinzufügen, sortieren und mit Modulen befüllen';
       } else {
         blockModalSub.textContent = `Typ: ${block.type}`;
@@ -3185,7 +3310,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
     } catch (err) {
       console.error('Block-Editor konnte nicht vollständig geladen werden:', err);
       blockModalFields.innerHTML = '';
-      blockModalFields.appendChild(block.type === 'service_showcase'
+      blockModalFields.appendChild(editorType(block) === 'service_showcase'
         ? renderServiceShowcaseBlockFields(block)
         : renderBlockFields(block));
     }
@@ -3211,7 +3336,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
       const left = el('div', {class: 'pages-edit-blockhead-left'});
       left.appendChild(el('span', {class: 'pages-edit-drag-handle', html: '⋮⋮'}));
       const displayLabel = blockLabel(block.type);
-      const previewTitle = blockPreviewTitle(block);
+      const previewTitle = defs[block.type] ? blockPreviewTitle(block) : 'Nicht freigegebener Block';
       const titleEl = el('strong', {class: 'pages-edit-blockhead-title'});
       titleEl.textContent = previewTitle !== '' ? previewTitle : displayLabel;
       left.appendChild(titleEl);
@@ -3226,6 +3351,7 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
         ev.stopPropagation();
         openBlockEditor(block);
       });
+      editBtn.disabled = !defs[block.type];
       right.appendChild(editBtn);
 
       if (CAN_EDIT) {
@@ -3282,6 +3408,24 @@ if (!is_string($newsCategoryOptionsJson) || $newsCategoryOptionsJson === '') $ne
 
     serialize(false);
     ensureSortable();
+  }
+
+  const applyPresetButton = document.getElementById('pbApplyPreset');
+  if (applyPresetButton) {
+    applyPresetButton.addEventListener('click', () => {
+      if (!CAN_EDIT) return;
+      const preset = PAGE_PRESETS[document.getElementById('pbPagePreset')?.value];
+      if (!preset || !Array.isArray(preset.blocks) || !preset.blocks.every(block => defs[block.type])) return;
+      if (model.blocks.length && !window.confirm('Die Vorlage ersetzt die aktuellen Bloecke. Fortfahren?')) return;
+      const existingEvents = model.blocks.find(block => editorType(block) === 'events');
+      model.blocks = preset.blocks.map(block => {
+        const data = Object.assign({}, defs[block.type].defaults || {}, block.data || {});
+        if (editorType(block) === 'events' && existingEvents) Object.assign(data, existingEvents.data);
+        return {id: uuid(), type: block.type, data: cloneData(data)};
+      });
+      render();
+      serialize(true);
+    });
   }
 
   document.querySelectorAll('[data-add-block]').forEach(btn => {

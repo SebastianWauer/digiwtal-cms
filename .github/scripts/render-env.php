@@ -49,6 +49,8 @@ try {
             'CMS_BASE_PATH' => $data['urls']['base_path'] ?? '',
             'FRONTEND_SOURCE_DIR' => $data['ssh']['frontend_path'] ?? '',
             'FRONTEND_BASE_URL' => $data['urls']['frontend'] ?? '',
+            'PAGEBUILDER_CUSTOMER_KEY' => $data['frontend']['key'] ?? '',
+            'PAGEBUILDER_ALLOWED_BLOCKS' => json_encode($data['pagebuilder']['allowed_blocks'] ?? null, JSON_THROW_ON_ERROR),
             'SUPPORT_URL' => $data['support']['url'] ?? '',
             'SUPPORT_TOKEN' => $data['support']['token'] ?? '',
         ];

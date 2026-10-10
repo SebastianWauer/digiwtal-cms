@@ -224,7 +224,11 @@ final class PageService
         }
 
         // Validiert + normalisiert PageBuilder JSON (unbekannte Blöcke/Felder entfernen, Strings trimmen)
-        $contentJson = (new \App\PageBuilder\BlockValidator(new \App\PageBuilder\BlockRegistry()))->validateJson($contentJson);
+        try {
+            $contentJson = (new \App\PageBuilder\BlockValidator(new \App\PageBuilder\BlockRegistry()))->validateJson($contentJson);
+        } catch (\DomainException $e) {
+            return ['ok' => false, 'flash' => ['type' => 'error', 'msg' => $e->getMessage()], 'id' => (int)($id ?? 0)];
+        }
 
         if (strlen($contentJson) > self::MAX_CONTENT_JSON_BYTES) {
             return [

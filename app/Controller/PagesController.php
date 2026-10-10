@@ -77,6 +77,13 @@ final class PagesController
             }
         }
         try {
+            \App\PageBuilder\BlockAccess::assertContentAllowed($blocks);
+        } catch (\DomainException $e) {
+            http_response_code(403);
+            echo htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
+            return;
+        }
+        try {
             $blocks = $this->enrichBlocksWithFocusFromDb($_pdo, $blocks);
             $blocks = $this->enrichBlocksWithPageIconsFromDb($_pdo, $blocks);
             $blocks = $this->enrichBlocksWithCatalogs($_pdo, $blocks);
@@ -587,7 +594,7 @@ final class PagesController
                 }
             }
 
-            if ((string)($value['type'] ?? '') !== 'events') {
+            if (!in_array((string)($value['type'] ?? ''), ['events', 'sport_voice_events'], true)) {
                 return $value;
             }
 

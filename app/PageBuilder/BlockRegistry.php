@@ -60,6 +60,15 @@ final class BlockRegistry
             new NewsBlock(),
             new SocialAccountBlock(),
             new ServiceShowcaseBlock(),
+            new CustomerBlocks\SportVoice\HeroBlock(),
+            new CustomerBlocks\SportVoice\LogoStripBlock(),
+            new CustomerBlocks\SportVoice\ServiceShowcaseBlock(),
+            new CustomerBlocks\SportVoice\ColumnsBlock(),
+            new CustomerBlocks\SportVoice\EventsBlock(),
+            new CustomerBlocks\SportVoice\ReferencesBlock(),
+            new CustomerBlocks\SportVoice\GalleryBlock(),
+            new CustomerBlocks\SportVoice\TextBlock(),
+            new CustomerBlocks\SportVoice\ContactFormBlock(),
         ];
 
         return self::$typesCache;
@@ -70,13 +79,20 @@ final class BlockRegistry
      */
     public static function definitions(): array
     {
+        return array_filter(self::allDefinitions(), static fn(array $definition, string $type): bool => BlockAccess::allows($type), ARRAY_FILTER_USE_BOTH);
+    }
+
+    public static function allDefinitions(): array
+    {
         if (self::$defsCache !== null) {
             return self::$defsCache;
         }
 
         $out = [];
         foreach (self::types() as $t) {
-            $out[$t->type()] = $t->definition();
+            $definition = $t->definition();
+            $definition['editor_type'] = (string)(BlockAccess::catalog()[$t->type()]['editor_type'] ?? $t->type());
+            $out[$t->type()] = $definition;
         }
 
         self::$defsCache = $out;
@@ -92,6 +108,7 @@ final class BlockRegistry
     /** Liefert die Block-Instanz für einen Typ, oder null wenn unbekannt. */
     public static function get(string $type): ?BlockTypeInterface
     {
+        if (!BlockAccess::allows($type)) return null;
         foreach (self::types() as $t) {
             if ($t->type() === $type) {
                 return $t;

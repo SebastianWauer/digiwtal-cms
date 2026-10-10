@@ -28,6 +28,7 @@ final class BlockValidator
             return '{"blocks":[]}';
         }
 
+        BlockAccess::assertContentAllowed($decoded['blocks']);
         $normalized = ['blocks' => []];
 
         foreach ($decoded['blocks'] as $block) {

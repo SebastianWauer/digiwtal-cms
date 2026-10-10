@@ -1,0 +1,137 @@
+{
+  "text": {
+    "label": "Text / Bild",
+    "customer_key": "",
+    "editor_type": "text"
+  },
+  "image": {
+    "label": "Bild",
+    "customer_key": "",
+    "editor_type": "image"
+  },
+  "hero": {
+    "label": "Hero",
+    "customer_key": "",
+    "editor_type": "hero"
+  },
+  "dual_hero": {
+    "label": "Doppel-Hero",
+    "customer_key": "",
+    "editor_type": "dual_hero"
+  },
+  "page_carousel": {
+    "label": "Seiten-Karussell",
+    "customer_key": "",
+    "editor_type": "page_carousel"
+  },
+  "catalog": {
+    "label": "Blaetterkatalog",
+    "customer_key": "",
+    "editor_type": "catalog"
+  },
+  "columns": {
+    "label": "Kacheln",
+    "customer_key": "",
+    "editor_type": "columns"
+  },
+  "cta": {
+    "label": "Call-to-Action",
+    "customer_key": "",
+    "editor_type": "cta"
+  },
+  "faq": {
+    "label": "FAQ",
+    "customer_key": "",
+    "editor_type": "faq"
+  },
+  "video": {
+    "label": "Video",
+    "customer_key": "",
+    "editor_type": "video"
+  },
+  "gallery": {
+    "label": "Galerie",
+    "customer_key": "",
+    "editor_type": "gallery"
+  },
+  "contact_form": {
+    "label": "Kontaktformular",
+    "customer_key": "",
+    "editor_type": "contact_form"
+  },
+  "imprint": {
+    "label": "Impressum",
+    "customer_key": "",
+    "editor_type": "imprint"
+  },
+  "events": {
+    "label": "Events",
+    "customer_key": "",
+    "editor_type": "events"
+  },
+  "three_columns_layout": {
+    "label": "Mehrspalten-Layout",
+    "customer_key": "",
+    "editor_type": "three_columns_layout"
+  },
+  "news": {
+    "label": "News",
+    "customer_key": "",
+    "editor_type": "news"
+  },
+  "social_account": {
+    "label": "Social Media",
+    "customer_key": "",
+    "editor_type": "social_account"
+  },
+  "service_showcase": {
+    "label": "Leistungen",
+    "customer_key": "",
+    "editor_type": "service_showcase"
+  },
+  "sport_voice_hero": {
+    "label": "Sport Voice - Hero",
+    "customer_key": "sport-voice",
+    "editor_type": "hero"
+  },
+  "sport_voice_logo_strip": {
+    "label": "Sport Voice - Logo-Leiste",
+    "customer_key": "sport-voice",
+    "editor_type": "logo_strip"
+  },
+  "sport_voice_service_showcase": {
+    "label": "Sport Voice - Leistungen",
+    "customer_key": "sport-voice",
+    "editor_type": "service_showcase"
+  },
+  "sport_voice_columns": {
+    "label": "Sport Voice - Einsaetze",
+    "customer_key": "sport-voice",
+    "editor_type": "columns"
+  },
+  "sport_voice_events": {
+    "label": "Sport Voice - Events",
+    "customer_key": "sport-voice",
+    "editor_type": "events"
+  },
+  "sport_voice_references": {
+    "label": "Sport Voice - Referenzen",
+    "customer_key": "sport-voice",
+    "editor_type": "references"
+  },
+  "sport_voice_gallery": {
+    "label": "Sport Voice - Galerie",
+    "customer_key": "sport-voice",
+    "editor_type": "gallery"
+  },
+  "sport_voice_text": {
+    "label": "Sport Voice - Portraet",
+    "customer_key": "sport-voice",
+    "editor_type": "text"
+  },
+  "sport_voice_contact_form": {
+    "label": "Sport Voice - Kontakt",
+    "customer_key": "sport-voice",
+    "editor_type": "contact_form"
+  }
+}
