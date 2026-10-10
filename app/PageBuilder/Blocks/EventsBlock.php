@@ -12,6 +12,7 @@ final class EventsBlock extends AbstractBlockType
     {
         return [
             'headline' => 'Events & Termine',
+            'intro' => '',
             'category_slugs' => '',
             'limit' => 'all',
             'include_past' => '1',
@@ -22,6 +23,7 @@ final class EventsBlock extends AbstractBlockType
     {
         return [
             'headline' => ['type' => 'string', 'max' => 200, 'label' => 'Titel', 'control' => 'input'],
+            'intro' => ['type' => 'string', 'max' => 500, 'label' => 'Einleitung', 'control' => 'textarea', 'rows' => 3],
             'category_slugs' => ['type' => 'string', 'max' => 500, 'label' => 'Kategorien', 'control' => 'input', 'hint' => 'Leer = alle Kategorien'],
             'limit' => ['type' => 'string', 'max' => 4, 'label' => 'Anzahl', 'control' => 'select', 'enum' => ['all', '6', '12', '24', '36', '50']],
             'include_past' => ['type' => 'string', 'max' => 1, 'label' => 'Vergangene anzeigen', 'control' => 'select', 'enum' => ['0', '1']],
