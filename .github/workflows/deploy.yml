@@ -28,6 +28,10 @@ on:
         description: "Migrationen nach dem Upload ausfuehren"
         type: boolean
         default: true
+      sport_voice_logos_reparieren:
+        description: "Beschaedigte Sport-Voice-Logo-SVGs aus den Originalen wiederherstellen"
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-kunde-${{ inputs.kunde }}
@@ -248,6 +252,12 @@ jobs:
           $SSH_CMD "$ziel" "cat > '$CMS_PATH/.env.new' && chmod 600 '$CMS_PATH/.env.new' && mv '$CMS_PATH/.env.new' '$CMS_PATH/.env'" < /tmp/cms-merged.env
           $SSH_CMD "$ziel" "mkdir -p '$CMS_PATH/storage' && chmod 755 '$CMS_PATH/storage'"
           echo "CMS-.env aus der Verwaltung synchronisiert; eigene Zusatzwerte wurden erhalten."
+
+      - name: Sport-Voice-Logo-Dateien wiederherstellen
+        if: ${{ inputs.sport_voice_logos_reparieren }}
+        run: |
+          set -euo pipefail
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "cd '$CMS_PATH' && php scripts/repair-sport-voice-logos.php --apply"
 
       - name: Migrationen ausfuehren
         if: ${{ inputs.migrationen }}

@@ -496,24 +496,7 @@ final class MediaService
             throw new \RuntimeException('SVG konnte nicht gelesen werden.');
         }
 
-        $svg = preg_replace('/<\s*script\b[^>]*>.*?<\s*\/\s*script\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*foreignObject\b[^>]*>.*?<\s*\/\s*foreignObject\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*(animate|set|animateTransform)\b[^>]*>.*?<\s*\/\s*\1\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*(animate|set|animateTransform)\b[^>]*\/\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*use\b[^>]*\b(?:href|xlink:href)\s*=\s*([\'"])[^\'"]*\1[^>]*>.*?<\s*\/\s*use\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*use\b[^>]*\b(?:href|xlink:href)\s*=\s*([\'"])[^\'"]*\1[^>]*\/\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*image\b[^>]*\b(?:href|xlink:href)\s*=\s*([\'"])\s*data:[^\'"]*\1[^>]*>.*?<\s*\/\s*image\s*>/is', '', $svg) ?? $svg;
-        $svg = preg_replace('/<\s*image\b[^>]*\b(?:href|xlink:href)\s*=\s*([\'"])\s*data:[^\'"]*\1[^>]*\/\s*>/is', '', $svg) ?? $svg;
-
-        $svg = preg_replace('/\son[a-z]+\s*=\s*"[^"]*"/i', '', $svg) ?? $svg;
-        $svg = preg_replace("/\son[a-z]+\s*=\s*'[^']*'/i", '', $svg) ?? $svg;
-
-        $svg = preg_replace('/\b(href|xlink:href)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', '$1=$2$2', $svg) ?? $svg;
-        $svg = preg_replace('/\b(href|xlink:href)\s*=\s*([\'"])\s*(https?:|data:)[^\'"]*\2/i', '$1=$2$2', $svg) ?? $svg;
-
-        if (stripos($svg, '<svg') === false) {
-            throw new \RuntimeException('SVG ungültig.');
-        }
+        $svg = SvgSanitizer::sanitize($svg);
 
         $tmp = tempnam(sys_get_temp_dir(), 'svg_');
         if ($tmp === false) {
