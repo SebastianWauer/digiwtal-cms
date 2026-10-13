@@ -139,6 +139,9 @@ echo flash_render($flash ?? null);
   </div>
 
   <div class="pages-actions-right">
+    <?php if (\App\Core\WebsiteMode::isOnepager()): ?>
+      <a class="btn btn--ghost" href="<?= cms_base_path() ?>/pages/onepager">Onepager</a>
+    <?php endif; ?>
     <?php if ($canEdit): ?>
       <button type="button" class="btn btn--ghost" data-order-open="header">Header sortieren</button>
       <button type="button" class="btn btn--ghost" data-order-open="footer">Footer sortieren</button>

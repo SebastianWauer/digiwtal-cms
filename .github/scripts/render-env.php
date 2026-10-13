@@ -50,6 +50,7 @@ try {
             'FRONTEND_SOURCE_DIR' => $data['ssh']['frontend_path'] ?? '',
             'FRONTEND_BASE_URL' => $data['urls']['frontend'] ?? '',
             'PAGEBUILDER_CUSTOMER_KEY' => $data['frontend']['key'] ?? '',
+            'WEBSITE_MODE' => ($data['site']['website_mode'] ?? 'multipage') === 'onepager' ? 'onepager' : 'multipage',
             'PAGEBUILDER_ALLOWED_BLOCKS' => json_encode($data['pagebuilder']['allowed_blocks'] ?? null, JSON_THROW_ON_ERROR),
             'SUPPORT_URL' => $data['support']['url'] ?? '',
             'SUPPORT_TOKEN' => $data['support']['token'] ?? '',

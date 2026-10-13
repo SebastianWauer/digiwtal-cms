@@ -185,6 +185,8 @@ function get_public_settings(PDO $pdo): array
     }
 
     return [
+        'website_mode' => \App\Core\WebsiteMode::get(),
+        'onepager_page_ids' => \App\Core\WebsiteMode::isOnepager() ? (new \App\Services\OnepagerService($pdo))->publicPageIds() : [],
         'site_name'             => (string)($raw['site_title'] ?? ''),
         'brand_color_primary'   => validate_hex_color($raw['brand_color_primary']   ?? '', '#2563eb'),
         'brand_color_secondary' => validate_hex_color($raw['brand_color_secondary'] ?? '', '#64748b'),

@@ -56,6 +56,8 @@ $router->post('/theme', \App\Controller\ThemeController::class, 'handle');
 $router->post('/prefs', \App\Controller\UserPrefsController::class, 'handle');
 
 $router->get('/pages', \App\Controller\PagesController::class, 'index');
+$router->get('/pages/onepager', \App\Controller\OnepagerController::class, 'index');
+$router->post('/pages/onepager', \App\Controller\OnepagerController::class, 'save');
 $router->get('/pages/edit', \App\Controller\PagesController::class, 'edit');
 $router->post('/pages/preview', \App\Controller\PagesController::class, 'preview');
 $router->post('/pages/save', \App\Controller\PagesController::class, 'save');
